@@ -1,0 +1,420 @@
+ConsignmentGenie - Phase 5: Advanced Platform Features & Multi-Channel Growth
+Timeline: Weeks 13-18 (6 weeks)
+
+=============================================================================
+PHASE 5 OVERVIEW
+=============================================================================
+
+Strategic Focus:
+Transform ConsignmentGenie from a B2B management tool into a comprehensive platform
+that serves all stakeholders - shop owners, providers, AND customers - while expanding
+e-commerce capabilities and business intelligence.
+
+Core Objectives:
+1. Public Storefront & Customer Experience - Enable online shopping
+2. Provider Self-Service Portal - Reduce shop owner workload
+3. Advanced Analytics & Reporting - Business intelligence for decision making
+4. Multi-User Staff Management - Team collaboration features
+5. Shopify Integration - Expand e-commerce reach
+
+Prerequisites: Phases 1-4 complete and deployed
+
+=============================================================================
+PHASE 5 REQUIREMENTS
+=============================================================================
+
+5.1 PUBLIC STOREFRONT & SHOPPER PORTAL
+Business Value: Generate online sales, expand customer base, provide 24/7 shopping
+
+Core Features:
+- Public catalog browsing (no auth required)
+- Item search and filtering (category, price, provider, condition)
+- Shopping cart and checkout (Stripe integration)
+- Customer accounts (purchase history, wishlist)
+- Inventory sync (real-time availability)
+- Mobile-responsive design
+- SEO optimization for organic discovery
+
+Technical Requirements:
+New Domain Entities:
+- Customer (separate from Provider)
+  - Id, Email, FirstName, LastName, PhoneNumber, CreatedAt
+  - OrganizationId (which store they're shopping at)
+  - StripeCustomerId, IsEmailVerified
+- ShoppingCart & CartItem
+  - CartId, CustomerId, OrganizationId, CreatedAt, UpdatedAt
+  - CartItem: CartId, ItemId, Quantity, AddedAt
+- Order & OrderItem
+  - Order: Id, CustomerId, OrganizationId, OrderNumber
+  - Total, Tax, Shipping, Status, CreatedAt, StripePaymentIntentId
+  - ShippingAddress (JSON), BillingAddress (JSON)
+  - OrderItem: OrderId, ItemId, Quantity, Price, Commission, ProviderId
+- CustomerWishlist
+  - CustomerId, ItemId, AddedAt
+- StoreConfiguration (per organization)
+  - StoreName, StoreUrl, LogoUrl, Theme, ContactInfo
+  - IsPublicStoreEnabled, ShippingSettings (JSON), TaxSettings (JSON)
+
+New API Endpoints:
+Public Store API (No Auth Required):
+- GET /api/public/{orgSlug}/items - Browse catalog with pagination
+- GET /api/public/{orgSlug}/items/{id} - Item details
+- GET /api/public/{orgSlug}/categories - Category list
+- GET /api/public/{orgSlug}/store-info - Store configuration
+- POST /api/public/{orgSlug}/search - Advanced search with filters
+
+Customer API (Customer Auth):
+- POST /api/customer/register - Create customer account
+- POST /api/customer/login - Customer authentication
+- GET/POST/PUT /api/customer/cart - Shopping cart management
+- POST /api/customer/orders - Place order
+- GET /api/customer/orders - Order history
+- GET/POST/DELETE /api/customer/wishlist - Wishlist management
+- PUT /api/customer/profile - Update customer profile
+
+Frontend Requirements:
+- Standalone Angular module for public storefront
+- Server-side rendering (Angular Universal) for SEO
+- Progressive Web App capabilities
+- Mobile-first responsive design
+- Shopping cart persistence across sessions
+- Google Analytics integration
+
+5.2 PROVIDER SELF-SERVICE PORTAL ENHANCEMENT
+Business Value: Reduce shop owner workload, improve provider satisfaction, scale operations
+
+Enhanced Provider Features:
+- Item Upload Portal (photos, descriptions, pricing)
+  - Multi-photo upload with cropping/resizing
+  - Rich text description editor
+  - Category selection and tagging
+  - Pricing suggestions based on similar items
+- Inventory Management (mark sold, adjust prices)
+  - Bulk operations (price updates, status changes)
+  - Low stock alerts
+  - Seasonal pricing adjustments
+- Sales Dashboard (real-time earnings, pending payouts)
+  - Interactive charts and graphs
+  - Performance metrics vs other providers
+  - Trending items and categories
+- Performance Analytics (top items, seasonal trends)
+  - Sales velocity analysis
+  - Customer engagement metrics
+  - Revenue forecasting
+- Direct Communication (message shop owner)
+  - In-app messaging system
+  - Email notifications for important updates
+  - File attachment support
+
+Provider Workflow:
+1. Provider uploads items ’ Shop owner approval queue
+2. Shop owner approves/rejects with feedback
+3. Approved items go live on public storefront
+4. Providers track performance and earnings
+
+Technical Requirements:
+New Entities:
+- ProviderItemUpload
+  - ProviderId, ItemId, Status (Pending, Approved, Rejected)
+  - UploadedAt, ReviewedAt, ReviewedByUserId, ReviewNotes
+- ProviderMessage
+  - FromProviderId, ToUserId (shop owner), OrganizationId
+  - Subject, Message, CreatedAt, IsRead, Attachments (JSON)
+- ProviderAnalytics (computed views)
+  - Daily/weekly/monthly sales summaries per provider
+  - Performance rankings and trends
+
+Enhanced Provider API:
+- POST /api/provider/items/upload - Submit item for approval
+- GET /api/provider/items/pending - View pending approvals
+- GET /api/provider/analytics - Performance dashboard data
+- GET/POST /api/provider/messages - Communication with shop owner
+- PUT /api/provider/items/{id}/price - Update item pricing
+- POST /api/provider/items/bulk-update - Bulk operations
+
+5.3 ADVANCED ANALYTICS & BUSINESS INTELLIGENCE
+Business Value: Data-driven decisions, identify trends, optimize operations
+
+Analytics Modules:
+
+Sales Analytics:
+- Revenue trends (daily/weekly/monthly/yearly)
+- Top-performing items and categories
+- Provider performance rankings
+- Customer behavior patterns
+- Seasonal analysis and forecasting
+- Geographic sales distribution
+- Payment method preferences
+
+Operational Analytics:
+- Inventory turnover rates
+- Average days to sell by category
+- Commission optimization analysis
+- Payout frequency impact on provider satisfaction
+- Staff productivity metrics
+- Customer acquisition cost analysis
+
+Predictive Analytics:
+- Demand forecasting using historical data
+- Optimal pricing suggestions
+- Inventory restocking recommendations
+- Customer lifetime value predictions
+- Churn risk analysis
+
+Technical Requirements:
+New Entities:
+- AnalyticsEvent
+  - OrganizationId, EventType, EventData (JSON)
+  - ItemId?, CustomerId?, UserId?, ProviderId?, Timestamp
+  - Source (POS, Web, Mobile), SessionId
+- AnalyticsReport
+  - ReportType, Parameters (JSON), GeneratedAt
+  - FilePath, RequestedByUserId
+- KPIMetric
+  - OrganizationId, MetricName, MetricValue, Period
+  - CalculatedAt, Trend (Up/Down/Stable)
+
+Analytics API:
+- GET /api/analytics/sales - Sales analytics with date ranges
+- GET /api/analytics/inventory - Inventory insights
+- GET /api/analytics/providers - Provider performance
+- GET /api/analytics/customers - Customer behavior
+- GET /api/analytics/kpis - Key performance indicators
+- POST /api/analytics/reports/generate - Custom report generation
+- GET /api/analytics/reports/{id}/download - Download reports
+
+Frontend Requirements:
+- Interactive dashboard with Chart.js/D3.js
+- Customizable widgets per user role
+- Real-time data updates using SignalR
+- Export capabilities (PDF, Excel, CSV)
+- Scheduled report delivery
+- Mobile-responsive analytics views
+
+5.4 MULTI-USER STAFF MANAGEMENT
+Business Value: Team collaboration, role-based permissions, audit trails
+
+User Roles & Permissions:
+- Owner (existing): Full access, billing management
+- Manager: All operations, no financial settings
+- Staff: Item entry, transaction processing, customer service
+- Cashier: POS operations only, limited reporting
+- Accountant: Financial reports, payouts only, no item management
+
+Features:
+- Role-based dashboard customization
+- Audit logging (who did what, when)
+- Staff performance tracking
+- Shift management integration
+- Team messaging system
+- Activity monitoring and notifications
+
+Technical Requirements:
+Enhanced User Entity:
+- Role (enum: Owner, Manager, Staff, Cashier, Accountant)
+- IsActive, LastLoginAt, CreatedByUserId
+- Permissions (JSON array), ShiftSchedule (JSON)
+
+New Entities:
+- UserPermission
+  - UserId, Permission (enum), GrantedAt, GrantedByUserId
+- AuditLog
+  - UserId, Action, EntityType, EntityId, OldValues (JSON)
+  - NewValues (JSON), Timestamp, IPAddress
+- UserSession
+  - UserId, SessionStart, SessionEnd, Actions
+
+Admin API:
+- GET/POST/PUT/DELETE /api/admin/users - Staff management
+- GET /api/admin/audit-logs - Activity tracking
+- GET/POST/PUT /api/admin/permissions - Role management
+- GET /api/admin/activity - Real-time activity monitoring
+
+5.5 SHOPIFY INTEGRATION
+Business Value: Expand online presence, sync with existing e-commerce
+
+Integration Scope:
+- Bi-directional inventory sync
+- Unified order management
+- Automatic profit split tracking
+- Cross-platform analytics
+- Webhook handling for real-time updates
+
+Technical Requirements:
+New Entities:
+- ShopifyConnection (per organization)
+  - OrganizationId, ShopifyShopDomain, AccessToken
+  - LastSyncAt, AutoSync, SyncDirection
+- ShopifyProduct (mapping)
+  - ItemId, ShopifyProductId, ShopifyVariantId
+  - LastSyncedAt, SyncStatus
+- ShopifySyncLog
+  - OrganizationId, SyncType, StartedAt, CompletedAt
+  - Success, ErrorMessage, RecordsProcessed
+- CrossPlatformOrder
+  - OrderId, Platform (Internal/Shopify), ExternalOrderId
+  - SyncStatus, SyncedAt
+
+Shopify Webhooks:
+- Order created/updated/cancelled
+- Product updated
+- Inventory level changed
+- Customer created/updated
+
+Integration API:
+- POST /api/shopify/connect - OAuth connection to Shopify
+- POST /api/shopify/sync/products - Manual product sync
+- POST /api/shopify/sync/orders - Manual order sync
+- GET /api/shopify/sync/status - Sync status monitoring
+- POST /api/shopify/webhooks/* - Webhook handlers
+
+=============================================================================
+PHASE 5 DATABASE MIGRATIONS
+=============================================================================
+
+Migration: AddPhase5CustomerDomain
+- Create Customer, ShoppingCart, CartItem tables
+- Create Order, OrderItem tables
+- Create CustomerWishlist table
+- Add indexes for performance
+
+Migration: AddPhase5ProviderEnhancements
+- Create ProviderItemUpload, ProviderMessage tables
+- Create ProviderAnalytics views
+- Add provider self-service columns to existing tables
+
+Migration: AddPhase5Analytics
+- Create AnalyticsEvent, AnalyticsReport, KPIMetric tables
+- Create computed views for common analytics queries
+- Add analytics indexes for performance
+
+Migration: AddPhase5StaffManagement
+- Extend User table with new role fields
+- Create UserPermission, AuditLog, UserSession tables
+- Create StoreConfiguration table
+
+Migration: AddPhase5ShopifyIntegration
+- Create ShopifyConnection, ShopifyProduct tables
+- Create ShopifySyncLog, CrossPlatformOrder tables
+- Add Shopify-related indexes
+
+=============================================================================
+PHASE 5 SECURITY REQUIREMENTS
+=============================================================================
+
+Customer Security:
+- Separate JWT tokens for customers vs admin users
+- Customer data isolation (can only access own data)
+- HTTPS-only customer authentication
+- Email verification for new customer accounts
+- Password reset flow with secure tokens
+
+Staff Security:
+- Role-based access control with middleware validation
+- Audit logging for all sensitive operations
+- Session management with timeout handling
+- IP-based access restrictions for admin functions
+
+API Security:
+- Rate limiting on public API endpoints
+- CORS configuration for public storefront
+- Input validation and sanitization
+- SQL injection prevention
+- XSS protection for all user inputs
+
+=============================================================================
+PHASE 5 TESTING REQUIREMENTS
+=============================================================================
+
+Critical Flows to Test:
+
+Public Storefront:
+- Product browsing and search
+- Shopping cart persistence
+- Customer registration/login
+- Order placement and confirmation
+- Mobile responsiveness
+
+Provider Portal:
+- Item upload and approval workflow
+- Analytics dashboard accuracy
+- Messaging system functionality
+- Bulk operations performance
+
+Analytics:
+- Data accuracy across all reports
+- Performance with large datasets
+- Real-time updates via SignalR
+- Export functionality
+
+Staff Management:
+- Role-based access enforcement
+- Audit logging completeness
+- Permission changes taking effect
+
+Shopify Integration:
+- OAuth connection flow
+- Bi-directional inventory sync
+- Order sync accuracy
+- Webhook processing reliability
+
+=============================================================================
+PHASE 5 PERFORMANCE REQUIREMENTS
+=============================================================================
+
+Page Load Times:
+- Public storefront: < 2 seconds initial load
+- Analytics dashboards: < 3 seconds with data
+- Provider portal: < 1.5 seconds for authenticated users
+
+API Response Times:
+- Public API endpoints: < 500ms average
+- Analytics queries: < 2 seconds for complex reports
+- Shopify sync operations: < 30 seconds for full sync
+
+Database Performance:
+- Support 10,000+ concurrent shoppers
+- Handle 100,000+ items in catalog
+- Process 1,000+ orders per day per organization
+
+=============================================================================
+PHASE 5 SUCCESS CRITERIA
+=============================================================================
+
+Phase 5 is complete when:
+
+ Public storefront generates online sales within 30 days
+ Provider self-service reduces shop owner item entry by 50%
+ Analytics dashboards used daily by 80% of Premium customers
+ Multi-user access adopted by 60% of Plus/Premium customers
+ Shopify integration successfully syncs inventory bidirectionally
+ Mobile responsiveness achieves 90+ Lighthouse score
+ Page load times under 2 seconds for all public pages
+ Customer acquisition through online storefront measurable
+ All Phase 5 migrations successful
+ No breaking changes to Phases 1-4 functionality
+
+Revenue Impact:
+- New Revenue Stream: Online sales (5-15% revenue increase)
+- Operational Efficiency: Provider self-service (30% admin time reduction)
+- Customer Retention: Analytics-driven decisions (10% improvement)
+- Market Expansion: Shopify integration (access to broader audience)
+
+Subscription Tier Enhancements:
+- Basic ($79/mo): View-only analytics, basic customer accounts
+- Standard ($129/mo): Full analytics, limited staff accounts (3 users)
+- Plus ($179/mo): Provider self-service, advanced analytics
+- Premium ($229/mo): Shopify integration, unlimited staff accounts
+
+=============================================================================
+POST-PHASE 5 ROADMAP (Phase 6+)
+=============================================================================
+
+Future Enhancements:
+1. Advanced Marketing Tools - Email campaigns, loyalty programs
+2. API Marketplace - Third-party integrations, developer ecosystem
+3. AI-Powered Features - Pricing optimization, demand forecasting
+4. International Expansion - Multi-currency, localization
+5. Enterprise Features - Multi-location, franchise management
+
+This completes the Phase 5 specification for ConsignmentGenie.

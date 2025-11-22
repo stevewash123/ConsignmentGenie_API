@@ -1,12 +1,34 @@
+using Azure.Storage.Blobs;
 using ConsignmentGenie.Application.Services;
 using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
+using ConsignmentGenie.Infrastructure.Repositories;
+using Hangfire;
+using Hangfire.MemoryStorage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using SendGrid;
 using System.Text;
+using Serilog;
+using Serilog.Sinks.PostgreSQL;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog for console and PostgreSQL logging
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", Serilog.Events.LogEventLevel.Information)
+    .WriteTo.Console()
+    .WriteTo.PostgreSQL(
+        connectionString: builder.Configuration.GetConnectionString("DefaultConnection") ?? "",
+        tableName: "Logs",
+        needAutoCreateTable: true)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Configure port for deployment compatibility
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
@@ -79,9 +101,44 @@ builder.Services.AddCors(options =>
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+// External services
+builder.Services.AddSingleton<ISendGridClient>(provider =>
+    new SendGridClient(builder.Configuration["SendGrid:ApiKey"]));
+
+builder.Services.AddSingleton<BlobServiceClient>(provider =>
+    new BlobServiceClient(builder.Configuration["Azure:Storage:ConnectionString"]));
+
+// Hangfire for background jobs
+builder.Services.AddHangfire(config =>
+    config.UseMemoryStorage());
+builder.Services.AddHangfireServer();
+
+// HttpClient for external API calls
+builder.Services.AddHttpClient<IQuickBooksService, QuickBooksService>();
+
+// Repository pattern
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 // Application services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ISplitCalculationService, SplitCalculationService>();
+builder.Services.AddScoped<IStripeService, StripeService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<SeedDataService>();
+
+// Photo storage implementations
+builder.Services.AddScoped<CloudinaryPhotoService>();
+builder.Services.AddScoped<AzurePhotoService>();
+builder.Services.AddScoped<IPhotoService, PhotoService>(); // Factory that switches between implementations
+
+// Payment gateway implementations
+builder.Services.AddScoped<StripePaymentGatewayService>();
+builder.Services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
+
+// Accounting service implementations
+builder.Services.AddScoped<IQuickBooksService, QuickBooksService>();
+builder.Services.AddScoped<QuickBooksAccountingService>();
 
 var app = builder.Build();
 
@@ -93,6 +150,7 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "ConsignmentGenie API v1");
     });
+    app.UseHangfireDashboard();
 }
 
 // Middleware order is important
@@ -104,4 +162,16 @@ app.MapControllers();
 // Health check endpoint
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
-app.Run();
+try
+{
+    Log.Information("Starting ConsignmentGenie API");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

@@ -14,7 +14,7 @@ public class User : BaseEntity
     [MaxLength(100)]
     public string PasswordHash { get; set; } = string.Empty;
 
-    public UserRole Role { get; set; } = UserRole.ShopOwner;
+    public UserRole Role { get; set; } = UserRole.Owner;
 
     public Guid OrganizationId { get; set; }
 

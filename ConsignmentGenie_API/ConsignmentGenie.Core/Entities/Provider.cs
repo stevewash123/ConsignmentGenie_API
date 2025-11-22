@@ -22,8 +22,23 @@ public class Provider : BaseEntity
     [MaxLength(20)]
     public string? Phone { get; set; }
 
-    [Column(TypeName = "decimal(5,2)")]
+[Column(TypeName = "decimal(5,2)")]
     public decimal DefaultSplitPercentage { get; set; } = 50.00m;  // e.g., 50 = 50%
+
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal CommissionRate { get; set; } = 50.00m;  // Provider's commission percentage
+
+    [MaxLength(100)]
+    public string? BusinessName { get; set; }
+
+    [MaxLength(200)]
+    public string? Address { get; set; }
+
+    [MaxLength(50)]
+    public string? City { get; set; }
+
+    [MaxLength(10)]
+    public string? ZipCode { get; set; }
 
     [MaxLength(50)]
     public string? PaymentMethod { get; set; }  // Venmo, Zelle, Check, BankTransfer
@@ -33,6 +48,17 @@ public class Provider : BaseEntity
     public ProviderStatus Status { get; set; } = ProviderStatus.Active;
 
     public string? Notes { get; set; }
+
+    // Provider Portal (Phase 3)
+    public bool PortalAccess { get; set; } = false;
+
+    [MaxLength(20)]
+    public string? InviteCode { get; set; }
+
+    public DateTime? InviteExpiry { get; set; }
+
+    [MaxLength(50)]
+    public string? QuickBooksCustomerId { get; set; }
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;

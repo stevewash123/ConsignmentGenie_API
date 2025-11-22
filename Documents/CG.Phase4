@@ -1,0 +1,1330 @@
+# ConsignmentPro - Phase 4 Requirements Specification (REVISED)
+
+## Phase 4: Multi-Platform E-Commerce Integration
+**Timeline: Weeks 11-13 (3 weeks)**
+
+### Phase 4 Overview
+Extend the Payment Gateway Abstraction Layer to support e-commerce platforms. Shop owners can publish inventory to Square Online, Shopify, WooCommerce, or BigCommerce. Online sales automatically sync back to ConsignmentPro with split calculations.
+
+**Prerequisites:** 
+- Phase 2 complete (Payment Gateway Abstraction Layer + Square POS)
+- Phase 3 complete (QuickBooks + Provider Portal)
+
+**Key Change from Original Plan**: Instead of just Square Online, we're implementing a **multi-platform e-commerce framework** using the abstraction layer built in Phase 2.
+
+---
+
+## Phase 4 Business Requirements
+
+### Core Value Proposition
+- Shop owners can sell consignment items online through **their choice** of platform
+- Support for: Square Online, Shopify, WooCommerce, BigCommerce
+- Inventory automatically syncs from ConsignmentPro → E-commerce platform(s)
+- Online sales auto-import back to ConsignmentPro (with split calculations)
+- Unified reporting: In-store vs online performance
+- No need to build custom e-commerce (leverage existing platforms)
+
+### Target Users
+- Shop owners with Plus tier ($179/mo) or higher
+- Can connect multiple platforms simultaneously (e.g., Square POS + Shopify store)
+- Each platform has different subscription requirements (through the platform, not us)
+
+---
+
+## 4.1 E-Commerce Gateway Implementations
+
+### Overview
+
+**Using the IPaymentGatewayService abstraction from Phase 2**, we'll extend it to support inventory sync and online sales capture.
+
+**Platforms to Support (Phase 4):**
+1. ✅ **Square Online** (extends SquareGatewayService from Phase 2)
+2. ✅ **Shopify** (new ShopifyGatewayService)
+3. ⚠️ **WooCommerce** (optional - if time permits)
+4. ⚠️ **BigCommerce** (optional - if time permits)
+
+**Minimum Viable Phase 4:** Square Online + Shopify (2-3 weeks)
+**Full Phase 4:** All four platforms (4-5 weeks)
+
+---
+
+## 4.2 Gateway Interface Extensions
+
+### Review of IPaymentGatewayService (From Phase 2)
+
+The abstraction layer already includes:
+```csharp
+public interface IPaymentGatewayService
+{
+    // ... OAuth, connection methods ...
+    
+    // Inventory Sync (already defined in Phase 2)
+    Task<bool> SupportsInventorySyncAsync();
+    Task<SyncResult> SyncInventoryAsync(Guid organizationId, List<Guid> itemIds);
+    Task<bool> UnpublishItemAsync(Guid organizationId, Guid itemId);
+    
+    // Capabilities
+    PaymentGatewayCapabilities GetCapabilities();
+}
+```
+
+**Phase 4 Focus**: Implement the inventory sync methods for e-commerce platforms.
+
+---
+
+## 4.3 Square Online Implementation
+
+### Extends: SquareGatewayService (from Phase 2)
+
+**Business Requirements:**
+- Shop owners with Square POS can enable Square Online
+- Inventory syncs to Square's catalog
+- Online sales via Square Online auto-import
+- Works alongside Square POS (unified Square connection)
+
+### Technical Implementation
+
+**Update SquareGatewayService:**
+```csharp
+public class SquareGatewayService : IPaymentGatewayService
+{
+    // ... Existing POS methods from Phase 2 ...
+    
+    public override PaymentGatewayCapabilities GetCapabilities()
+    {
+        return new PaymentGatewayCapabilities
+        {
+            SupportsPOS = true,
+            SupportsEcommerce = true,  // ← Enable this
+            SupportsInventorySync = true,  // ← Enable this
+            SupportsAutoMatch = true,
+            SupportsWebhooks = true,
+            SupportsMultiLocation = true,
+            SupportedCurrencies = new[] { "USD", "CAD", "GBP", "AUD", "EUR", "JPY" }
+        };
+    }
+    
+    public async Task<bool> SupportsInventorySyncAsync()
+    {
+        return true;
+    }
+    
+    public async Task<SyncResult> SyncInventoryAsync(Guid organizationId, List<Guid> itemIds)
+    {
+        var connection = await _connectionRepo.GetByOrganizationAndTypeAsync(
+            organizationId, 
+            PaymentGatewayType.Square
+        );
+        
+        if (!connection.IsConnected)
+            throw new InvalidOperationException("Square not connected");
+        
+        var syncResult = new SyncResult { Success = true };
+        var catalogApi = GetSquareCatalogApi(connection);
+        
+        foreach (var itemId in itemIds)
+        {
+            var item = await _itemRepo.GetByIdAsync(itemId);
+            
+            // Check if already synced
+            var inventorySync = await _inventorySyncRepo.GetByItemAndGatewayAsync(
+                itemId, 
+                PaymentGatewayType.Square
+            );
+            
+            if (inventorySync != null && inventorySync.IsPublished)
+            {
+                // Update existing
+                await UpdateSquareCatalogItemAsync(catalogApi, item, inventorySync);
+            }
+            else
+            {
+                // Create new
+                await CreateSquareCatalogItemAsync(catalogApi, item);
+            }
+            
+            syncResult.ItemsSynced++;
+        }
+        
+        return syncResult;
+    }
+    
+    private async Task CreateSquareCatalogItemAsync(CatalogApi catalogApi, Item item)
+    {
+        var catalogObject = new CatalogObject(
+            type: "ITEM",
+            id: $"#item-{item.Id}",
+            itemData: new CatalogItem(
+                name: item.Title,
+                description: item.Description,
+                variations: new List<CatalogObject>
+                {
+                    new CatalogObject(
+                        type: "ITEM_VARIATION",
+                        id: $"#variation-{item.Id}",
+                        itemVariationData: new CatalogItemVariation(
+                            itemId: $"#item-{item.Id}",
+                            name: "Regular",
+                            pricingType: "FIXED_PRICING",
+                            priceMoney: new Money(
+                                amount: (long)(item.Price * 100),
+                                currency: "USD"
+                            ),
+                            sku: item.SKU
+                        )
+                    )
+                },
+                productType: "REGULAR",
+                availableOnline: true,
+                availableForPickup: true
+            )
+        );
+        
+        var response = await catalogApi.UpsertCatalogObjectAsync(
+            new UpsertCatalogObjectRequest(
+                idempotencyKey: Guid.NewGuid().ToString(),
+                objectData: catalogObject
+            )
+        );
+        
+        // Store sync record
+        var inventorySync = new PaymentGatewayInventorySync
+        {
+            ItemId = item.Id,
+            OrganizationId = item.OrganizationId,
+            GatewayType = PaymentGatewayType.Square,
+            ExternalProductId = response.CatalogObject.Id,
+            ExternalVariantId = response.CatalogObject.ItemData.Variations[0].Id,
+            SyncStatus = "Synced",
+            IsPublished = true,
+            LastSyncedAt = DateTime.UtcNow
+        };
+        
+        await _inventorySyncRepo.AddAsync(inventorySync);
+    }
+    
+    public async Task<bool> UnpublishItemAsync(Guid organizationId, Guid itemId)
+    {
+        var inventorySync = await _inventorySyncRepo.GetByItemAndGatewayAsync(
+            itemId,
+            PaymentGatewayType.Square
+        );
+        
+        if (inventorySync == null || !inventorySync.IsPublished)
+            return true;  // Already unpublished
+        
+        var connection = await _connectionRepo.GetByOrganizationAndTypeAsync(
+            organizationId,
+            PaymentGatewayType.Square
+        );
+        
+        var catalogApi = GetSquareCatalogApi(connection);
+        
+        // Set item as unavailable online (don't delete, keep for reporting)
+        await catalogApi.UpdateItemModifierListsAsync(
+            new UpdateItemModifierListsRequest(
+                itemIds: new List<string> { inventorySync.ExternalProductId },
+                modifierListsToEnable: new List<string>(),
+                modifierListsToDisable: new List<string>()
+            )
+        );
+        
+        inventorySync.IsPublished = false;
+        inventorySync.SyncStatus = "Unpublished";
+        await _inventorySyncRepo.UpdateAsync(inventorySync);
+        
+        return true;
+    }
+}
+```
+
+### Square Online Webhook Handling
+
+**Already handled in Phase 2**, but ensure it captures online orders:
+```csharp
+// In SquareGatewayService.ProcessWebhookAsync()
+switch (webhookEvent.Type)
+{
+    case "order.created":
+        // Check if order is from online store
+        var order = webhookEvent.Data.Object as Order;
+        if (order.Source.Name == "Square Online")
+        {
+            await HandleOnlineOrderAsync(order);
+        }
+        break;
+}
+```
+
+---
+
+## 4.4 Shopify Implementation
+
+### New: ShopifyGatewayService
+
+**Business Requirements:**
+- Connect to Shopify store via OAuth
+- Sync inventory to Shopify products
+- Capture online sales via Shopify webhooks
+- Support Shopify's multi-variant products (sizes, colors)
+
+### Technical Implementation
+
+**Create ShopifyGatewayService:**
+```csharp
+public class ShopifyGatewayService : IPaymentGatewayService
+{
+    public PaymentGatewayType GatewayType => PaymentGatewayType.Shopify;
+    public string GatewayName => "Shopify";
+    
+    private readonly IPaymentGatewayConnectionRepository _connectionRepo;
+    private readonly IPaymentGatewayInventorySyncRepository _inventorySyncRepo;
+    private readonly IItemRepository _itemRepo;
+    private readonly ITransactionRepository _transactionRepo;
+    private readonly IConfiguration _config;
+    private readonly IEncryptionService _encryption;
+    
+    public PaymentGatewayCapabilities GetCapabilities()
+    {
+        return new PaymentGatewayCapabilities
+        {
+            SupportsPOS = false,  // Shopify POS is separate product
+            SupportsEcommerce = true,
+            SupportsInventorySync = true,
+            SupportsAutoMatch = true,
+            SupportsWebhooks = true,
+            SupportsMultiLocation = true,
+            SupportedCurrencies = new[] { "USD", "CAD", "EUR", "GBP", "AUD", "JPY", /* 133 total */ }
+        };
+    }
+    
+    public async Task<string> GetAuthorizationUrlAsync(Guid organizationId, string returnUrl)
+    {
+        var apiKey = _config["PaymentGateways:Shopify:ApiKey"];
+        var scopes = _config["PaymentGateways:Shopify:Scopes"]; // "read_products,write_products,read_orders"
+        var state = EncodeState(organizationId);
+        
+        // Shopify requires shop domain (get from user input or metadata)
+        var shopDomain = await GetShopDomainFromMetadataAsync(organizationId);
+        
+        return $"https://{shopDomain}/admin/oauth/authorize?" +
+               $"client_id={apiKey}" +
+               $"&scope={Uri.EscapeDataString(scopes)}" +
+               $"&redirect_uri={Uri.EscapeDataString(returnUrl)}" +
+               $"&state={state}";
+    }
+    
+    public async Task<ConnectionResult> ConnectAsync(string authorizationCode, string state)
+    {
+        var organizationId = DecodeState(state);
+        var shopDomain = await GetShopDomainFromMetadataAsync(organizationId);
+        
+        // Exchange code for access token
+        var tokenUrl = $"https://{shopDomain}/admin/oauth/access_token";
+        var requestBody = new
+        {
+            client_id = _config["PaymentGateways:Shopify:ApiKey"],
+            client_secret = _config["PaymentGateways:Shopify:ApiSecret"],
+            code = authorizationCode
+        };
+        
+        var response = await _httpClient.PostAsJsonAsync(tokenUrl, requestBody);
+        var tokenData = await response.Content.ReadFromJsonAsync<ShopifyTokenResponse>();
+        
+        // Get shop info
+        var shopInfo = await GetShopInfoAsync(shopDomain, tokenData.AccessToken);
+        
+        // Store connection
+        var connection = new PaymentGatewayConnection
+        {
+            OrganizationId = organizationId,
+            GatewayType = PaymentGatewayType.Shopify,
+            IsConnected = true,
+            MerchantId = shopInfo.Shop.Id.ToString(),
+            AccessToken = await _encryption.EncryptAsync(tokenData.AccessToken),
+            RefreshToken = null,  // Shopify tokens don't expire
+            TokenExpiry = null,
+            ConnectionMetadata = new
+            {
+                shopDomain = shopDomain,
+                shopName = shopInfo.Shop.Name,
+                storefrontUrl = shopInfo.Shop.Domain,
+                email = shopInfo.Shop.Email
+            }.ToJson(),
+            Capabilities = GetCapabilities().ToJson(),
+            AutoSync = true
+        };
+        
+        await _connectionRepo.AddAsync(connection);
+        
+        // Register webhooks
+        await RegisterWebhooksAsync(shopDomain, tokenData.AccessToken);
+        
+        return new ConnectionResult
+        {
+            Success = true,
+            MerchantId = shopInfo.Shop.Id.ToString(),
+            StoreName = shopInfo.Shop.Name,
+            StoreUrl = shopInfo.Shop.Domain
+        };
+    }
+    
+    public async Task<SyncResult> SyncInventoryAsync(Guid organizationId, List<Guid> itemIds)
+    {
+        var connection = await _connectionRepo.GetByOrganizationAndTypeAsync(
+            organizationId,
+            PaymentGatewayType.Shopify
+        );
+        
+        if (!connection.IsConnected)
+            throw new InvalidOperationException("Shopify not connected");
+        
+        var shopDomain = connection.GetMetadata<string>("shopDomain");
+        var accessToken = await _encryption.DecryptAsync(connection.AccessToken);
+        
+        var syncResult = new SyncResult { Success = true };
+        
+        foreach (var itemId in itemIds)
+        {
+            var item = await _itemRepo.GetByIdAsync(itemId);
+            
+            var inventorySync = await _inventorySyncRepo.GetByItemAndGatewayAsync(
+                itemId,
+                PaymentGatewayType.Shopify
+            );
+            
+            if (inventorySync != null && inventorySync.IsPublished)
+            {
+                await UpdateShopifyProductAsync(shopDomain, accessToken, item, inventorySync);
+            }
+            else
+            {
+                await CreateShopifyProductAsync(shopDomain, accessToken, item);
+            }
+            
+            syncResult.ItemsSynced++;
+        }
+        
+        return syncResult;
+    }
+    
+    private async Task CreateShopifyProductAsync(string shopDomain, string accessToken, Item item)
+    {
+        var productUrl = $"https://{shopDomain}/admin/api/2024-01/products.json";
+        
+        var product = new
+        {
+            product = new
+            {
+                title = item.Title,
+                body_html = item.Description,
+                vendor = "Consignment",
+                product_type = item.Category ?? "General",
+                tags = "consignment",
+                variants = new[]
+                {
+                    new
+                    {
+                        price = item.Price.ToString("F2"),
+                        sku = item.SKU,
+                        inventory_management = "shopify",
+                        inventory_quantity = 1,
+                        inventory_policy = "deny"  // Don't oversell
+                    }
+                },
+                images = item.Photos != null ? 
+                    JsonSerializer.Deserialize<List<string>>(item.Photos)
+                        .Select(url => new { src = url })
+                        .ToArray() 
+                    : Array.Empty<object>()
+            }
+        };
+        
+        var request = new HttpRequestMessage(HttpMethod.Post, productUrl);
+        request.Headers.Add("X-Shopify-Access-Token", accessToken);
+        request.Content = JsonContent.Create(product);
+        
+        var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadFromJsonAsync<ShopifyProductResponse>();
+        
+        // Store sync record
+        var inventorySync = new PaymentGatewayInventorySync
+        {
+            ItemId = item.Id,
+            OrganizationId = item.OrganizationId,
+            GatewayType = PaymentGatewayType.Shopify,
+            ExternalProductId = responseData.Product.Id.ToString(),
+            ExternalVariantId = responseData.Product.Variants[0].Id.ToString(),
+            SyncStatus = "Synced",
+            IsPublished = true,
+            LastSyncedAt = DateTime.UtcNow,
+            ExternalMetadata = new
+            {
+                productUrl = $"https://{shopDomain}/products/{responseData.Product.Handle}",
+                handle = responseData.Product.Handle
+            }.ToJson()
+        };
+        
+        await _inventorySyncRepo.AddAsync(inventorySync);
+    }
+    
+    public async Task<bool> UnpublishItemAsync(Guid organizationId, Guid itemId)
+    {
+        var inventorySync = await _inventorySyncRepo.GetByItemAndGatewayAsync(
+            itemId,
+            PaymentGatewayType.Shopify
+        );
+        
+        if (inventorySync == null || !inventorySync.IsPublished)
+            return true;
+        
+        var connection = await _connectionRepo.GetByOrganizationAndTypeAsync(
+            organizationId,
+            PaymentGatewayType.Shopify
+        );
+        
+        var shopDomain = connection.GetMetadata<string>("shopDomain");
+        var accessToken = await _encryption.DecryptAsync(connection.AccessToken);
+        
+        // Set inventory to 0 (unpublish)
+        var variantUrl = $"https://{shopDomain}/admin/api/2024-01/variants/{inventorySync.ExternalVariantId}.json";
+        var updateRequest = new
+        {
+            variant = new
+            {
+                inventory_quantity = 0
+            }
+        };
+        
+        var request = new HttpRequestMessage(HttpMethod.Put, variantUrl);
+        request.Headers.Add("X-Shopify-Access-Token", accessToken);
+        request.Content = JsonContent.Create(updateRequest);
+        
+        await _httpClient.SendAsync(request);
+        
+        inventorySync.IsPublished = false;
+        inventorySync.SyncStatus = "Unpublished";
+        await _inventorySyncRepo.UpdateAsync(inventorySync);
+        
+        return true;
+    }
+    
+    public async Task ProcessWebhookAsync(string payload, string signature, Dictionary<string, string> headers)
+    {
+        // Verify webhook signature
+        var hmac = headers["X-Shopify-Hmac-SHA256"];
+        if (!VerifyShopifyWebhook(payload, hmac))
+            throw new UnauthorizedAccessException("Invalid webhook signature");
+        
+        var topic = headers["X-Shopify-Topic"];
+        
+        switch (topic)
+        {
+            case "orders/create":
+                await HandleOrderCreatedAsync(payload);
+                break;
+                
+            case "orders/updated":
+                await HandleOrderUpdatedAsync(payload);
+                break;
+        }
+    }
+    
+    private async Task HandleOrderCreatedAsync(string payload)
+    {
+        var order = JsonSerializer.Deserialize<ShopifyOrder>(payload);
+        
+        foreach (var lineItem in order.LineItems)
+        {
+            // Find item by SKU
+            var item = await _itemRepo.GetBySKUAsync(order.ShopId, lineItem.Sku);
+            
+            if (item != null)
+            {
+                // Create transaction
+                var transaction = new Transaction
+                {
+                    OrganizationId = item.OrganizationId,
+                    ItemId = item.Id,
+                    ProviderId = item.ProviderId,
+                    SalePrice = lineItem.Price,
+                    SaleDate = order.CreatedAt,
+                    Source = "Shopify",
+                    PaymentMethod = order.Gateway ?? "Online",
+                    GatewayType = "Shopify",
+                    ExternalPaymentId = order.Id.ToString(),
+                    ImportedFromGateway = true,
+                    GatewayCreatedAt = order.CreatedAt
+                };
+                
+                // Calculate splits
+                var splitPercentage = item.OverrideSplitPercentage ?? item.Provider.DefaultSplitPercentage;
+                var split = _splitCalc.CalculateSplit(lineItem.Price, splitPercentage);
+                transaction.ProviderSplitPercentage = splitPercentage;
+                transaction.ProviderAmount = split.ProviderAmount;
+                transaction.ShopAmount = split.ShopAmount;
+                
+                await _transactionRepo.AddAsync(transaction);
+                
+                // Update item status and unpublish
+                item.Status = ItemStatus.Sold;
+                await _itemRepo.UpdateAsync(item);
+                await UnpublishItemAsync(item.OrganizationId, item.Id);
+            }
+            else
+            {
+                // Log unmatched order
+                // (Add to unmatched transactions list)
+            }
+        }
+    }
+}
+```
+
+---
+
+## 4.5 WooCommerce Implementation (Optional)
+
+### New: WooCommerceGatewayService
+
+**Business Requirements:**
+- Connect to WordPress/WooCommerce site via REST API
+- Sync inventory to WooCommerce products
+- Capture orders via WooCommerce webhooks
+
+**Implementation Notes:**
+- WooCommerce uses REST API with API keys (not OAuth)
+- Shop owner provides: Site URL, Consumer Key, Consumer Secret
+- Similar structure to Shopify implementation
+- Defer to Phase 5 if time constrained
+
+---
+
+## 4.6 Multi-Gateway Management
+
+### Shop Owner Can Connect Multiple Platforms
+
+**Example Scenarios:**
+
+**Scenario 1: Square POS + Shopify Online**
+- Square for in-store POS
+- Shopify for online store
+- Inventory syncs to both
+- Transactions from both sync back to ConsignmentPro
+
+**Scenario 2: Just Shopify**
+- No physical store
+- Online-only consignment
+- Shopify for everything
+
+**Scenario 3: Square POS + Square Online + Shopify**
+- Square for POS and their online store
+- Also have a separate Shopify storefront
+- Inventory syncs to all three
+- Unified reporting
+
+### Database Schema (Already in Place from Phase 2)
+
+**PaymentGatewayConnection** - supports multiple rows per organization:
+```sql
+SELECT * FROM payment_gateway_connections WHERE organization_id = '...';
+
+-- Results:
+| gateway_type | is_connected | merchant_id |
+|--------------|--------------|-------------|
+| Square       | true         | sq123...    |
+| Shopify      | true         | shop456...  |
+```
+
+**PaymentGatewayInventorySync** - tracks per platform:
+```sql
+SELECT * FROM payment_gateway_inventory_sync WHERE item_id = '...';
+
+-- Results:
+| gateway_type | external_product_id | is_published |
+|--------------|---------------------|--------------|
+| Square       | LKJH...             | true         |
+| Shopify      | 7891011...          | true         |
+```
+
+---
+
+## 4.7 API Endpoints (Using Generic Gateway Controller from Phase 2)
+
+### Already Implemented in Phase 2:
+
+```
+GET    /api/payment-gateway/available
+GET    /api/payment-gateway/{gatewayType}/connect-url
+GET    /api/payment-gateway/{gatewayType}/callback
+POST   /api/payment-gateway/{gatewayType}/disconnect
+POST   /api/payment-gateway/{gatewayType}/sync
+POST   /api/payment-gateway/{gatewayType}/webhook
+```
+
+### New Endpoints for Inventory Sync:
+
+```
+POST   /api/payment-gateway/{gatewayType}/inventory/sync
+       Body: { itemIds: [guid1, guid2, ...] }
+       
+POST   /api/payment-gateway/{gatewayType}/inventory/sync-all
+       Syncs all available items
+       
+POST   /api/payment-gateway/{gatewayType}/inventory/unpublish
+       Body: { itemId: guid }
+       
+GET    /api/payment-gateway/{gatewayType}/inventory/status
+       Get sync status for all items
+       
+POST   /api/items/{itemId}/publish-to
+       Body: { gatewayTypes: ["Square", "Shopify"] }
+       Publish single item to multiple gateways
+```
+
+### Implementation:
+
+```csharp
+[ApiController]
+[Route("api/payment-gateway")]
+[Authorize(Roles = "ShopOwner")]
+public class PaymentGatewayController : ControllerBase
+{
+    private readonly IPaymentGatewayFactory _gatewayFactory;
+    
+    // ... Existing methods from Phase 2 ...
+    
+    [HttpPost("{gatewayType}/inventory/sync")]
+    public async Task<IActionResult> SyncInventory(
+        PaymentGatewayType gatewayType,
+        [FromBody] SyncInventoryRequest request)
+    {
+        var gateway = _gatewayFactory.GetGateway(gatewayType);
+        
+        if (!await gateway.SupportsInventorySyncAsync())
+            return BadRequest("Gateway does not support inventory sync");
+        
+        var orgId = GetOrganizationId();
+        var result = await gateway.SyncInventoryAsync(orgId, request.ItemIds);
+        
+        return Ok(result);
+    }
+    
+    [HttpPost("{gatewayType}/inventory/sync-all")]
+    public async Task<IActionResult> SyncAllInventory(PaymentGatewayType gatewayType)
+    {
+        var gateway = _gatewayFactory.GetGateway(gatewayType);
+        var orgId = GetOrganizationId();
+        
+        // Get all available items
+        var items = await _itemRepo.GetAvailableItemsAsync(orgId);
+        var itemIds = items.Select(i => i.Id).ToList();
+        
+        var result = await gateway.SyncInventoryAsync(orgId, itemIds);
+        
+        return Ok(result);
+    }
+    
+    [HttpPost("{gatewayType}/inventory/unpublish")]
+    public async Task<IActionResult> UnpublishItem(
+        PaymentGatewayType gatewayType,
+        [FromBody] UnpublishRequest request)
+    {
+        var gateway = _gatewayFactory.GetGateway(gatewayType);
+        var orgId = GetOrganizationId();
+        
+        var success = await gateway.UnpublishItemAsync(orgId, request.ItemId);
+        
+        return Ok(new { success });
+    }
+    
+    [HttpPost("items/{itemId}/publish-to")]
+    public async Task<IActionResult> PublishToMultiple(
+        Guid itemId,
+        [FromBody] PublishToMultipleRequest request)
+    {
+        var orgId = GetOrganizationId();
+        var results = new Dictionary<string, SyncResult>();
+        
+        foreach (var gatewayType in request.GatewayTypes)
+        {
+            var gateway = _gatewayFactory.GetGateway(gatewayType);
+            var result = await gateway.SyncInventoryAsync(orgId, new List<Guid> { itemId });
+            results[gatewayType.ToString()] = result;
+        }
+        
+        return Ok(results);
+    }
+}
+```
+
+---
+
+## 4.8 Frontend Requirements
+
+### Integrations Hub (Updated from Phase 2)
+
+**Page: `/settings/integrations`**
+
+Display all available gateways dynamically:
+
+```html
+<div class="integrations-grid">
+  <!-- Square Card -->
+  <div class="gateway-card" *ngIf="hasGateway('Square')">
+    <img src="/assets/logos/square.svg" alt="Square">
+    <h3>Square</h3>
+    <div class="capabilities">
+      <span class="badge">POS</span>
+      <span class="badge" *ngIf="isConnected('Square')">Online Store</span>
+    </div>
+    
+    <div *ngIf="isConnected('Square')" class="gateway-info">
+      <p>Connected as: {{ squareConnection.merchantName }}</p>
+      <p>Last sync: {{ squareConnection.lastSync | date }}</p>
+      
+      <div class="online-store-section">
+        <h4>Square Online</h4>
+        <label>
+          <input type="checkbox" [(ngModel)]="squareConnection.onlineEnabled">
+          Enable online store sync
+        </label>
+        
+        <div *ngIf="squareConnection.onlineEnabled">
+          <p>Store URL: {{ squareConnection.onlineUrl }}</p>
+          <button (click)="syncInventory('Square')">Sync Inventory Now</button>
+          <button (click)="viewSyncStatus('Square')">View Sync Status</button>
+        </div>
+      </div>
+      
+      <button (click)="disconnect('Square')" class="btn-danger">Disconnect</button>
+    </div>
+    
+    <button *ngIf="!isConnected('Square')" (click)="connect('Square')" class="btn-primary">
+      Connect Square
+    </button>
+  </div>
+  
+  <!-- Shopify Card -->
+  <div class="gateway-card" *ngIf="hasGateway('Shopify')">
+    <img src="/assets/logos/shopify.svg" alt="Shopify">
+    <h3>Shopify</h3>
+    <div class="capabilities">
+      <span class="badge">Online Store</span>
+      <span class="badge">Inventory Sync</span>
+    </div>
+    
+    <div *ngIf="!isConnected('Shopify')" class="shopify-setup">
+      <label>Shopify Store URL:</label>
+      <input type="text" [(ngModel)]="shopifyDomain" placeholder="mystore.myshopify.com">
+      <button (click)="connectShopify()" [disabled]="!shopifyDomain">
+        Connect Shopify
+      </button>
+    </div>
+    
+    <div *ngIf="isConnected('Shopify')" class="gateway-info">
+      <p>Connected to: {{ shopifyConnection.shopName }}</p>
+      <p>Store URL: <a [href]="shopifyConnection.storeUrl" target="_blank">
+        {{ shopifyConnection.storeUrl }}
+      </a></p>
+      <p>Last sync: {{ shopifyConnection.lastSync | date }}</p>
+      
+      <button (click)="syncInventory('Shopify')">Sync Inventory Now</button>
+      <button (click)="viewSyncStatus('Shopify')">View Sync Status</button>
+      <button (click)="disconnect('Shopify')" class="btn-danger">Disconnect</button>
+    </div>
+  </div>
+  
+  <!-- WooCommerce Card (if implemented) -->
+  <div class="gateway-card" *ngIf="hasGateway('WooCommerce')">
+    <img src="/assets/logos/woocommerce.svg" alt="WooCommerce">
+    <h3>WooCommerce</h3>
+    <div class="capabilities">
+      <span class="badge">Online Store</span>
+    </div>
+    
+    <div *ngIf="!isConnected('WooCommerce')" class="woo-setup">
+      <label>WordPress Site URL:</label>
+      <input type="text" [(ngModel)]="wooSiteUrl" placeholder="https://mystore.com">
+      
+      <label>Consumer Key:</label>
+      <input type="text" [(ngModel)]="wooConsumerKey">
+      
+      <label>Consumer Secret:</label>
+      <input type="password" [(ngModel)]="wooConsumerSecret">
+      
+      <button (click)="connectWooCommerce()">Connect WooCommerce</button>
+    </div>
+    
+    <!-- Connected state similar to others -->
+  </div>
+</div>
+```
+
+### Item Form (Updated)
+
+**Add Multi-Gateway Publishing:**
+
+```html
+<!-- Item form: /items/create or /items/{id}/edit -->
+<div class="item-form">
+  <!-- ... existing fields ... -->
+  
+  <div class="publish-section">
+    <h3>Publish Online</h3>
+    
+    <div class="gateway-checkboxes">
+      <label *ngFor="let gateway of connectedEcommerceGateways">
+        <input type="checkbox" 
+               [(ngModel)]="publishTo[gateway.type]"
+               [disabled]="item.status !== 'Available'">
+        Publish to {{ gateway.name }}
+      </label>
+    </div>
+    
+    <button *ngIf="item.id" (click)="publishNow()" [disabled]="!hasSelectedGateways()">
+      Publish to Selected Platforms
+    </button>
+  </div>
+  
+  <!-- Sync Status (if item already published) -->
+  <div *ngIf="item.id && hasSyncedGateways()" class="sync-status">
+    <h4>Online Presence</h4>
+    <div *ngFor="let sync of item.gatewaySyncs" class="sync-item">
+      <span class="gateway-name">{{ sync.gatewayName }}:</span>
+      <span class="status-badge" [class]="sync.status">{{ sync.status }}</span>
+      <a *ngIf="sync.externalUrl" [href]="sync.externalUrl" target="_blank">
+        View on {{ sync.gatewayName }}
+      </a>
+      <button (click)="unpublish(sync.gatewayType)" class="btn-sm">Unpublish</button>
+    </div>
+  </div>
+</div>
+```
+
+### New Page: Inventory Sync Status
+
+**Page: `/inventory/sync-status`**
+
+```html
+<div class="sync-status-page">
+  <h1>Inventory Sync Status</h1>
+  
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="summary-card" *ngFor="let gateway of connectedGateways">
+      <h3>{{ gateway.name }}</h3>
+      <div class="stats">
+        <div class="stat">
+          <label>Published:</label>
+          <span>{{ gateway.publishedCount }}</span>
+        </div>
+        <div class="stat">
+          <label>Pending:</label>
+          <span>{{ gateway.pendingCount }}</span>
+        </div>
+        <div class="stat">
+          <label>Failed:</label>
+          <span class="error">{{ gateway.failedCount }}</span>
+        </div>
+      </div>
+      <button (click)="syncAll(gateway.type)">Sync All to {{ gateway.name }}</button>
+    </div>
+  </div>
+  
+  <!-- Item-by-Item Status -->
+  <div class="item-sync-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>SKU</th>
+          <th>Price</th>
+          <th *ngFor="let gateway of connectedGateways">{{ gateway.name }}</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td>{{ item.title }}</td>
+          <td>{{ item.sku }}</td>
+          <td>{{ item.price | currency }}</td>
+          <td *ngFor="let gateway of connectedGateways">
+            <span class="status-badge" [class]="item.getSyncStatus(gateway.type)">
+              {{ item.getSyncStatus(gateway.type) }}
+            </span>
+          </td>
+          <td>
+            <button (click)="publishItem(item.id)">Publish</button>
+            <button (click)="viewDetails(item.id)">Details</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+```
+
+---
+
+## 4.9 Reporting Enhancements
+
+### Sales by Channel Report (Updated)
+
+**Include all connected gateways:**
+
+```html
+<div class="sales-by-channel-report">
+  <h2>Sales by Channel</h2>
+  
+  <!-- Date range selector -->
+  <div class="date-filter">
+    <input type="date" [(ngModel)]="startDate">
+    <input type="date" [(ngModel)]="endDate">
+    <button (click)="loadReport()">Update</button>
+  </div>
+  
+  <!-- Pie chart or bar chart -->
+  <div class="chart">
+    <canvas id="channelChart"></canvas>
+  </div>
+  
+  <!-- Table breakdown -->
+  <table class="channel-breakdown">
+    <thead>
+      <tr>
+        <th>Channel</th>
+        <th>Transactions</th>
+        <th>Revenue</th>
+        <th>% of Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>In-Store (Manual)</td>
+        <td>{{ manualSales.count }}</td>
+        <td>{{ manualSales.revenue | currency }}</td>
+        <td>{{ manualSales.percentage }}%</td>
+      </tr>
+      <tr *ngIf="hasGateway('Square')">
+        <td>Square POS</td>
+        <td>{{ squarePOSSales.count }}</td>
+        <td>{{ squarePOSSales.revenue | currency }}</td>
+        <td>{{ squarePOSSales.percentage }}%</td>
+      </tr>
+      <tr *ngIf="hasGateway('Square') && squareOnlineEnabled">
+        <td>Square Online</td>
+        <td>{{ squareOnlineSales.count }}</td>
+        <td>{{ squareOnlineSales.revenue | currency }}</td>
+        <td>{{ squareOnlineSales.percentage }}%</td>
+      </tr>
+      <tr *ngIf="hasGateway('Shopify')">
+        <td>Shopify</td>
+        <td>{{ shopifySales.count }}</td>
+        <td>{{ shopifySales.revenue | currency }}</td>
+        <td>{{ shopifySales.percentage }}%</td>
+      </tr>
+      <tr *ngIf="hasGateway('WooCommerce')">
+        <td>WooCommerce</td>
+        <td>{{ wooSales.count }}</td>
+        <td>{{ wooSales.revenue | currency }}</td>
+        <td>{{ wooSales.percentage }}%</td>
+      </tr>
+      <tr class="total-row">
+        <td><strong>Total</strong></td>
+        <td><strong>{{ totalSales.count }}</strong></td>
+        <td><strong>{{ totalSales.revenue | currency }}</strong></td>
+        <td><strong>100%</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+### Transaction List Filters (Updated)
+
+**Add gateway type filter:**
+
+```html
+<div class="transaction-filters">
+  <select [(ngModel)]="sourceFilter">
+    <option value="">All Sources</option>
+    <option value="Manual">Manual Entry</option>
+    <option value="Square-POS">Square POS</option>
+    <option value="Square-Online">Square Online</option>
+    <option value="Shopify">Shopify</option>
+    <option value="WooCommerce">WooCommerce</option>
+  </select>
+  
+  <!-- Other filters -->
+</div>
+```
+
+---
+
+## 4.10 Tier Enforcement
+
+### Feature Gates by Tier:
+
+```
+Basic ($79/mo):        ❌ E-Commerce Integration
+Standard ($129/mo):    ❌ E-Commerce Integration
+Plus ($179/mo):        ✅ E-Commerce Integration (1 platform)
+Premium ($229/mo):     ✅ E-Commerce Integration (unlimited platforms)
+```
+
+**Enforcement Logic:**
+```csharp
+public async Task<bool> CanConnectEcommerceGatewayAsync(Guid organizationId)
+{
+    var org = await _orgRepo.GetByIdAsync(organizationId);
+    
+    if (org.SubscriptionTier < SubscriptionTier.Plus)
+        return false;  // Below Plus tier
+    
+    if (org.SubscriptionTier == SubscriptionTier.Plus)
+    {
+        // Plus tier: only 1 e-commerce gateway
+        var ecommerceGateways = await _connectionRepo.GetEcommerceGatewaysAsync(organizationId);
+        return ecommerceGateways.Count < 1;
+    }
+    
+    // Premium tier: unlimited
+    return true;
+}
+```
+
+**Frontend Upgrade Prompts:**
+```html
+<div *ngIf="tier === 'Standard'" class="upgrade-prompt">
+  <h3>🔒 E-Commerce Integration</h3>
+  <p>Sell your items online with Square Online, Shopify, or WooCommerce.</p>
+  <p>Upgrade to Plus tier to enable e-commerce integration.</p>
+  <button routerLink="/settings/billing">Upgrade to Plus - $179/mo</button>
+</div>
+
+<div *ngIf="tier === 'Plus' && hasMaxGateways()" class="upgrade-prompt">
+  <h3>Connect Multiple Platforms</h3>
+  <p>You're currently using {{ currentGatewayName }}.</p>
+  <p>Upgrade to Premium to connect unlimited e-commerce platforms.</p>
+  <button routerLink="/settings/billing">Upgrade to Premium - $229/mo</button>
+</div>
+```
+
+---
+
+## 4.11 Background Jobs
+
+### New Scheduled Tasks:
+
+**1. E-Commerce Inventory Sync** (if enabled)
+- Frequency: Every 6 hours (or configurable)
+- Action: Sync items where `status = 'Available'` AND `sync_status != 'Synced'`
+- For each connected e-commerce gateway
+
+**2. Webhook Reconciliation** (safety net)
+- Frequency: Daily at 3 AM
+- Action: Fetch recent orders from each gateway's API
+- Compare to ConsignmentPro transactions
+- Import any missed orders
+- Email shop owner if discrepancies > 5
+
+**3. Clean Up Unpublished Items**
+- Frequency: Weekly
+- Action: Find items where `status = 'Sold'` but `is_published = true`
+- Unpublish from all gateways
+- Update sync records
+
+---
+
+## 4.12 Configuration
+
+### appsettings.json (Updated from Phase 2)
+
+```json
+{
+  "PaymentGateways": {
+    "Square": {
+      "Enabled": true,
+      "ApplicationId": "...",
+      "ApplicationSecret": "...",
+      "Environment": "sandbox",
+      "WebhookSignatureKey": "...",
+      "Features": {
+        "POS": true,
+        "Online": true
+      }
+    },
+    "Shopify": {
+      "Enabled": true,
+      "ApiKey": "...",
+      "ApiSecret": "...",
+      "Scopes": "read_products,write_products,read_orders,write_orders,read_inventory,write_inventory",
+      "ApiVersion": "2024-01"
+    },
+    "WooCommerce": {
+      "Enabled": false,
+      "Note": "Shop owner provides their own API keys"
+    },
+    "BigCommerce": {
+      "Enabled": false
+    }
+  }
+}
+```
+
+---
+
+## 4.13 Testing Requirements
+
+### Critical Flows to Test:
+
+**Square Online:**
+1. Enable Square Online on existing Square POS connection
+2. Sync inventory to Square catalog
+3. Place order on Square Online store (sandbox)
+4. Verify transaction imports with correct splits
+5. Verify item unpublishes after sale
+
+**Shopify:**
+1. OAuth connection flow
+2. Sync inventory creates Shopify products
+3. Upload photos to Shopify
+4. Webhook receives order
+5. Transaction imports with matching
+6. Manual match unmatched orders
+
+**Multi-Gateway:**
+1. Connect both Square and Shopify
+2. Publish same item to both platforms
+3. Sell on Shopify → verify unpublishes from Square too
+4. Sales by channel report shows both
+5. Disconnect one gateway → other unaffected
+
+**Tier Enforcement:**
+1. Basic tier: Cannot connect any e-commerce
+2. Plus tier: Can connect 1 gateway, blocked from 2nd
+3. Premium tier: Can connect unlimited
+
+### Test Data:
+- Square Sandbox account with online store
+- Shopify Partner account with development store
+- 20+ test items with photos
+- Multiple test orders on each platform
+
+---
+
+## Phase 4 Success Criteria
+
+Phase 4 is complete when:
+
+- ✅ Shop owners can connect Square Online (extends Phase 2 Square connection)
+- ✅ Shop owners can connect Shopify (new gateway)
+- ✅ Items sync to Square Online catalog
+- ✅ Items sync to Shopify products
+- ✅ Photos upload correctly to both platforms
+- ✅ Online sales from Square Online auto-import
+- ✅ Online sales from Shopify auto-import
+- ✅ Splits calculated correctly for online sales
+- ✅ Items unpublish when sold (from all connected platforms)
+- ✅ Unmatched orders show in manual match UI
+- ✅ Multi-gateway support works (Square + Shopify simultaneously)
+- ✅ Tier enforcement: Plus = 1 gateway, Premium = unlimited
+- ✅ Sales by channel report includes all sources
+- ✅ Inventory sync status page functional
+- ✅ Webhooks process reliably for all platforms
+- ✅ Background sync jobs run correctly
+- ✅ No breaking changes to Phase 2-3 functionality
+
+---
+
+## Phase 4 Timeline (Revised)
+
+### Week 11: Square Online + Framework
+- Extend SquareGatewayService with inventory sync
+- Implement Square catalog item creation
+- Implement Square Online webhook handling
+- Test end-to-end: publish → sell → unpublish
+
+### Week 12: Shopify Integration
+- Implement ShopifyGatewayService
+- OAuth flow for Shopify
+- Product creation & sync
+- Webhook handling for Shopify orders
+- Test end-to-end
+
+### Week 13: Multi-Gateway & Polish
+- Test Square + Shopify simultaneously
+- Inventory sync status page
+- Sales by channel report updates
+- Background job implementation
+- Tier enforcement
+- Documentation
+
+**Optional (Week 14)**: WooCommerce if time permits
+
+---
+
+## Competitive Advantage
+
+### What You'll Have After Phase 4:
+
+**Your Platform:**
+- ✅ Square POS
+- ✅ Square Online
+- ✅ Shopify
+- ✅ (Optional) WooCommerce
+- ✅ Multi-platform simultaneously
+- ✅ Unified reporting across all channels
+
+**SimpleConsign:**
+- ✅ Square (via SimplePay - forced)
+- ✅ Shopify (Pro tier only, $359/mo)
+- ❌ No multi-platform
+
+**Ricochet:**
+- ✅ Square
+- ✅ Shopify (basic)
+- ❌ No unified reporting
+
+**ConsignPro:**
+- ⚠️ WooCommerce (basic)
+- ❌ No modern integrations
+
+### Your Competitive Edge:
+
+> "Use ANY e-commerce platform - Square Online, Shopify, WooCommerce - or use them all together. Your inventory syncs everywhere, and all your sales flow into one system."
+
+**No competitor offers multi-platform e-commerce with unified consignment tracking.**
+
+---
+
+## Notes for Claude Code
+
+**Prerequisites:**
+- Payment Gateway Abstraction Layer (completed in Phase 2)
+- `IPaymentGatewayService` interface defined
+- `PaymentGatewayFactory` implemented
+- Gateway-agnostic database tables in place
+
+**Implementation Order:**
+1. Extend SquareGatewayService (easiest - builds on Phase 2)
+2. Implement ShopifyGatewayService (most demand)
+3. Test multi-gateway scenarios
+4. Optional: WooCommerceGatewayService
+
+**Key Principles:**
+- Use existing abstraction layer (don't reinvent)
+- Each gateway is isolated (changes to one don't affect others)
+- Shop owner data is gateway-agnostic
+- Transactions table uses generic fields (gateway_type, external_payment_id)
+
+**Testing:**
+- Use Square Sandbox + Shopify development store
+- Test webhooks thoroughly (use ngrok for local dev)
+- Verify multi-gateway doesn't cause race conditions
+- Test tier enforcement rigorously
+
+---
+
+**This completes the revised Phase 4 requirements specification. The abstraction layer from Phase 2 makes adding multiple gateways straightforward and future-proof.**

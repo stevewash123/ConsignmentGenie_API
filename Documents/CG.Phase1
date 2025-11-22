@@ -1,0 +1,637 @@
+Phase 1: Project Setup & Core Infrastructure - Complete Specification
+Project Overview
+Multi-tenant consignment management platform supporting multiple business verticals (consignment shops, art galleries, booth rentals, farmers markets) with configurable terminology and workflows.
+Core Value Proposition: Track provider (consigner/artist/vendor) inventory, calculate split payments automatically, generate payout reports, and export to accounting software.
+
+Technology Stack
+
+Backend: .NET 8 Web API (C#)
+Frontend: Latest Angular (standalone components)
+Database: PostgreSQL (hosted on Neon.tech)
+Authentication: JWT tokens
+ORM: Entity Framework Core (code-first migrations)
+
+
+Architecture Pattern
+N-Tier Solution Structure:
+ConsignmentPro.API         → Web API, controllers, middleware
+ConsignmentPro.Core        → Domain entities, interfaces, enums
+ConsignmentPro.Infrastructure → EF Core, repositories, data access
+ConsignmentPro.Application → Business logic, DTOs, services
+ConsignmentPro.Tests       → Unit tests
+Note: Claude Code has been trained on this architecture pattern. Follow standard n-tier setup.
+
+Domain Model
+Core Entities
+Organization (Tenant)
+csharppublic class Organization : BaseEntity
+{
+    // Core
+    public string Name { get; set; }
+    public VerticalType VerticalType { get; set; }  // Consignment, Gallery, BoothRental, FarmersMarket
+    public string? Subdomain { get; set; }
+    public string? Settings { get; set; }  // JSON: terminology mappings, defaults
+    
+    // Stripe (Phase 2 - include fields now)
+    public string? StripeCustomerId { get; set; }
+    public string? StripeSubscriptionId { get; set; }
+    public string? StripePriceId { get; set; }
+    public SubscriptionStatus SubscriptionStatus { get; set; } = SubscriptionStatus.Trial;
+    public SubscriptionTier SubscriptionTier { get; set; } = SubscriptionTier.Basic;
+    public DateTime? SubscriptionStartDate { get; set; }
+    public DateTime? SubscriptionEndDate { get; set; }
+    public bool IsFounderPricing { get; set; }
+    public int? FounderTier { get; set; }  // 1, 2, 3
+    
+    // QuickBooks (Phase 3 - include fields now)
+    public bool QuickBooksConnected { get; set; }
+    public string? QuickBooksRealmId { get; set; }
+    public string? QuickBooksAccessToken { get; set; }  // Store encrypted
+    public string? QuickBooksRefreshToken { get; set; }  // Store encrypted
+    public DateTime? QuickBooksTokenExpiry { get; set; }
+    public DateTime? QuickBooksLastSync { get; set; }
+}
+User (Authentication)
+csharppublic class User : BaseEntity
+{
+    public string Email { get; set; }
+    public string PasswordHash { get; set; }  // Use BCrypt
+    public UserRole Role { get; set; }  // ShopOwner, Provider, Shopper
+    public Guid OrganizationId { get; set; }
+    
+    // Navigation
+    public Organization Organization { get; set; }
+}
+
+public enum UserRole
+{
+    ShopOwner,   // Full admin access
+    Provider,    // Portal access (Phase 3)
+    Shopper      // Customer access (Phase 5)
+}
+Provider (Consigner/Artist/Vendor)
+csharppublic class Provider : BaseEntity
+{
+    public Guid OrganizationId { get; set; }
+    public Guid? UserId { get; set; }  // Nullable - linked when portal access granted (Phase 3)
+    
+    public string DisplayName { get; set; }
+    public string Email { get; set; }
+    public string? Phone { get; set; }
+    public decimal DefaultSplitPercentage { get; set; }  // e.g., 50 = 50%
+    public string? PaymentMethod { get; set; }  // Venmo, Zelle, Check, BankTransfer
+    public string? PaymentDetails { get; set; }  // JSON: venmo handle, etc.
+    public ProviderStatus Status { get; set; } = ProviderStatus.Active;
+    public string? Notes { get; set; }
+    
+    // Navigation
+    public Organization Organization { get; set; }
+    public User? User { get; set; }
+    public ICollection<Item> Items { get; set; }
+}
+
+public enum ProviderStatus
+{
+    Active,
+    Inactive,
+    Suspended
+}
+Item (Inventory)
+csharppublic class Item : BaseEntity
+{
+    public Guid OrganizationId { get; set; }
+    public Guid ProviderId { get; set; }
+    
+    public string SKU { get; set; }
+    public string Title { get; set; }
+    public string? Description { get; set; }
+    public decimal Price { get; set; }
+    public decimal? CostBasis { get; set; }  // Minimum provider wants
+    public string? Photos { get; set; }  // JSON array of URLs (Phase 2: blob storage)
+    public string? Category { get; set; }
+    public ItemStatus Status { get; set; } = ItemStatus.Available;
+    
+    // Product extensibility (future)
+    public string ProductType { get; set; } = "General";  // General, Clothing, Art, Furniture
+    public string? ExtendedProperties { get; set; }  // JSON for type-specific fields
+    
+    // Split override (optional)
+    public decimal? OverrideSplitPercentage { get; set; }  // Override provider's default
+    
+    // Navigation
+    public Organization Organization { get; set; }
+    public Provider Provider { get; set; }
+}
+
+public enum ItemStatus
+{
+    Available,
+    Sold,
+    Returned,
+    PaidOut
+}
+Transaction (Sales Record)
+csharppublic class Transaction : BaseEntity
+{
+    public Guid OrganizationId { get; set; }
+    public Guid ItemId { get; set; }
+    public Guid ProviderId { get; set; }
+    
+    public decimal SalePrice { get; set; }
+    public DateTime SaleDate { get; set; }
+    public string Source { get; set; } = "InStore";  // InStore, Square, Shopify, SquareOnline
+    public string? PaymentMethod { get; set; }  // Cash, Card, Online
+    
+    // Split calculation (calculated, not user-entered)
+    public decimal ProviderSplitPercentage { get; set; }
+    public decimal ProviderAmount { get; set; }
+    public decimal ShopAmount { get; set; }
+    
+    // Tax (optional, imported from POS)
+    public decimal? SalesTaxAmount { get; set; }
+    public string? TaxCode { get; set; }
+    
+    // QuickBooks sync (Phase 3 - include fields now)
+    public bool SyncedToQuickBooks { get; set; }
+    public DateTime? SyncedAt { get; set; }
+    public string? QuickBooksSalesReceiptId { get; set; }
+    public bool QuickBooksSyncFailed { get; set; }
+    public string? QuickBooksSyncError { get; set; }
+    
+    public string? Notes { get; set; }
+    
+    // Navigation
+    public Organization Organization { get; set; }
+    public Item Item { get; set; }
+    public Provider Provider { get; set; }
+}
+Payout (Provider Payments)
+csharppublic class Payout : BaseEntity
+{
+    public Guid OrganizationId { get; set; }
+    public Guid ProviderId { get; set; }
+    
+    public DateTime PeriodStart { get; set; }
+    public DateTime PeriodEnd { get; set; }
+    public decimal TotalAmount { get; set; }
+    
+    public PayoutStatus Status { get; set; } = PayoutStatus.Pending;
+    public DateTime? PaidAt { get; set; }
+    public string? PaymentMethod { get; set; }
+    public string? ItemsIncluded { get; set; }  // JSON array of transaction IDs
+    
+    // QuickBooks sync (Phase 3 - include fields now)
+    public bool SyncedToQuickBooks { get; set; }
+    public DateTime? SyncedAt { get; set; }
+    public string? QuickBooksBillId { get; set; }
+    public bool QuickBooksSyncFailed { get; set; }
+    public string? QuickBooksSyncError { get; set; }
+    
+    public string? Notes { get; set; }
+    
+    // Navigation
+    public Organization Organization { get; set; }
+    public Provider Provider { get; set; }
+}
+
+public enum PayoutStatus
+{
+    Pending,
+    Paid,
+    Cancelled
+}
+BaseEntity (All entities inherit)
+csharppublic abstract class BaseEntity
+{
+    public Guid Id { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+}
+
+Core Business Logic
+Split Calculation Service
+csharppublic interface ISplitCalculationService
+{
+    SplitResult CalculateSplit(decimal salePrice, decimal splitPercentage);
+    PayoutSummary CalculatePayouts(Guid providerId, DateTime periodStart, DateTime periodEnd);
+}
+
+public class SplitResult
+{
+    public decimal ProviderAmount { get; set; }
+    public decimal ShopAmount { get; set; }
+    public decimal SplitPercentage { get; set; }
+}
+
+// Calculation: ProviderAmount = SalePrice * (SplitPercentage / 100)
+//              ShopAmount = SalePrice - ProviderAmount
+Vertical Configuration System
+Organization.Settings JSON example:
+json{
+  "terminology": {
+    "provider": "Consigner",      // or "Artist", "Vendor", "Booth Renter"
+    "item": "Item",                // or "Artwork", "Product"
+    "payout": "Payout"             // or "Commission", "Rent Split"
+  },
+  "defaultSplit": 50,
+  "payoutFrequency": "Monthly"     // Monthly, BiWeekly, PerSale
+}
+
+Authentication & Authorization
+JWT Configuration
+Token Claims:
+csharpvar claims = new[]
+{
+    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+    new Claim(ClaimTypes.Email, user.Email),
+    new Claim(ClaimTypes.Role, user.Role.ToString()),  // "ShopOwner", "Provider", "Shopper"
+    new Claim("OrganizationId", user.OrganizationId.ToString())
+};
+
+var token = new JwtSecurityToken(
+    issuer: _config["Jwt:Issuer"],
+    audience: _config["Jwt:Audience"],
+    claims: claims,
+    expires: DateTime.UtcNow.AddHours(24),
+    signingCredentials: credentials
+);
+Token expiration: 24 hours
+Role-Based Authorization
+Controller protection:
+csharp[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "ShopOwner")]  // Only shop owners in Phase 1
+public class ProvidersController : ControllerBase
+{
+    // CRUD endpoints
+}
+Phase 1: Only ShopOwner role is functional
+Phase 3: Add Provider role with portal access
+Phase 5: Add Shopper role with storefront access
+
+API Response Pattern
+Standard API Response Wrapper
+csharppublic class ApiResponse<T>
+{
+    public bool Success { get; set; }
+    public T? Data { get; set; }
+    public string? Message { get; set; }
+    public List<string>? Errors { get; set; }
+}
+
+// Usage:
+return Ok(new ApiResponse<Provider> 
+{ 
+    Success = true, 
+    Data = provider,
+    Message = "Provider created successfully"
+});
+
+return BadRequest(new ApiResponse<object> 
+{ 
+    Success = false, 
+    Errors = new List<string> { "Email already exists" } 
+});
+
+CSV Export Requirements (Phase 1)
+Export Service Interface
+csharppublic interface IExportService
+{
+    byte[] ExportTransactionsToCSV(List<Transaction> transactions);
+    byte[] ExportPayoutsToCSV(List<Payout> payouts);
+    byte[] ExportProvidersToCSV(List<Provider> providers);
+}
+CSV Formats
+Transactions Export (for QuickBooks):
+csvDate,Description,Amount,Category,TaxAmount,Provider
+11/18/2024,"Sale - Vintage Dress",45.00,Sales Revenue,3.38,Jane Smith
+11/18/2024,"Sale - Leather Bag",80.00,Sales Revenue,6.00,Bob Jones
+Payouts Export (for QuickBooks):
+csvDate,Vendor,Description,Amount,Category
+11/30/2024,"Jane Smith (Consigner)","November Payout",450.00,Consignment Payouts
+11/30/2024,"Bob Jones (Consigner)","November Payout",320.00,Consignment Payouts
+```
+
+---
+
+## Angular Frontend Requirements
+
+### Core Module Structure
+```
+src/app/
+├── core/
+│   ├── services/
+│   │   ├── auth.service.ts
+│   │   ├── api.service.ts
+│   │   └── export.service.ts
+│   ├── guards/
+│   │   ├── auth.guard.ts
+│   │   └── shop-owner.guard.ts
+│   ├── interceptors/
+│   │   ├── auth.interceptor.ts        // Attach JWT to all requests
+│   │   └── error.interceptor.ts       // Handle 401, global errors
+│   └── models/
+│       ├── api-response.model.ts
+│       ├── user.model.ts
+│       ├── provider.model.ts
+│       ├── item.model.ts
+│       ├── transaction.model.ts
+│       └── payout.model.ts
+├── features/
+│   ├── auth/
+│   │   ├── login.component.ts
+│   │   └── register.component.ts
+│   ├── dashboard/
+│   │   └── dashboard.component.ts
+│   ├── providers/
+│   │   ├── provider-list.component.ts
+│   │   ├── provider-form.component.ts
+│   │   └── provider.service.ts
+│   ├── items/
+│   │   ├── item-list.component.ts
+│   │   ├── item-form.component.ts
+│   │   └── item.service.ts
+│   ├── transactions/
+│   │   ├── transaction-list.component.ts
+│   │   ├── transaction-form.component.ts
+│   │   └── transaction.service.ts
+│   └── payouts/
+│       ├── payout-list.component.ts
+│       ├── payout-report.component.ts
+│       └── payout.service.ts
+├── shared/
+│   ├── components/
+│   └── pipes/
+├── app.component.ts
+├── app.config.ts
+└── app.routes.ts
+Routing Configuration
+typescriptexport const routes: Routes = [
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [authGuard, shopOwnerGuard]
+  },
+  {
+    path: 'providers',
+    component: ProviderListComponent,
+    canActivate: [authGuard, shopOwnerGuard]
+  },
+  {
+    path: 'items',
+    component: ItemListComponent,
+    canActivate: [authGuard, shopOwnerGuard]
+  },
+  {
+    path: 'transactions',
+    component: TransactionListComponent,
+    canActivate: [authGuard, shopOwnerGuard]
+  },
+  {
+    path: 'payouts',
+    component: PayoutListComponent,
+    canActivate: [authGuard, shopOwnerGuard]
+  }
+];
+Auth Service Pattern
+typescript@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
+
+  login(email: string, password: string): Observable<any> {
+    return this.http.post<ApiResponse<{ token: string }>>('/api/auth/login', { email, password })
+      .pipe(
+        tap(response => {
+          if (response.success && response.data) {
+            localStorage.setItem('token', response.data.token);
+            this.setCurrentUser();
+          }
+        })
+      );
+  }
+
+  private setCurrentUser(): void {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decoded = jwtDecode<any>(token);
+      this.currentUserSubject.next({
+        id: decoded.nameid,
+        email: decoded.email,
+        role: decoded.role,
+        organizationId: decoded.OrganizationId
+      });
+    }
+  }
+
+  isShopOwner(): boolean {
+    return this.currentUserSubject.value?.role === 'ShopOwner';
+  }
+
+  logout(): void {
+    localStorage.removeItem('token');
+    this.currentUserSubject.next(null);
+  }
+}
+HTTP Interceptor for JWT
+typescriptexport const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const token = localStorage.getItem('token');
+  
+  if (token) {
+    req = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  }
+  
+  return next(req);
+};
+
+Configuration
+appsettings.json
+json{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=your-neon-host;Database=consignmentpro;Username=user;Password=pass;SSL Mode=Require"
+  },
+  "Jwt": {
+    "Key": "your-super-secret-key-min-32-chars",
+    "Issuer": "ConsignmentProAPI",
+    "Audience": "ConsignmentProClient",
+    "ExpirationHours": 24
+  },
+  "Cors": {
+    "AllowedOrigins": ["http://localhost:4200"]
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  }
+}
+Angular environment.ts
+typescriptexport const environment = {
+  production: false,
+  apiUrl: 'http://localhost:5000/api'
+};
+
+Phase 1 User Flows
+Shop Owner Registration
+
+Visit site, click "Sign Up"
+Enter: Email, Password, Organization Name
+System creates:
+
+Organization record (VerticalType: Consignment, Status: Trial)
+User record (Role: ShopOwner)
+
+
+Returns JWT token
+Redirect to dashboard
+
+Shop Owner Daily Workflow
+
+Log in
+View dashboard (today's sales, pending items, provider stats)
+Add new item from consigner
+
+Select provider (dropdown)
+Enter SKU, title, price
+Upload photo (Phase 2 - skip for Phase 1)
+Split defaults to provider's DefaultSplitPercentage
+
+
+Record sale
+
+Select item (dropdown)
+Enter sale price (can differ from listed price)
+System calculates provider split automatically
+Item status → Sold
+
+
+End of month:
+
+Generate payout report (filter by date range, provider)
+Review item-by-item breakdown
+Mark payout as "Paid"
+Export to CSV for QuickBooks import
+
+
+
+
+Deferred to Future Phases
+Phase 2 (Weeks 4-6):
+
+Stripe subscription management
+Photo uploads (Azure Blob Storage or AWS S3)
+Square POS integration
+
+Phase 3 (Weeks 7-10):
+
+QuickBooks Online API integration
+Provider portal (invitation system, login, dashboard)
+Email notifications (SendGrid)
+
+Phase 4 (Weeks 11-12):
+
+Square Online integration
+Shopify integration (optional)
+
+Phase 5+:
+
+Shopper role & storefront
+Provider self-service (upload items)
+QuickBooks Desktop Web Connector (only if demanded)
+
+
+Phase 1 Deliverables Checklist
+Backend (.NET 8 Web API)
+
+ N-tier solution structure (API, Core, Infrastructure, Application)
+ Entity Framework Core with PostgreSQL (Neon.tech)
+ All domain entities with future integration fields (Stripe, QB)
+ Code-first migrations
+ JWT authentication middleware
+ Role-based authorization (ShopOwner only functional)
+ CORS policy for Angular
+ API endpoints:
+
+ Auth (register, login)
+ Providers (CRUD)
+ Items (CRUD)
+ Transactions (CRUD)
+ Payouts (generate report, mark paid)
+ Export (CSV downloads)
+
+
+ Split calculation service
+ CSV export service (transactions, payouts, providers)
+ Standard API response wrapper
+ Error handling middleware
+
+Frontend (Latest Angular )
+
+ Standalone components architecture
+ Core module (auth service, API service, interceptors)
+ Auth guard & shop owner guard
+ HTTP interceptor (attach JWT, handle 401)
+ Login/register components
+ Dashboard (KPI cards: sales, items, providers)
+ Provider management (list, create, edit, delete)
+ Item management (list, create, edit, delete)
+ Transaction entry form (calculate splits)
+ Payout report page (filter, generate, export CSV)
+ Responsive design (mobile-friendly)
+ Loading states & error handling
+ Toast notifications
+
+Database
+
+ All tables created via migrations
+ Seed data: 1 test organization, 1 shop owner user
+ Indexes on foreign keys
+ Multi-tenant scoping (OrganizationId on all tables)
+
+DevOps
+
+ Skip - use standard docs already available
+
+
+Success Criteria for Phase 1
+Phase 1 is complete when:
+
+Shop owner can register and log in
+Shop owner can add/edit/delete providers
+Shop owner can add/edit/delete items (assign to providers)
+Shop owner can record transactions (automatic split calculation)
+Shop owner can generate payout reports (date range, per provider)
+Shop owner can export transactions/payouts as CSV
+All data is scoped to organization (multi-tenant works)
+JWT authentication and role-based authorization functional
+Angular app is responsive and error-free
+Database has all fields needed for Phase 2 & 3 (Stripe, QB)
+
+Timeline: 3 weeks
+
+Notes for Claude Code
+
+Use standard n-tier architecture you've been trained on
+PostgreSQL connection string will be provided separately
+Generate strong JWT secret key (32+ characters)
+Use AutoMapper for DTOs
+Use FluentValidation for input validation
+All GUIDs for primary keys
+All timestamps in UTC
+Use BCrypt for password hashing
+CORS: Allow http://localhost:4200 for development
+Angular Material or PrimeNG (your choice for UI components)
+Photo upload: Skip for Phase 1 (just text field for URL)
+Email: Skip for Phase 1
+No payment processing in Phase 1 (Stripe deferred to Phase 2)
+
+
+This is the complete specification. Build Phase 1 following this exactly.

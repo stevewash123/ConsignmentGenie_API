@@ -43,8 +43,49 @@ public class Item : BaseEntity
     [Column(TypeName = "decimal(5,2)")]
     public decimal? OverrideSplitPercentage { get; set; }  // Override provider's default
 
+    // Phase 4: Advanced inventory features
+    public Guid? CategoryId { get; set; }
+
+    [MaxLength(100)]
+    public string? Brand { get; set; }
+
+    [MaxLength(100)]
+    public string? Model { get; set; }
+
+    [MaxLength(50)]
+    public string? Size { get; set; }
+
+    [MaxLength(50)]
+    public string? Color { get; set; }
+
+    [MaxLength(50)]
+    public string? Condition { get; set; } // New, Like New, Good, Fair, Poor
+
+    // Inventory tracking
+    public int Quantity { get; set; } = 1;
+    public int? MinimumStock { get; set; }
+    public int? MaximumStock { get; set; }
+
+    // Search optimization
+    public string? SearchKeywords { get; set; } // Space-separated keywords for search
+
+    // Weight/Dimensions for shipping
+    [Column(TypeName = "decimal(8,2)")]
+    public decimal? Weight { get; set; } // in pounds
+
+    [Column(TypeName = "decimal(8,2)")]
+    public decimal? Length { get; set; } // in inches
+
+    [Column(TypeName = "decimal(8,2)")]
+    public decimal? Width { get; set; } // in inches
+
+    [Column(TypeName = "decimal(8,2)")]
+    public decimal? Height { get; set; } // in inches
+
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public Provider Provider { get; set; } = null!;
     public Transaction? Transaction { get; set; }  // One-to-one when sold
+    public ItemCategory? ItemCategory { get; set; }
+    public ICollection<ItemTagAssignment> ItemTagAssignments { get; set; } = new List<ItemTagAssignment>();
 }

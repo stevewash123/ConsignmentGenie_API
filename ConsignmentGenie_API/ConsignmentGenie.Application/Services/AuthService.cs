@@ -75,7 +75,7 @@ public class AuthService : IAuthService
         {
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = UserRole.ShopOwner,
+            Role = UserRole.Owner,
             OrganizationId = organization.Id
         };
 
