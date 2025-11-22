@@ -1,0 +1,316 @@
+import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { ShopperAuthService, ShopperLoginRequest, ShopperRegisterRequest } from './shopper-auth.service';
+import { environment } from '../../../environments/environment';
+
+describe('ShopperAuthService', () => {
+  let service: ShopperAuthService;
+  let httpMock: HttpTestingController;
+
+  const mockStoreSlug = 'test-store';
+  const apiUrl = `${environment.apiUrl}/api/shop/${mockStoreSlug}/auth`;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [ShopperAuthService]
+    });
+
+    service = TestBed.inject(ShopperAuthService);
+    httpMock = TestBed.inject(HttpTestingController);
+
+    // Clear localStorage before each test
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    localStorage.clear();
+  });
+
+  describe('Service Initialization', () => {
+    it('should be created', () => {
+      expect(service).toBeTruthy();
+    });
+
+    it('should initialize with no authenticated user', () => {
+      expect(service.isAuthenticated(mockStoreSlug)).toBeFalse();
+      expect(service.getCurrentUser(mockStoreSlug)).toBeNull();
+    });
+  });
+
+  describe('Login', () => {
+    it('should login successfully and store token', () => {
+      const loginRequest: ShopperLoginRequest = {
+        email: 'test@example.com',
+        password: 'password123',
+        rememberMe: false
+      };
+
+      const mockResponse = {
+        success: true,
+        token: 'mock-jwt-token',
+        shopper: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          fullName: 'John Doe',
+          email: 'test@example.com'
+        }
+      };
+
+      service.login(mockStoreSlug, loginRequest).subscribe(response => {
+        expect(response.success).toBeTruthy();
+        expect(response.token).toBe('mock-jwt-token');
+        expect(service.isAuthenticated(mockStoreSlug)).toBeTruthy();
+        expect(service.getCurrentUser(mockStoreSlug)).toEqual(mockResponse.shopper);
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/login`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(loginRequest);
+      req.flush(mockResponse);
+
+      // Verify token is stored in localStorage
+      const storedToken = localStorage.getItem(`shopper_token_${mockStoreSlug}`);
+      expect(storedToken).toBe('mock-jwt-token');
+    });
+
+    it('should handle login failure', () => {
+      const loginRequest: ShopperLoginRequest = {
+        email: 'test@example.com',
+        password: 'wrongpassword',
+        rememberMe: false
+      };
+
+      const mockErrorResponse = {
+        success: false,
+        errorMessage: 'Invalid credentials'
+      };
+
+      service.login(mockStoreSlug, loginRequest).subscribe(response => {
+        expect(response.success).toBeFalsy();
+        expect(response.errorMessage).toBe('Invalid credentials');
+        expect(service.isAuthenticated(mockStoreSlug)).toBeFalsy();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/login`);
+      req.flush(mockErrorResponse);
+
+      // Verify no token is stored
+      const storedToken = localStorage.getItem(`shopper_token_${mockStoreSlug}`);
+      expect(storedToken).toBeNull();
+    });
+
+    it('should handle HTTP error during login', () => {
+      const loginRequest: ShopperLoginRequest = {
+        email: 'test@example.com',
+        password: 'password123',
+        rememberMe: false
+      };
+
+      service.login(mockStoreSlug, loginRequest).subscribe({
+        next: () => fail('Should have failed'),
+        error: (error) => {
+          expect(error).toBeTruthy();
+          expect(service.isAuthenticated(mockStoreSlug)).toBeFalsy();
+        }
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/login`);
+      req.error(new ErrorEvent('Network error'));
+    });
+  });
+
+  describe('Register', () => {
+    it('should register successfully', () => {
+      const registerRequest: ShopperRegisterRequest = {
+        fullName: 'Jane Doe',
+        email: 'jane@example.com',
+        password: 'password123',
+        phone: '555-123-4567',
+        address: '123 Main St',
+        city: 'Springfield',
+        state: 'IL',
+        zipCode: '62701'
+      };
+
+      const mockResponse = {
+        success: true,
+        token: 'mock-jwt-token',
+        shopper: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          fullName: 'Jane Doe',
+          email: 'jane@example.com'
+        }
+      };
+
+      service.register(mockStoreSlug, registerRequest).subscribe(response => {
+        expect(response.success).toBeTruthy();
+        expect(response.token).toBe('mock-jwt-token');
+        expect(service.isAuthenticated(mockStoreSlug)).toBeTruthy();
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/register`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(registerRequest);
+      req.flush(mockResponse);
+    });
+
+    it('should handle registration failure', () => {
+      const registerRequest: ShopperRegisterRequest = {
+        fullName: 'Jane Doe',
+        email: 'existing@example.com',
+        password: 'password123'
+      };
+
+      const mockErrorResponse = {
+        success: false,
+        errorMessage: 'Email already exists'
+      };
+
+      service.register(mockStoreSlug, registerRequest).subscribe(response => {
+        expect(response.success).toBeFalsy();
+        expect(response.errorMessage).toBe('Email already exists');
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/register`);
+      req.flush(mockErrorResponse);
+    });
+  });
+
+  describe('Logout', () => {
+    it('should logout and clear stored data', () => {
+      // First, simulate a login
+      localStorage.setItem(`shopper_token_${mockStoreSlug}`, 'mock-token');
+      localStorage.setItem(`shopper_user_${mockStoreSlug}`, JSON.stringify({
+        id: '123',
+        fullName: 'John Doe',
+        email: 'john@example.com'
+      }));
+
+      expect(service.isAuthenticated(mockStoreSlug)).toBeTruthy();
+
+      service.logout(mockStoreSlug);
+
+      expect(service.isAuthenticated(mockStoreSlug)).toBeFalsy();
+      expect(service.getCurrentUser(mockStoreSlug)).toBeNull();
+      expect(localStorage.getItem(`shopper_token_${mockStoreSlug}`)).toBeNull();
+      expect(localStorage.getItem(`shopper_user_${mockStoreSlug}`)).toBeNull();
+    });
+  });
+
+  describe('Authentication State', () => {
+    it('should check authentication status correctly', () => {
+      expect(service.isAuthenticated(mockStoreSlug)).toBeFalsy();
+
+      // Set a valid token
+      localStorage.setItem(`shopper_token_${mockStoreSlug}`, 'valid-token');
+      expect(service.isAuthenticated(mockStoreSlug)).toBeTruthy();
+
+      // Clear token
+      localStorage.removeItem(`shopper_token_${mockStoreSlug}`);
+      expect(service.isAuthenticated(mockStoreSlug)).toBeFalsy();
+    });
+
+    it('should return correct current user', () => {
+      const mockUser = {
+        id: '123',
+        fullName: 'John Doe',
+        email: 'john@example.com'
+      };
+
+      expect(service.getCurrentUser(mockStoreSlug)).toBeNull();
+
+      localStorage.setItem(`shopper_user_${mockStoreSlug}`, JSON.stringify(mockUser));
+      expect(service.getCurrentUser(mockStoreSlug)).toEqual(mockUser);
+    });
+
+    it('should handle corrupted user data in localStorage', () => {
+      localStorage.setItem(`shopper_user_${mockStoreSlug}`, 'invalid-json');
+      expect(service.getCurrentUser(mockStoreSlug)).toBeNull();
+    });
+  });
+
+  describe('JWT Token Validation', () => {
+    it('should validate non-expired token', () => {
+      // Create a mock JWT with future expiration
+      const futureTimestamp = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      const mockToken = createMockJwt({ exp: futureTimestamp });
+
+      localStorage.setItem(`shopper_token_${mockStoreSlug}`, mockToken);
+      expect(service.isAuthenticated(mockStoreSlug)).toBeTruthy();
+    });
+
+    it('should invalidate expired token', () => {
+      // Create a mock JWT with past expiration
+      const pastTimestamp = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
+      const mockToken = createMockJwt({ exp: pastTimestamp });
+
+      localStorage.setItem(`shopper_token_${mockStoreSlug}`, mockToken);
+      expect(service.isAuthenticated(mockStoreSlug)).toBeFalsy();
+
+      // Verify expired token was removed
+      expect(localStorage.getItem(`shopper_token_${mockStoreSlug}`)).toBeNull();
+    });
+
+    it('should handle malformed JWT token', () => {
+      localStorage.setItem(`shopper_token_${mockStoreSlug}`, 'invalid-jwt-token');
+      expect(service.isAuthenticated(mockStoreSlug)).toBeFalsy();
+
+      // Verify invalid token was removed
+      expect(localStorage.getItem(`shopper_token_${mockStoreSlug}`)).toBeNull();
+    });
+  });
+
+  describe('Guest Session', () => {
+    it('should create guest session successfully', () => {
+      const guestRequest = {
+        email: 'guest@example.com',
+        fullName: 'Guest User'
+      };
+
+      const mockResponse = {
+        success: true,
+        token: 'guest-jwt-token',
+        sessionId: 'guest-session-123'
+      };
+
+      service.createGuestSession(mockStoreSlug, guestRequest).subscribe(response => {
+        expect(response.success).toBeTruthy();
+        expect(response.token).toBe('guest-jwt-token');
+        expect(response.sessionId).toBe('guest-session-123');
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/guest`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(guestRequest);
+      req.flush(mockResponse);
+    });
+  });
+
+  describe('Store-specific Authentication', () => {
+    it('should handle multiple store authentication separately', () => {
+      const store1 = 'store-one';
+      const store2 = 'store-two';
+
+      // Set tokens for different stores
+      localStorage.setItem(`shopper_token_${store1}`, 'token-store-1');
+      localStorage.setItem(`shopper_token_${store2}`, 'token-store-2');
+
+      expect(service.isAuthenticated(store1)).toBeTruthy();
+      expect(service.isAuthenticated(store2)).toBeTruthy();
+
+      // Logout from store1 should not affect store2
+      service.logout(store1);
+      expect(service.isAuthenticated(store1)).toBeFalsy();
+      expect(service.isAuthenticated(store2)).toBeTruthy();
+    });
+  });
+
+  // Helper function to create mock JWT tokens
+  function createMockJwt(payload: any): string {
+    const header = btoa(JSON.stringify({ typ: 'JWT', alg: 'HS256' }));
+    const payloadStr = btoa(JSON.stringify(payload));
+    const signature = 'mock-signature';
+    return `${header}.${payloadStr}.${signature}`;
+  }
+});

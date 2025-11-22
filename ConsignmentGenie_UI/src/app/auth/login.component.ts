@@ -19,6 +19,7 @@ interface LoginData {
   organizationId: string;
   organizationName: string;
   expiresAt: string;
+  approvalStatus?: number;
 }
 
 interface LoginResponse {
@@ -152,6 +153,10 @@ interface LoginResponse {
               <div class="account-email">customer@demoshop.com</div>
             </button>
           </div>
+        </div>
+
+        <div class="register-link">
+          <p>Don't have an account? <a routerLink="/register">Sign up here</a></p>
         </div>
       </div>
     </div>
@@ -361,6 +366,28 @@ interface LoginResponse {
       font-family: monospace;
     }
 
+    .register-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .register-link p {
+      color: #6b7280;
+      margin: 0;
+    }
+
+    .register-link a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+
     @media (max-width: 640px) {
       .login-container {
         padding: 1rem;
@@ -423,6 +450,20 @@ export class LoginComponent {
 
         // Extract actual login data from API wrapper
         const loginData = response.data;
+
+        // Check approval status for owners/managers before proceeding
+        if (this.normalizeRole(loginData.role) === 'Owner' && loginData.approvalStatus !== undefined) {
+          const approvalStatus = loginData.approvalStatus;
+
+          // 0 = Pending, 1 = Approved, 2 = Rejected
+          if (approvalStatus === 0) {
+            this.errorMessage.set('Your account is pending admin approval. You will receive an email once approved.');
+            return;
+          } else if (approvalStatus === 2) {
+            this.errorMessage.set('Your account has been rejected. Please contact support for more information.');
+            return;
+          }
+        }
 
         // Clear any old auth data first
         localStorage.removeItem('auth_token');

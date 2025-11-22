@@ -5,6 +5,7 @@ import { OwnerLayoutComponent } from './owner-layout.component';
 import { ProviderService } from '../../services/provider.service';
 import { TransactionService, SalesMetrics, MetricsQueryParams } from '../../services/transaction.service';
 import { PayoutService, PayoutStatus } from '../../services/payout.service';
+import { PendingPayoutData } from '../../models/payout.model';
 import { AuthService } from '../../services/auth.service';
 
 interface ShopSummary {
@@ -68,14 +69,18 @@ interface Transaction {
             </div>
           </div>
 
-          <div class="metric-card pending-payouts">
+          <a routerLink="/owner/payouts" class="metric-card pending-payouts"
+             [ngClass]="{ 'has-pending': summary()!.pendingPayoutCount > 0 }">
             <div class="metric-icon">⏳</div>
             <div class="metric-content">
               <h3>Pending Payouts</h3>
               <div class="metric-value">\${{ summary()!.pendingPayouts | number:'1.2-2' }}</div>
-              <div class="metric-change">{{ summary()!.pendingPayoutCount }} providers waiting</div>
+              <div class="metric-change">
+                {{ summary()!.pendingPayoutCount }} providers waiting
+                <span *ngIf="summary()!.pendingPayoutCount > 0" class="action-hint">→ Click to process</span>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
 
         <ng-template #loadingMetrics>
@@ -86,7 +91,7 @@ interface Transaction {
         <div class="actions-section">
           <h2>Quick Actions</h2>
           <div class="action-grid">
-            <a routerLink="/owner/transactions" class="action-card">
+            <a routerLink="/owner/sales" class="action-card">
               <div class="action-icon">🛒</div>
               <h3>Process Sale</h3>
               <p>Record a new transaction and automatically calculate splits</p>
@@ -98,7 +103,7 @@ interface Transaction {
               <p>View providers, update commission rates, and track performance</p>
             </a>
 
-            <a routerLink="/owner/inventory" class="action-card">
+            <a routerLink="/owner/sales" class="action-card">
               <div class="action-icon">📋</div>
               <h3>Inventory Check</h3>
               <p>Review current stock levels and add new items</p>
@@ -110,7 +115,7 @@ interface Transaction {
               <p>Create payout reports and process provider payments</p>
             </a>
 
-            <a routerLink="/owner/reports" class="action-card">
+            <a routerLink="/owner/payouts" class="action-card">
               <div class="action-icon">📊</div>
               <h3>View Reports</h3>
               <p>Analyze sales trends, provider performance, and profits</p>
@@ -199,6 +204,22 @@ interface Transaction {
     .metric-card.profit { border-left-color: #fbbf24; }
     .metric-card.providers { border-left-color: #3b82f6; }
     .metric-card.inventory { border-left-color: #8b5cf6; }
+    .metric-card.pending-payouts {
+      border-left-color: #f59e0b;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .metric-card.pending-payouts.has-pending {
+      border-left-color: #ef4444;
+      background: linear-gradient(135deg, #fff 0%, #fef2f2 100%);
+      cursor: pointer;
+    }
+
+    .metric-card.pending-payouts.has-pending:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.15);
+    }
 
     .metric-icon {
       font-size: 3rem;
@@ -225,6 +246,13 @@ interface Transaction {
       font-size: 0.875rem;
       color: #059669;
       font-weight: 600;
+    }
+
+    .action-hint {
+      color: #ef4444;
+      font-weight: 700;
+      margin-left: 0.5rem;
+      opacity: 0.8;
     }
 
     .loading {
@@ -397,12 +425,16 @@ export class OwnerDashboardComponent implements OnInit {
     };
 
     const salesPromise = this.transactionService.getSalesMetrics(metricsParams).toPromise();
-    const payoutsPromise = this.payoutService.getPayoutReports(undefined, PayoutStatus.Pending).toPromise();
+    const pendingPayoutsPromise = this.payoutService.getPendingPayouts().toPromise();
 
-    Promise.all([providersPromise, salesPromise, payoutsPromise])
+    Promise.all([providersPromise, salesPromise, pendingPayoutsPromise])
       .then(([providers, salesMetrics, pendingPayouts]) => {
         const activeProviderCount = providers?.filter(p => p.isActive).length || 0;
         this.activeProviderCount.set(activeProviderCount);
+
+        // Calculate real pending payout totals from new API
+        const totalPendingAmount = pendingPayouts?.reduce((total, pending) => total + pending.pendingAmount, 0) || 0;
+        const pendingProviderCount = pendingPayouts?.length || 0;
 
         const mockSummary: ShopSummary = {
           activeProviders: activeProviderCount,
@@ -410,8 +442,8 @@ export class OwnerDashboardComponent implements OnInit {
           totalItems: 342, // Still mock - needs inventory API
           recentSales: salesMetrics?.totalSales || 0,
           recentSalesCount: salesMetrics?.transactionCount || 0,
-          pendingPayouts: pendingPayouts?.reduce((total, payout) => total + payout.payoutAmount, 0) || 0,
-          pendingPayoutCount: pendingPayouts?.length || 0,
+          pendingPayouts: totalPendingAmount,
+          pendingPayoutCount: pendingProviderCount,
           recentTransactions: [
             {
               id: '1',

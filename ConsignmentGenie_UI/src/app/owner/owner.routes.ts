@@ -15,8 +15,16 @@ export const ownerRoutes: Routes = [
     loadComponent: () => import('../components/provider-list.component').then(m => m.ProviderListComponent)
   },
   {
+    path: 'inventory',
+    loadComponent: () => import('./components/inventory-list.component').then(m => m.InventoryListComponent)
+  },
+  {
     path: 'sales',
     loadComponent: () => import('./components/owner-sales.component').then(m => m.OwnerSalesComponent)
+  },
+  {
+    path: 'payouts',
+    loadComponent: () => import('./components/owner-payouts.component').then(m => m.OwnerPayoutsComponent)
   },
   {
     path: 'settings',

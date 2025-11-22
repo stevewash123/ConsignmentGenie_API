@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SuggestionBoxModalComponent, SuggestionFormData } from './suggestion-box-modal.component';
 
 interface UserData {
   userId: string;
@@ -12,7 +13,7 @@ interface UserData {
 @Component({
   selector: 'app-owner-footer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SuggestionBoxModalComponent],
   template: `
     <footer class="owner-footer">
       <div class="footer-container">
@@ -49,6 +50,7 @@ interface UserData {
               <li><a href="#" target="_blank">User Guide</a></li>
               <li><a href="#" target="_blank">Video Tutorials</a></li>
               <li><a href="#" target="_blank">Best Practices</a></li>
+              <li><button class="suggestion-link" (click)="openSuggestionBox()">💡 Suggestion Box</button></li>
             </ul>
           </div>
         </div>
@@ -63,6 +65,12 @@ interface UserData {
         </div>
       </div>
     </footer>
+
+    <app-suggestion-box-modal
+      [isVisible]="showSuggestionModal()"
+      (close)="closeSuggestionBox()"
+      (submit)="onSuggestionSubmit($event)">
+    </app-suggestion-box-modal>
   `,
   styles: [`
     .owner-footer {
@@ -150,6 +158,23 @@ interface UserData {
       text-decoration: underline;
     }
 
+    .suggestion-link {
+      background: none;
+      border: none;
+      color: #d1fae5;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+    }
+
+    .suggestion-link:hover {
+      color: #fbbf24;
+    }
+
     @media (max-width: 768px) {
       .footer-content {
         grid-template-columns: 1fr;
@@ -177,6 +202,7 @@ interface UserData {
 export class OwnerFooterComponent implements OnInit {
   currentYear = new Date().getFullYear();
   currentUser = signal<UserData | null>(null);
+  showSuggestionModal = signal<boolean>(false);
 
   ngOnInit() {
     this.loadUserData();
@@ -185,7 +211,30 @@ export class OwnerFooterComponent implements OnInit {
   private loadUserData() {
     const userData = localStorage.getItem('user_data');
     if (userData) {
-      this.currentUser.set(JSON.parse(userData));
+      try {
+        this.currentUser.set(JSON.parse(userData));
+      } catch (error) {
+        console.error('Failed to parse user data from localStorage', error);
+        this.currentUser.set(null);
+      }
     }
+  }
+
+  openSuggestionBox() {
+    this.showSuggestionModal.set(true);
+  }
+
+  closeSuggestionBox() {
+    this.showSuggestionModal.set(false);
+  }
+
+  onSuggestionSubmit(suggestionData: SuggestionFormData) {
+    console.log('Suggestion submitted:', suggestionData);
+
+    // For now, just log to console and show a simple alert
+    // TODO: Integrate with backend API when notification service is ready
+    alert(`Thank you for your ${suggestionData.type.toLowerCase()} suggestion! We'll review it and get back to you.`);
+
+    this.closeSuggestionBox();
   }
 }

@@ -5,7 +5,13 @@ import { ProviderGuard } from './guards/provider.guard';
 import { CustomerGuard } from './guards/customer.guard';
 
 export const routes: Routes = [
-  // Public storefront routes (no auth required)
+  // Shopper storefront routes (/shop/{storeSlug}) - Phase 1
+  {
+    path: 'shop/:storeSlug',
+    loadChildren: () => import('./shopper/shopper.routes').then(m => m.shopperRoutes)
+  },
+
+  // Public storefront routes (fallback when Square/Shopify unavailable)
   {
     path: 'store/:orgSlug',
     loadChildren: () => import('./public-store/public-store.routes').then(m => m.publicStoreRoutes)
@@ -39,10 +45,22 @@ export const routes: Routes = [
     loadChildren: () => import('./customer/customer.routes').then(m => m.customerRoutes)
   },
 
-  // Unified login route (no auth required)
+  // Authentication routes (no auth required)
   {
     path: 'login',
     loadComponent: () => import('./auth/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('./auth/register.component').then(m => m.RegisterComponent)
+  },
+  {
+    path: 'register/owner',
+    loadComponent: () => import('./auth/register-owner.component').then(m => m.RegisterOwnerComponent)
+  },
+  {
+    path: 'register/success',
+    loadComponent: () => import('./auth/register-success.component').then(m => m.RegisterSuccessComponent)
   },
 
   // Unauthorized access route

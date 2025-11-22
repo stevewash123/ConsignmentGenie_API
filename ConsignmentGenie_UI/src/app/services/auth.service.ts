@@ -32,6 +32,48 @@ export class AuthService {
       );
   }
 
+  async registerOwner(request: {
+    fullName: string;
+    email: string;
+    phone?: string;
+    password: string;
+    shopName: string;
+  }): Promise<{ success: boolean; message?: string; errors?: string[] }> {
+    try {
+      const response = await this.http.post<{ success: boolean; message?: string; errors?: string[] }>(
+        `${this.apiUrl}/auth/register/owner`,
+        request
+      ).toPromise();
+      return response!;
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.error?.message || 'Registration failed',
+        errors: error.error?.errors || [error.message]
+      };
+    }
+  }
+
+  async validateStoreCode(code: string): Promise<{
+    isValid: boolean;
+    shopName?: string;
+    errorMessage?: string;
+  }> {
+    try {
+      const response = await this.http.get<{
+        isValid: boolean;
+        shopName?: string;
+        errorMessage?: string;
+      }>(`${this.apiUrl}/auth/validate-store-code/${code}`).toPromise();
+      return response!;
+    } catch (error: any) {
+      return {
+        isValid: false,
+        errorMessage: 'Unable to validate store code'
+      };
+    }
+  }
+
   logout(): void {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refreshToken');

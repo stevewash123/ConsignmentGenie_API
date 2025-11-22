@@ -9,6 +9,10 @@ export const adminRoutes: Routes = [
   {
     path: 'dashboard',
     loadComponent: () => import('./components/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+  },
+  {
+    path: 'owner-approvals',
+    loadComponent: () => import('./components/owner-approval.component').then(m => m.OwnerApprovalComponent)
   }
   // Note: Login is now handled by /login route in main app routing
 ];

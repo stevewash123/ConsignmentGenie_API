@@ -26,6 +26,7 @@ interface UserData {
           <nav class="main-nav" *ngIf="currentUser()">
             <div class="nav-links">
               <a routerLink="/admin/dashboard" routerLinkActive="active">Dashboard</a>
+              <a routerLink="/admin/owner-approvals" routerLinkActive="active">Owner Approvals</a>
               <a routerLink="/admin/organizations" routerLinkActive="active">Organizations</a>
               <a routerLink="/admin/users" routerLinkActive="active">Users</a>
               <a routerLink="/admin/billing" routerLinkActive="active">Billing</a>

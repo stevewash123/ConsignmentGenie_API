@@ -1,10 +1,21 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PayoutReport, GeneratePayoutRequest, PayoutStatus } from '../models/payout.model';
+import { map } from 'rxjs/operators';
+import {
+  PayoutDto,
+  PayoutListDto,
+  PayoutStatus,
+  CreatePayoutRequest,
+  UpdatePayoutRequest,
+  PayoutSearchRequest,
+  PayoutSearchResponse,
+  PendingPayoutsRequest,
+  PendingPayoutData
+} from '../models/payout.model';
+import { environment } from '../../environments/environment';
 
 export { PayoutStatus };
-import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -14,45 +25,63 @@ export class PayoutService {
 
   constructor(private http: HttpClient) {}
 
-  getPayoutReports(providerId?: number, status?: PayoutStatus): Observable<PayoutReport[]> {
+  getPayouts(request?: PayoutSearchRequest): Observable<PayoutSearchResponse> {
     let params = new HttpParams();
-    if (providerId) params = params.set('providerId', providerId.toString());
-    if (status) params = params.set('status', status);
 
-    return this.http.get<PayoutReport[]>(this.apiUrl, { params });
+    if (request?.providerId) params = params.set('providerId', request.providerId);
+    if (request?.payoutDateFrom) params = params.set('payoutDateFrom', request.payoutDateFrom.toISOString());
+    if (request?.payoutDateTo) params = params.set('payoutDateTo', request.payoutDateTo.toISOString());
+    if (request?.status) params = params.set('status', request.status);
+    if (request?.periodStart) params = params.set('periodStart', request.periodStart.toISOString());
+    if (request?.periodEnd) params = params.set('periodEnd', request.periodEnd.toISOString());
+    if (request?.page) params = params.set('page', request.page.toString());
+    if (request?.pageSize) params = params.set('pageSize', request.pageSize.toString());
+    if (request?.sortBy) params = params.set('sortBy', request.sortBy);
+    if (request?.sortDirection) params = params.set('sortDirection', request.sortDirection);
+
+    return this.http.get<PayoutSearchResponse>(this.apiUrl, { params });
   }
 
-  getPayoutReport(id: number): Observable<PayoutReport> {
-    return this.http.get<PayoutReport>(`${this.apiUrl}/${id}`);
+  getPayoutById(id: string): Observable<PayoutDto> {
+    return this.http.get<{success: boolean, data: PayoutDto}>(`${this.apiUrl}/${id}`)
+      .pipe(map(response => response.data));
   }
 
-  generatePayoutReport(request: GeneratePayoutRequest): Observable<PayoutReport> {
-    return this.http.post<PayoutReport>(`${this.apiUrl}/generate`, request);
+  getPendingPayouts(request?: PendingPayoutsRequest): Observable<PendingPayoutData[]> {
+    let params = new HttpParams();
+
+    if (request?.providerId) params = params.set('providerId', request.providerId);
+    if (request?.periodEndBefore) params = params.set('periodEndBefore', request.periodEndBefore.toISOString());
+    if (request?.minimumAmount) params = params.set('minimumAmount', request.minimumAmount.toString());
+
+    return this.http.get<{success: boolean, data: PendingPayoutData[]}>(`${this.apiUrl}/pending`, { params })
+      .pipe(map(response => response.data));
   }
 
-  updatePayoutStatus(id: number, status: PayoutStatus): Observable<PayoutReport> {
-    return this.http.patch<PayoutReport>(`${this.apiUrl}/${id}/status`, { status });
+  createPayout(request: CreatePayoutRequest): Observable<PayoutDto> {
+    return this.http.post<{success: boolean, data: PayoutDto}>(this.apiUrl, request)
+      .pipe(map(response => response.data));
   }
 
-  exportPayoutToCsv(id: number): Observable<Blob> {
+  updatePayout(id: string, request: UpdatePayoutRequest): Observable<void> {
+    return this.http.put<{success: boolean, message: string}>(`${this.apiUrl}/${id}`, request)
+      .pipe(map(() => {}));
+  }
+
+  deletePayout(id: string): Observable<void> {
+    return this.http.delete<{success: boolean, message: string}>(`${this.apiUrl}/${id}`)
+      .pipe(map(() => {}));
+  }
+
+  exportPayoutToCsv(id: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/export`, {
       responseType: 'blob'
     });
   }
 
-  getPayoutsByProvider(providerId: number): Observable<PayoutReport[]> {
-    return this.http.get<PayoutReport[]>(`${this.apiUrl}/provider/${providerId}`);
-  }
-
-  deletePayoutReport(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
-  }
-
-  markPayoutAsPaid(id: number): Observable<PayoutReport> {
-    return this.updatePayoutStatus(id, PayoutStatus.Paid);
-  }
-
-  markPayoutAsProcessed(id: number): Observable<PayoutReport> {
-    return this.updatePayoutStatus(id, PayoutStatus.Processed);
+  exportPayoutToPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/pdf`, {
+      responseType: 'blob'
+    });
   }
 }
