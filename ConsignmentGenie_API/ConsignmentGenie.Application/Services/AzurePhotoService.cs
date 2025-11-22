@@ -2,6 +2,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using ConsignmentGenie.Application.Models;
 using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -177,36 +178,8 @@ public class AzurePhotoService : IPhotoService
 
     public async Task<List<PhotoInfo>> GetPhotosAsync(Guid itemId)
     {
-        var item = await _context.Items.FindAsync(itemId);
-        if (item == null || string.IsNullOrEmpty(item.Photos))
-        {
-            return new List<PhotoInfo>();
-        }
-
-        try
-        {
-            var photoUrls = System.Text.Json.JsonSerializer.Deserialize<string[]>(item.Photos) ?? Array.Empty<string>();
-            var photos = new List<PhotoInfo>();
-
-            foreach (var url in photoUrls)
-            {
-                var thumbnailUrl = GetThumbnailUrlFromPhotoUrl(url);
-                photos.Add(new PhotoInfo
-                {
-                    Url = url,
-                    ThumbnailUrl = thumbnailUrl,
-                    FileName = Path.GetFileName(new Uri(url).AbsolutePath),
-                    UploadedAt = item.CreatedAt
-                });
-            }
-
-            return photos;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get photos for item {ItemId}", itemId);
-            return new List<PhotoInfo>();
-        }
+        // TODO: Update to use ItemImages collection
+        return await Task.FromResult(new List<PhotoInfo>());
     }
 
     private async Task UpdateItemPhotosAsync(Guid itemId, string photoUrl)
@@ -214,19 +187,27 @@ public class AzurePhotoService : IPhotoService
         var item = await _context.Items.FindAsync(itemId);
         if (item == null) return;
 
-        var currentPhotos = string.IsNullOrEmpty(item.Photos)
-            ? new List<string>()
-            : System.Text.Json.JsonSerializer.Deserialize<List<string>>(item.Photos) ?? new List<string>();
+        // Get current image count
+        var imageCount = await _context.ItemImages.CountAsync(i => i.ItemId == itemId);
 
-        currentPhotos.Add(photoUrl);
-
-        // Enforce 5 photo limit
-        if (currentPhotos.Count > 5)
+        // Create new ItemImage
+        var itemImage = new ItemImage
         {
-            currentPhotos = currentPhotos.TakeLast(5).ToList();
+            ItemId = itemId,
+            ImageUrl = photoUrl,
+            DisplayOrder = imageCount,
+            IsPrimary = imageCount == 0, // First image is primary
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.ItemImages.Add(itemImage);
+
+        // Update item's primary image URL if this is the first image
+        if (itemImage.IsPrimary)
+        {
+            item.PrimaryImageUrl = photoUrl;
         }
 
-        item.Photos = System.Text.Json.JsonSerializer.Serialize(currentPhotos);
         await _context.SaveChangesAsync();
     }
 

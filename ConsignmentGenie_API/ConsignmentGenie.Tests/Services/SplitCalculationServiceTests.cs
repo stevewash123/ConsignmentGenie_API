@@ -62,7 +62,7 @@ public class SplitCalculationServiceTests : IDisposable
         {
             OrganizationId = organization.Id,
             ProviderId = provider.Id,
-            SKU = "ITEM001",
+            Sku = "ITEM001",
             Title = "Test Item 1",
             Price = 100.00m
         };
@@ -70,7 +70,7 @@ public class SplitCalculationServiceTests : IDisposable
         {
             OrganizationId = organization.Id,
             ProviderId = provider.Id,
-            SKU = "ITEM002",
+            Sku = "ITEM002",
             Title = "Test Item 2",
             Price = 75.00m
         };
@@ -199,7 +199,7 @@ public class SplitCalculationServiceTests : IDisposable
         {
             OrganizationId = organization.Id,
             ProviderId = provider.Id,
-            SKU = "ITEM001",
+            Sku = "ITEM001",
             Title = "Test Item",
             Price = 100.00m
         };

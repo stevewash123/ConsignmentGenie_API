@@ -1,4 +1,5 @@
 using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.Extensions;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,7 +48,7 @@ public class SplitCalculationService : ISplitCalculationService
         var payoutTransactions = transactions.Select(t => new PayoutTransaction
         {
             TransactionId = t.Id,
-            ItemSku = t.Item.SKU,
+            ItemSku = t.Item.Sku,
             ItemTitle = t.Item.Title,
             SalePrice = t.SalePrice,
             ProviderAmount = t.ProviderAmount,
@@ -57,7 +58,7 @@ public class SplitCalculationService : ISplitCalculationService
         return new PayoutSummary
         {
             ProviderId = providerId,
-            ProviderName = provider.DisplayName,
+            ProviderName = provider.GetDisplayName(),
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
             TotalAmount = transactions.Sum(t => t.ProviderAmount),

@@ -4,6 +4,5 @@ public enum ItemStatus
 {
     Available = 1,
     Sold = 2,
-    Returned = 3,
-    PaidOut = 4
+    Removed = 3  // Updated to match spec (was Returned)
 }

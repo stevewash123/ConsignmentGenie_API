@@ -2,6 +2,35 @@ namespace ConsignmentGenie.Core.Enums;
 
 public enum NotificationType
 {
+    // Provider notifications
+    ProviderApproved,
+    ProviderRejected,
+    ItemSold,
+    PayoutReady,
+    PayoutProcessed,
+
+    // Owner notifications
+    NewProviderRequest,
+    LowInventoryAlert,
+    DailySalesSummary,
+    SuggestionSubmitted,
+
+    // System notifications
+    PasswordReset,
+    WelcomeEmail,
+    AccountActivated,
+    AccountDeactivated,
+
+    // Payment notifications
+    PaymentReceived,
+    PaymentFailed,
+    SubscriptionExpiring,
+
+    // Integration notifications
+    SyncError,
+    SyncCompleted,
+
+    // Legacy UI notification types (for in-app notifications)
     Info,
     Success,
     Warning,
@@ -13,6 +42,15 @@ public enum NotificationType
     Inventory,
     Provider,
     Report
+}
+
+public enum NotificationChannel
+{
+    Email,
+    Sms,
+    Slack,
+    Push,
+    InApp  // For the existing Notification entity
 }
 
 public enum NotificationPriority

@@ -121,10 +121,15 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Application services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IShopperAuthService, ShopperAuthService>();
+builder.Services.AddScoped<ISlugService, SlugService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ISplitCalculationService, SplitCalculationService>();
 builder.Services.AddScoped<IStripeService, StripeService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ISuggestionService, SuggestionService>();
 builder.Services.AddScoped<SeedDataService>();
 
 // Photo storage implementations

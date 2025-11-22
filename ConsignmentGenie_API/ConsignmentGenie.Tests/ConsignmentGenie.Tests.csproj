@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="Moq" Version="4.20.70" />
     <PackageReference Include="xunit" Version="2.6.2" />
@@ -20,8 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ConsignmentGenie.API\ConsignmentGenie.API.csproj" />
     <ProjectReference Include="..\ConsignmentGenie.Application\ConsignmentGenie.Application.csproj" />
     <ProjectReference Include="..\ConsignmentGenie.Infrastructure\ConsignmentGenie.Infrastructure.csproj" />
+    <ProjectReference Include="..\ConsignmentGenie.Core\ConsignmentGenie.Core.csproj" />
   </ItemGroup>
 
 </Project>

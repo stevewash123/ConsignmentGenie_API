@@ -1,36 +1,41 @@
-using ConsignmentGenie.Application.DTOs;
+using ConsignmentGenie.Application.Models.Notifications;
+using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
 
 namespace ConsignmentGenie.Application.Services.Interfaces;
 
 public interface INotificationService
 {
-    // Create notifications
-    Task<Guid> CreateNotificationAsync(Guid organizationId, Guid? userId, string title, string message,
-        NotificationType type = NotificationType.Info, NotificationPriority priority = NotificationPriority.Normal);
+    /// <summary>
+    /// Send a notification to a user based on their notification preferences
+    /// </summary>
+    Task<bool> SendAsync(NotificationRequest request);
 
-    Task CreateBulkNotificationAsync(Guid organizationId, List<Guid> userIds, string title, string message,
-        NotificationType type = NotificationType.Info, NotificationPriority priority = NotificationPriority.Normal);
+    /// <summary>
+    /// Send multiple notifications in bulk
+    /// </summary>
+    Task<Dictionary<Guid, bool>> SendBulkAsync(IEnumerable<NotificationRequest> requests);
 
-    // Get notifications
-    Task<List<NotificationDto>> GetUserNotificationsAsync(Guid userId, bool includeRead = false, int limit = 50);
-    Task<List<NotificationDto>> GetOrganizationNotificationsAsync(Guid organizationId, int limit = 50);
-    Task<int> GetUnreadCountAsync(Guid userId);
+    /// <summary>
+    /// Get user's notification preferences for a specific notification type
+    /// </summary>
+    Task<UserNotificationPreference?> GetUserPreferenceAsync(Guid userId, NotificationType type);
 
-    // Mark as read/dismissed
-    Task MarkAsReadAsync(Guid notificationId, Guid userId);
-    Task MarkAllAsReadAsync(Guid userId);
-    Task DismissNotificationAsync(Guid notificationId, Guid userId);
+    /// <summary>
+    /// Update user's notification preferences
+    /// </summary>
+    Task<bool> UpdateUserPreferenceAsync(Guid userId, NotificationType type, bool emailEnabled, bool smsEnabled = false, bool slackEnabled = false);
+}
 
-    // Send via email/SMS
-    Task SendEmailNotificationAsync(Guid notificationId);
-    Task SendSmsNotificationAsync(Guid notificationId);
+public interface INotificationTemplateService
+{
+    /// <summary>
+    /// Get the template for a notification type
+    /// </summary>
+    NotificationTemplate GetTemplate(NotificationType type);
 
-    // System notifications (for common scenarios)
-    Task NotifyLowStockAsync(Guid organizationId, Guid providerId, string itemName, int currentStock, int minimumStock);
-    Task NotifyPaymentFailedAsync(Guid organizationId, Guid userId, string errorMessage);
-    Task NotifyPayoutReadyAsync(Guid organizationId, Guid providerId, decimal amount);
-    Task NotifyItemSoldAsync(Guid organizationId, Guid providerId, string itemName, decimal salePrice);
-    Task NotifyTrialExpiringAsync(Guid organizationId, int daysRemaining);
-    Task NotifySubscriptionCancelledAsync(Guid organizationId, DateTime cancelDate);
+    /// <summary>
+    /// Render a template with data
+    /// </summary>
+    EmailMessage RenderTemplate(NotificationType type, Dictionary<string, string> data, string recipientEmail);
 }

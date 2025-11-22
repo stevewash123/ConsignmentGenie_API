@@ -1,46 +1,69 @@
-using ConsignmentGenie.Core.Enums;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using ConsignmentGenie.Core.Enums;
 
-namespace ConsignmentGenie.Core.Entities;
-
-public class Payout : BaseEntity
+namespace ConsignmentGenie.Core.Entities
 {
-    public Guid OrganizationId { get; set; }
+    public class Payout
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
 
-    public Guid ProviderId { get; set; }
+        [Required]
+        public Guid OrganizationId { get; set; }
+        public Organization Organization { get; set; } = null!;
 
-    public DateTime PeriodStart { get; set; }
+        [Required]
+        public Guid ProviderId { get; set; }
+        public Provider Provider { get; set; } = null!;
 
-    public DateTime PeriodEnd { get; set; }
+        // Payout Details
+        [Required]
+        [StringLength(50)]
+        public string PayoutNumber { get; set; } = string.Empty;
 
-    [Column(TypeName = "decimal(10,2)")]
-    public decimal TotalAmount { get; set; }
+        [Required]
+        public DateTime PayoutDate { get; set; }
 
-    public PayoutStatus Status { get; set; } = PayoutStatus.Pending;
+        [Required]
+        [Range(0.01, 999999.99)]
+        public decimal Amount { get; set; }
 
-    public DateTime? PaidAt { get; set; }
+        [Required]
+        public PayoutStatus Status { get; set; } = PayoutStatus.Paid;
 
-    [MaxLength(50)]
-    public string? PaymentMethod { get; set; }
+        // Payment Info
+        [Required]
+        [StringLength(50)]
+        public string PaymentMethod { get; set; } = string.Empty;
 
-    public string? ItemsIncluded { get; set; }  // JSON array of transaction IDs
+        [StringLength(100)]
+        public string? PaymentReference { get; set; }
 
-    // QuickBooks sync (Phase 3 - include fields now)
-    public bool SyncedToQuickBooks { get; set; }
+        // Period Covered
+        [Required]
+        public DateTime PeriodStart { get; set; }
 
-    public DateTime? SyncedAt { get; set; }
+        [Required]
+        public DateTime PeriodEnd { get; set; }
 
-    [MaxLength(100)]
-    public string? QuickBooksBillId { get; set; }
+        [Required]
+        public int TransactionCount { get; set; }
 
-    public bool QuickBooksSyncFailed { get; set; }
+        public string? Notes { get; set; }
 
-    public string? QuickBooksSyncError { get; set; }
+        // QuickBooks Integration
+        public bool SyncedToQuickBooks { get; set; } = false;
+        [StringLength(100)]
+        public string? QuickBooksBillId { get; set; }
 
-    public string? Notes { get; set; }
+        // Audit
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public Guid? CreatedBy { get; set; }
 
-    // Navigation properties
-    public Organization Organization { get; set; } = null!;
-    public Provider Provider { get; set; } = null!;
+        // Computed Properties for QuickBooks compatibility
+        public decimal TotalAmount => Amount;
+        public DateTime? PaidAt => PayoutDate;
+
+        // Navigation Properties
+        public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+    }
 }

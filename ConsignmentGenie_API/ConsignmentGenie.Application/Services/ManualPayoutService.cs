@@ -1,6 +1,7 @@
 using ConsignmentGenie.Application.DTOs.Payout;
 using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Core.Entities;
+using ConsignmentGenie.Core.Extensions;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -48,7 +49,7 @@ public class ManualPayoutService : IPayoutService
         return new PayoutReportDto
         {
             ProviderId = providerId,
-            ProviderName = provider.DisplayName,
+            ProviderName = provider.GetDisplayName(),
             StartDate = startDate,
             EndDate = endDate,
             TotalAmount = totalAmount,
@@ -155,7 +156,7 @@ public class ManualPayoutService : IPayoutService
             .Select(g => new PayoutSummaryDto
             {
                 ProviderId = g.Key,
-                ProviderName = g.First().Provider.DisplayName,
+                ProviderName = g.First().Provider.GetDisplayName(),
                 PendingAmount = g.Sum(t => t.ProviderAmount),
                 TransactionCount = g.Count(),
                 OldestTransaction = g.Min(t => t.SaleDate)

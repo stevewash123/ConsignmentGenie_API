@@ -1,6 +1,7 @@
 using ConsignmentGenie.Application.Models.Accounting;
 using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Application.DTOs.QuickBooks;
+using ConsignmentGenie.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -90,9 +91,9 @@ public class QuickBooksAccountingService : IAccountingService
                 Email = customer.Email,
                 Phone = customer.Phone,
                 BusinessName = customer.CompanyName,
-                Address = customer.BillingAddress?.Line1 ?? "",
+                AddressLine1 = customer.BillingAddress?.Line1 ?? "",
                 City = customer.BillingAddress?.City ?? "",
-                ZipCode = customer.BillingAddress?.PostalCode ?? "",
+                PostalCode = customer.BillingAddress?.PostalCode ?? "",
                 CreatedAt = DateTime.UtcNow,
                 OrganizationId = Guid.Empty // Would be set from context
             };

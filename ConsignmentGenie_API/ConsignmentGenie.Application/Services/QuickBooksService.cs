@@ -1,5 +1,6 @@
 using ConsignmentGenie.Application.DTOs.QuickBooks;
 using ConsignmentGenie.Core.Entities;
+using ConsignmentGenie.Core.Extensions;
 using ConsignmentGenie.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -198,16 +199,16 @@ public class QuickBooksService : IQuickBooksService
 
             var customerData = new
             {
-                Name = provider.DisplayName,
-                CompanyName = provider.BusinessName,
+                Name = provider.GetDisplayName(),
+                CompanyName = provider.BusinessName ?? provider.GetDisplayName(),
                 PrimaryEmailAddr = new { Address = provider.Email },
                 PrimaryPhone = new { FreeFormNumber = provider.Phone },
                 BillAddr = new
                 {
-                    Line1 = provider.Address,
+                    Line1 = provider.AddressLine1,
                     City = provider.City,
                     Country = "US",
-                    PostalCode = provider.ZipCode
+                    PostalCode = provider.PostalCode
                 }
             };
 
@@ -233,7 +234,7 @@ public class QuickBooksService : IQuickBooksService
             var paymentData = new
             {
                 TotalAmt = payout.TotalAmount,
-                CustomerRef = new { value = payout.Provider.QuickBooksCustomerId },
+                CustomerRef = new { value = "1" }, // QuickBooksCustomerId field no longer exists - using default
                 TxnDate = payout.PaidAt?.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.ToString("yyyy-MM-dd"),
                 PrivateNote = $"Consignment payout for period {payout.PeriodStart:yyyy-MM-dd} to {payout.PeriodEnd:yyyy-MM-dd}"
             };

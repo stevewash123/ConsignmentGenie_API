@@ -1,0 +1,356 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using ConsignmentGenie.API.Controllers;
+using ConsignmentGenie.Core.DTOs.Admin;
+using ConsignmentGenie.Core.Entities;
+using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Infrastructure.Data;
+using ConsignmentGenie.Tests.Helpers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+namespace ConsignmentGenie.Tests.Controllers
+{
+    public class AdminControllerTests : IDisposable
+    {
+        private readonly ConsignmentGenieContext _context;
+        private readonly AdminController _controller;
+        private readonly Mock<ILogger<AdminController>> _loggerMock;
+        private readonly Guid _organizationId = new("11111111-1111-1111-1111-111111111111");
+        private readonly Guid _adminUserId = new("22222222-2222-2222-2222-222222222222");
+
+        public AdminControllerTests()
+        {
+            _context = TestDbContextFactory.CreateInMemoryContext();
+            _loggerMock = new Mock<ILogger<AdminController>>();
+            _controller = new AdminController(_context, _loggerMock.Object);
+
+            // Setup admin user claims
+            var claims = new List<Claim>
+            {
+                new("organizationId", _organizationId.ToString()),
+                new("userId", _adminUserId.ToString()),
+                new(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, "test");
+            var principal = new ClaimsPrincipal(identity);
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = principal
+                }
+            };
+
+            SeedTestData().Wait();
+        }
+
+        private async Task SeedTestData()
+        {
+            // Add test organization
+            var organization = new Organization
+            {
+                Id = _organizationId,
+                Name = "Test Consignment Shop",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Organizations.Add(organization);
+
+            // Add admin user
+            var adminUser = new User
+            {
+                Id = _adminUserId,
+                Email = "admin@test.com",
+                PasswordHash = "hashed_password",
+                Role = UserRole.Owner, // Admin functionality uses Owner role currently
+                OrganizationId = _organizationId,
+                ApprovalStatus = ApprovalStatus.Approved,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Users.Add(adminUser);
+
+            // Add pending owners for testing
+            var pendingOrg1 = new Organization
+            {
+                Id = Guid.NewGuid(),
+                Name = "Pending Shop 1",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            var pendingOrg2 = new Organization
+            {
+                Id = Guid.NewGuid(),
+                Name = "Pending Shop 2",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.Organizations.AddRange(pendingOrg1, pendingOrg2);
+
+            var pendingUser1 = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "pending1@test.com",
+                PasswordHash = "hashed_password",
+                FullName = "John Pending",
+                Phone = "555-123-4567",
+                Role = UserRole.Owner,
+                OrganizationId = pendingOrg1.Id,
+                ApprovalStatus = ApprovalStatus.Pending,
+                CreatedAt = DateTime.UtcNow.AddDays(-2),
+                UpdatedAt = DateTime.UtcNow.AddDays(-2)
+            };
+
+            var pendingUser2 = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "pending2@test.com",
+                PasswordHash = "hashed_password",
+                FullName = "Jane Pending",
+                Phone = "555-987-6543",
+                Role = UserRole.Owner,
+                OrganizationId = pendingOrg2.Id,
+                ApprovalStatus = ApprovalStatus.Pending,
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                UpdatedAt = DateTime.UtcNow.AddDays(-1)
+            };
+
+            _context.Users.AddRange(pendingUser1, pendingUser2);
+            await _context.SaveChangesAsync();
+        }
+
+        [Fact]
+        public async Task GetPendingOwners_ReturnsAllPendingOwners()
+        {
+            // Act
+            var result = await _controller.GetPendingOwners();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var pendingOwners = Assert.IsType<List<PendingOwnerDto>>(okResult.Value);
+
+            Assert.Equal(2, pendingOwners.Count);
+            Assert.Contains(pendingOwners, p => p.FullName == "John Pending");
+            Assert.Contains(pendingOwners, p => p.FullName == "Jane Pending");
+            Assert.All(pendingOwners, p => Assert.NotNull(p.ShopName));
+        }
+
+        [Fact]
+        public async Task GetPendingOwners_OrdersByRequestedDate()
+        {
+            // Act
+            var result = await _controller.GetPendingOwners();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var pendingOwners = Assert.IsType<List<PendingOwnerDto>>(okResult.Value);
+
+            // Should be ordered by RequestedAt ascending (oldest first)
+            Assert.Equal("John Pending", pendingOwners[0].FullName); // Created 2 days ago
+            Assert.Equal("Jane Pending", pendingOwners[1].FullName); // Created 1 day ago
+        }
+
+        [Fact]
+        public async Task ApproveOwner_WithValidUser_ApprovesSuccessfully()
+        {
+            // Arrange
+            var pendingUser = _context.Users.First(u => u.ApprovalStatus == ApprovalStatus.Pending);
+
+            // Act
+            var result = await _controller.ApproveOwner(pendingUser.Id);
+
+            // Assert
+            var okResult = Assert.IsType<OkResult>(result);
+
+            // Verify user was approved
+            var approvedUser = await _context.Users.FindAsync(pendingUser.Id);
+            Assert.Equal(ApprovalStatus.Approved, approvedUser.ApprovalStatus);
+            Assert.Equal(_adminUserId, approvedUser.ApprovedBy);
+            Assert.NotNull(approvedUser.ApprovedAt);
+            Assert.True(approvedUser.ApprovedAt > DateTime.UtcNow.AddMinutes(-1));
+        }
+
+        [Fact]
+        public async Task ApproveOwner_GeneratesStoreCodeForOrganization()
+        {
+            // Arrange
+            var pendingUser = _context.Users.First(u => u.ApprovalStatus == ApprovalStatus.Pending);
+            var organization = await _context.Organizations.FindAsync(pendingUser.OrganizationId);
+            Assert.True(string.IsNullOrEmpty(organization.StoreCode)); // Verify it starts without store code
+
+            // Act
+            var result = await _controller.ApproveOwner(pendingUser.Id);
+
+            // Assert
+            Assert.IsType<OkResult>(result);
+
+            // Verify store code was generated
+            var updatedOrganization = await _context.Organizations.FindAsync(pendingUser.OrganizationId);
+            Assert.NotNull(updatedOrganization.StoreCode);
+            Assert.Matches(@"^\d{4}$", updatedOrganization.StoreCode); // Should be 4-digit number
+        }
+
+        [Fact]
+        public async Task ApproveOwner_WithNonExistentUser_ReturnsNotFound()
+        {
+            // Arrange
+            var nonExistentUserId = Guid.NewGuid();
+
+            // Act
+            var result = await _controller.ApproveOwner(nonExistentUserId);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("User not found", notFoundResult.Value);
+        }
+
+        [Fact]
+        public async Task ApproveOwner_WithNonOwnerUser_ReturnsBadRequest()
+        {
+            // Arrange - Create a non-owner user
+            var providerUser = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "provider@test.com",
+                PasswordHash = "hashed_password",
+                Role = UserRole.Provider, // Not an owner
+                OrganizationId = _organizationId,
+                ApprovalStatus = ApprovalStatus.Pending,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Users.Add(providerUser);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _controller.ApproveOwner(providerUser.Id);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("User is not an owner", badRequestResult.Value);
+        }
+
+        [Fact]
+        public async Task ApproveOwner_WithAlreadyApprovedUser_ReturnsBadRequest()
+        {
+            // Arrange
+            var pendingUser = _context.Users.First(u => u.ApprovalStatus == ApprovalStatus.Pending);
+            pendingUser.ApprovalStatus = ApprovalStatus.Approved;
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _controller.ApproveOwner(pendingUser.Id);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("User is not pending approval", badRequestResult.Value);
+        }
+
+        [Fact]
+        public async Task RejectOwner_WithValidData_RejectsSuccessfully()
+        {
+            // Arrange
+            var pendingUser = _context.Users.First(u => u.ApprovalStatus == ApprovalStatus.Pending);
+            var rejectRequest = new RejectUserRequest { Reason = "Insufficient information provided" };
+
+            // Act
+            var result = await _controller.RejectOwner(pendingUser.Id, rejectRequest);
+
+            // Assert
+            var okResult = Assert.IsType<OkResult>(result);
+
+            // Verify user was rejected
+            var rejectedUser = await _context.Users.FindAsync(pendingUser.Id);
+            Assert.Equal(ApprovalStatus.Rejected, rejectedUser.ApprovalStatus);
+            Assert.Equal("Insufficient information provided", rejectedUser.RejectedReason);
+        }
+
+        [Fact]
+        public async Task RejectOwner_WithNullReason_RejectsWithoutReason()
+        {
+            // Arrange
+            var pendingUser = _context.Users.First(u => u.ApprovalStatus == ApprovalStatus.Pending);
+            var rejectRequest = new RejectUserRequest { Reason = null };
+
+            // Act
+            var result = await _controller.RejectOwner(pendingUser.Id, rejectRequest);
+
+            // Assert
+            var okResult = Assert.IsType<OkResult>(result);
+
+            // Verify user was rejected
+            var rejectedUser = await _context.Users.FindAsync(pendingUser.Id);
+            Assert.Equal(ApprovalStatus.Rejected, rejectedUser.ApprovalStatus);
+            Assert.Null(rejectedUser.RejectedReason);
+        }
+
+        [Fact]
+        public async Task RejectOwner_WithNonExistentUser_ReturnsNotFound()
+        {
+            // Arrange
+            var nonExistentUserId = Guid.NewGuid();
+            var rejectRequest = new RejectUserRequest { Reason = "Test reason" };
+
+            // Act
+            var result = await _controller.RejectOwner(nonExistentUserId, rejectRequest);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("User not found", notFoundResult.Value);
+        }
+
+        [Fact]
+        public async Task GenerateUniqueStoreCode_CreatesUniqueCodes()
+        {
+            // Arrange
+            var controller = new AdminController(_context, _loggerMock.Object);
+
+            // Use reflection to access the private method
+            var method = typeof(AdminController).GetMethod("GenerateUniqueStoreCode",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            // Act
+            var task1 = (Task<string>)method.Invoke(controller, null);
+            var code1 = await task1;
+
+            var task2 = (Task<string>)method.Invoke(controller, null);
+            var code2 = await task2;
+
+            // Assert
+            Assert.Matches(@"^\d{4}$", code1); // 4-digit number
+            Assert.Matches(@"^\d{4}$", code2); // 4-digit number
+            Assert.NotEqual(code1, code2); // Should be different
+        }
+
+        [Fact]
+        public async Task Health_ReturnsHealthyStatus()
+        {
+            // Act
+            var result = _controller.Health();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            dynamic response = okResult.Value;
+
+            // Access nested properties - using correct case for property names
+            var data = response.GetType().GetProperty("Data").GetValue(response, null);
+            var status = data.GetType().GetProperty("status").GetValue(data, null);
+            Assert.Equal("healthy", status);
+        }
+
+        public void Dispose()
+        {
+            _context.Dispose();
+        }
+    }
+}

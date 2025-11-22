@@ -10,7 +10,8 @@ using System.Security.Claims;
 namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
-[Route("api/provider-portal")]
+[Route("api/provider")]
+[Authorize(Roles = "Provider")]
 public class ProviderPortalController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -27,159 +28,82 @@ public class ProviderPortalController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost("setup")]
-    public async Task<IActionResult> SetupProviderAccount([FromBody] ProviderPortalSetupRequest request)
-    {
-        try
-        {
-            // Find provider by email and invite code
-            var provider = await _unitOfWork.Providers
-                .GetAsync(p => p.Email == request.Email && p.InviteCode == request.InviteCode);
-
-            if (provider == null)
-                return BadRequest("Invalid email or invite code");
-
-            if (provider.UserId != null)
-                return BadRequest("Provider account already set up");
-
-            // Create user account for provider
-            var user = new ConsignmentGenie.Core.Entities.User
-            {
-                Email = request.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                Role = UserRole.Provider,
-                OrganizationId = provider.OrganizationId,
-            };
-
-            await _unitOfWork.Users.AddAsync(user);
-            await _unitOfWork.SaveChangesAsync();
-
-            // Link provider to user
-            provider.UserId = user.Id;
-            provider.PortalAccess = true;
-            provider.InviteCode = null; // Clear invite code
-
-            await _unitOfWork.Providers.UpdateAsync(provider);
-            await _unitOfWork.SaveChangesAsync();
-
-            // Generate JWT token
-            var token = _authService.GenerateJwtToken(user.Id, user.Email, user.Role.ToString(), provider.OrganizationId);
-
-            return Ok(new
-            {
-                success = true,
-                message = "Provider account setup successful",
-                data = new
-                {
-                    token,
-                    userId = user.Id,
-                    email = user.Email,
-                    role = (int)user.Role,
-                    providerId = provider.Id,
-                    providerName = provider.DisplayName,
-                    organizationId = provider.OrganizationId,
-                    organizationName = provider.Organization.Name
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error setting up provider account");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
-    [HttpPost("login")]
-    public async Task<IActionResult> LoginProvider([FromBody] ProviderPortalLoginRequest request)
-    {
-        try
-        {
-            // Find provider by email and invite code (for initial login)
-            var provider = await _unitOfWork.Providers
-                .GetAsync(p => p.Email == request.Email,
-                    includeProperties: "Organization,User");
-
-            if (provider?.User == null)
-                return BadRequest("Invalid credentials");
-
-            if (!BCrypt.Net.BCrypt.Verify(request.InviteCode, provider.User.PasswordHash))
-                return BadRequest("Invalid credentials");
-
-            // Generate JWT token
-            var token = _authService.GenerateJwtToken(provider.User.Id, provider.User.Email, provider.User.Role.ToString(), provider.OrganizationId);
-
-            return Ok(new
-            {
-                success = true,
-                message = "Login successful",
-                data = new
-                {
-                    token,
-                    userId = provider.User.Id,
-                    email = provider.User.Email,
-                    role = (int)provider.User.Role,
-                    providerId = provider.Id,
-                    providerName = provider.DisplayName,
-                    organizationId = provider.OrganizationId,
-                    organizationName = provider.Organization.Name
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during provider login");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
+    // DASHBOARD
     [HttpGet("dashboard")]
-    [Authorize(Roles = "Provider")]
-    public async Task<IActionResult> GetProviderDashboard()
+    public async Task<ActionResult<ProviderDashboardDto>> GetDashboard()
     {
         try
         {
-            var providerId = User.FindFirst("ProviderId")?.Value;
-            if (string.IsNullOrEmpty(providerId))
+            var providerId = GetCurrentProviderId();
+            if (providerId == null)
                 return BadRequest("Provider not found");
 
             var provider = await _unitOfWork.Providers
-                .GetAsync(p => p.Id == Guid.Parse(providerId), includeProperties: "Items,Payouts");
+                .GetAsync(p => p.Id == providerId.Value,
+                    includeProperties: "Items,Payouts,Transactions,Organization");
 
             if (provider == null)
                 return NotFound("Provider not found");
 
             // Calculate dashboard metrics
-            var totalEarnings = provider.Payouts
-                .Where(p => p.PaidAt.HasValue)
-                .Sum(p => p.TotalAmount);
+            var now = DateTime.UtcNow;
+            var thisMonthStart = new DateTime(now.Year, now.Month, 1);
 
-            var pendingPayouts = provider.Payouts
-                .Where(p => !p.PaidAt.HasValue)
-                .Sum(p => p.TotalAmount);
-
-            var activeItems = provider.Items
-                .Count(i => i.Status == ItemStatus.Available);
-
-            var soldItems = provider.Items
-                .Count(i => i.Status == ItemStatus.Sold);
-
-            var lastPayoutDate = provider.Payouts
-                .Where(p => p.PaidAt.HasValue)
-                .OrderByDescending(p => p.PaidAt)
-                .FirstOrDefault()?.PaidAt;
-
-            var dashboard = new ProviderDashboardResponse
+            var dashboard = new ProviderDashboardDto
             {
+                ShopName = provider.Organization.Name,
                 ProviderName = provider.DisplayName,
-                TotalEarnings = totalEarnings,
-                PendingPayouts = pendingPayouts,
-                ActiveItems = activeItems,
-                SoldItems = soldItems,
-                LastPayoutDate = lastPayoutDate,
-                CommissionRate = provider.DefaultSplitPercentage
+
+                // Items
+                TotalItems = provider.Items.Count,
+                AvailableItems = provider.Items.Count(i => i.Status == ItemStatus.Available),
+                SoldItems = provider.Items.Count(i => i.Status == ItemStatus.Sold),
+                InventoryValue = provider.Items
+                    .Where(i => i.Status == ItemStatus.Available)
+                    .Sum(i => i.Price * (provider.CommissionRate / 100)),
+
+                // Earnings
+                PendingBalance = provider.Transactions
+                    .Where(t => t.PayoutId == null)
+                    .Sum(t => t.ProviderAmount),
+                TotalEarningsAllTime = provider.Transactions
+                    .Sum(t => t.ProviderAmount),
+                EarningsThisMonth = provider.Transactions
+                    .Where(t => t.SaleDate >= thisMonthStart)
+                    .Sum(t => t.ProviderAmount),
+
+                // Recent activity - get last 5 sales
+                RecentSales = provider.Transactions
+                    .OrderByDescending(t => t.SaleDate)
+                    .Take(5)
+                    .Select(t => new ProviderSaleDto
+                    {
+                        TransactionId = t.Id,
+                        SaleDate = t.SaleDate,
+                        ItemTitle = t.Item?.Title ?? "Unknown Item",
+                        ItemSku = t.Item?.Sku ?? "",
+                        SalePrice = t.SalePrice,
+                        MyEarnings = t.ProviderAmount,
+                        PayoutStatus = t.PayoutId != null ? "Paid" : "Pending"
+                    }).ToList(),
+
+                // Last payout
+                LastPayout = provider.Payouts
+                    .Where(p => p.PaidAt.HasValue)
+                    .OrderByDescending(p => p.PaidAt)
+                    .Select(p => new ProviderPayoutDto
+                    {
+                        PayoutId = p.Id,
+                        PayoutNumber = p.PayoutNumber,
+                        PayoutDate = p.PaidAt!.Value,
+                        Amount = p.TotalAmount,
+                        PaymentMethod = provider.PaymentMethod ?? "Not Set",
+                        ItemCount = p.Transactions.Count()
+                    })
+                    .FirstOrDefault()
             };
 
-            return Ok(new { success = true, data = dashboard });
+            return Ok(dashboard);
         }
         catch (Exception ex)
         {
@@ -188,35 +112,72 @@ public class ProviderPortalController : ControllerBase
         }
     }
 
+    // MY ITEMS
     [HttpGet("items")]
-    [Authorize(Roles = "Provider")]
-    public async Task<IActionResult> GetProviderItems()
+    public async Task<ActionResult<PagedResult<ProviderItemDto>>> GetMyItems(
+        [FromQuery] ProviderItemQueryParams queryParams)
     {
         try
         {
-            var providerId = User.FindFirst("ProviderId")?.Value;
-            if (string.IsNullOrEmpty(providerId))
+            var providerId = GetCurrentProviderId();
+            if (providerId == null)
                 return BadRequest("Provider not found");
 
-            var items = await _unitOfWork.Items
-                .GetAllAsync(i => i.ProviderId == Guid.Parse(providerId), includeProperties: "Photos");
+            var itemsQuery = await _unitOfWork.Items
+                .GetAllAsync(i => i.ProviderId == providerId.Value,
+                    includeProperties: "Provider,Transactions");
+            var items = itemsQuery.ToList();
 
-            var itemResponses = items.Select(item => new ProviderItemResponse
+            // Apply filters
+            if (!string.IsNullOrEmpty(queryParams.Status))
             {
-                Id = item.Id,
-                Name = item.Title,
-                Description = item.Description,
-                Price = item.Price,
-                Status = item.Status.ToString(),
-                DateAdded = item.CreatedAt,
-                DateSold = item.Status == ItemStatus.Sold ? item.UpdatedAt : null,
-                ProviderAmount = item.Status == ItemStatus.Sold
-                    ? item.Price * (item.Provider.DefaultSplitPercentage / 100)
-                    : null,
-                PhotoUrls = new List<string>() // TODO: Parse Photos JSON field
-            }).ToList();
+                if (Enum.TryParse<ItemStatus>(queryParams.Status, out var status))
+                    items = items.Where(i => i.Status == status).ToList();
+            }
 
-            return Ok(new { success = true, data = itemResponses });
+            if (!string.IsNullOrEmpty(queryParams.Category))
+                items = items.Where(i => i.Category == queryParams.Category).ToList();
+
+            if (!string.IsNullOrEmpty(queryParams.Search))
+                items = items.Where(i => i.Title.Contains(queryParams.Search, StringComparison.OrdinalIgnoreCase)
+                    || i.Description.Contains(queryParams.Search, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if (queryParams.DateFrom.HasValue)
+                items = items.Where(i => i.CreatedAt >= queryParams.DateFrom.Value).ToList();
+
+            if (queryParams.DateTo.HasValue)
+                items = items.Where(i => i.CreatedAt <= queryParams.DateTo.Value).ToList();
+
+            // Apply paging
+            var totalCount = items.Count;
+            var pagedItems = items
+                .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
+                .Select(item => new ProviderItemDto
+                {
+                    ItemId = item.Id,
+                    Sku = item.Sku,
+                    Title = item.Title,
+                    PrimaryImageUrl = ExtractPrimaryImage(item.Photos),
+                    Price = item.Price,
+                    MyEarnings = item.Price * (item.Provider.CommissionRate / 100),
+                    Category = item.Category,
+                    Status = item.Status.ToString(),
+                    ReceivedDate = item.CreatedAt,
+                    SoldDate = item.Status == ItemStatus.Sold ? (DateTime?)item.Transactions.FirstOrDefault()?.SaleDate : null,
+                    SalePrice = item.Status == ItemStatus.Sold ? (decimal?)item.Transactions.FirstOrDefault()?.SalePrice : null
+                })
+                .ToList();
+
+            var result = new PagedResult<ProviderItemDto>
+            {
+                Items = pagedItems,
+                TotalCount = totalCount,
+                Page = queryParams.Page,
+                PageSize = queryParams.PageSize
+            };
+
+            return Ok(result);
         }
         catch (Exception ex)
         {
@@ -225,33 +186,156 @@ public class ProviderPortalController : ControllerBase
         }
     }
 
-    [HttpGet("payouts")]
-    [Authorize(Roles = "Provider")]
-    public async Task<IActionResult> GetProviderPayouts()
+    [HttpGet("items/{id}")]
+    public async Task<ActionResult<ProviderItemDetailDto>> GetMyItem(Guid id)
     {
         try
         {
-            var providerId = User.FindFirst("ProviderId")?.Value;
-            if (string.IsNullOrEmpty(providerId))
+            var providerId = GetCurrentProviderId();
+            if (providerId == null)
+                return BadRequest("Provider not found");
+
+            var item = await _unitOfWork.Items
+                .GetAsync(i => i.Id == id && i.ProviderId == providerId.Value,
+                    includeProperties: "Provider,Transactions");
+
+            if (item == null)
+                return NotFound("Item not found");
+
+            var itemDetail = new ProviderItemDetailDto
+            {
+                ItemId = item.Id,
+                Sku = item.Sku,
+                Title = item.Title,
+                Description = item.Description,
+                PrimaryImageUrl = ExtractPrimaryImage(item.Photos),
+                ImageUrls = ExtractAllImages(item.Photos),
+                Price = item.Price,
+                MyEarnings = item.Price * (item.Provider.CommissionRate / 100),
+                Category = item.Category,
+                Status = item.Status.ToString(),
+                ReceivedDate = item.CreatedAt,
+                SoldDate = item.Status == ItemStatus.Sold ? item.Transactions.FirstOrDefault()?.SaleDate : null,
+                SalePrice = item.Status == ItemStatus.Sold ? item.Transactions.FirstOrDefault()?.SalePrice : null,
+                Notes = item.Notes ?? ""
+            };
+
+            return Ok(itemDetail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting provider item detail");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    // MY SALES
+    [HttpGet("sales")]
+    public async Task<ActionResult<PagedResult<ProviderSaleDto>>> GetMySales(
+        [FromQuery] ProviderSaleQueryParams queryParams)
+    {
+        try
+        {
+            var providerId = GetCurrentProviderId();
+            if (providerId == null)
+                return BadRequest("Provider not found");
+
+            var transactionsQuery = await _unitOfWork.Transactions
+                .GetAllAsync(t => t.ProviderId == providerId.Value,
+                    includeProperties: "Item,Payouts");
+            var transactions = transactionsQuery.ToList();
+
+            // Apply filters
+            if (queryParams.DateFrom.HasValue)
+                transactions = transactions.Where(t => t.SaleDate >= queryParams.DateFrom.Value).ToList();
+
+            if (queryParams.DateTo.HasValue)
+                transactions = transactions.Where(t => t.SaleDate <= queryParams.DateTo.Value).ToList();
+
+            if (!string.IsNullOrEmpty(queryParams.PayoutStatus))
+            {
+                switch (queryParams.PayoutStatus.ToLower())
+                {
+                    case "paid":
+                        transactions = transactions.Where(t => t.PayoutId != null).ToList();
+                        break;
+                    case "pending":
+                        transactions = transactions.Where(t => t.PayoutId == null).ToList();
+                        break;
+                }
+            }
+
+            // Apply paging
+            var totalCount = transactions.Count;
+            var pagedSales = transactions
+                .OrderByDescending(t => t.SaleDate)
+                .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
+                .Select(t => new ProviderSaleDto
+                {
+                    TransactionId = t.Id,
+                    SaleDate = t.SaleDate,
+                    ItemTitle = t.Item?.Title ?? "Unknown Item",
+                    ItemSku = t.Item?.Sku ?? "",
+                    SalePrice = t.SalePrice,
+                    MyEarnings = t.ProviderAmount,
+                    PayoutStatus = t.PayoutId != null ? "Paid" : "Pending"
+                })
+                .ToList();
+
+            var result = new PagedResult<ProviderSaleDto>
+            {
+                Items = pagedSales,
+                TotalCount = totalCount,
+                Page = queryParams.Page,
+                PageSize = queryParams.PageSize
+            };
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting provider sales");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    // MY PAYOUTS
+    [HttpGet("payouts")]
+    public async Task<ActionResult<PagedResult<ProviderPayoutDto>>> GetMyPayouts()
+    {
+        try
+        {
+            var providerId = GetCurrentProviderId();
+            if (providerId == null)
                 return BadRequest("Provider not found");
 
             var payouts = await _unitOfWork.Payouts
-                .GetAllAsync(p => p.ProviderId == Guid.Parse(providerId),
-                    includeProperties: "Provider");
+                .GetAllAsync(p => p.ProviderId == providerId.Value,
+                    includeProperties: "Provider,Transactions");
 
-            var payoutResponses = payouts.Select(payout => new ProviderPayoutResponse
+            var payoutDtos = payouts
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new ProviderPayoutDto
+                {
+                    PayoutId = p.Id,
+                    PayoutNumber = p.PayoutNumber,
+                    PayoutDate = p.PaidAt ?? p.CreatedAt,
+                    Amount = p.TotalAmount,
+                    PaymentMethod = p.Provider.PaymentMethod ?? "Not Set",
+                    ItemCount = p.Transactions.Count()
+                })
+                .ToList();
+
+            var result = new PagedResult<ProviderPayoutDto>
             {
-                Id = payout.Id,
-                Amount = payout.TotalAmount,
-                PeriodStart = payout.PeriodStart,
-                PeriodEnd = payout.PeriodEnd,
-                PayoutDate = payout.PaidAt,
-                Status = payout.PaidAt.HasValue ? "Paid" : "Pending",
-                ItemCount = 0, // Would need to query transactions for this
-                Items = new() // Would need to populate from transaction items
-            }).OrderByDescending(p => p.PeriodEnd).ToList();
+                Items = payoutDtos,
+                TotalCount = payoutDtos.Count,
+                Page = 1,
+                PageSize = payoutDtos.Count
+            };
 
-            return Ok(new { success = true, data = payoutResponses });
+            return Ok(result);
         }
         catch (Exception ex)
         {
@@ -260,52 +344,166 @@ public class ProviderPortalController : ControllerBase
         }
     }
 
-    [HttpPost("send-invite")]
-    [Authorize(Roles = "Owner")]
-    public async Task<IActionResult> SendProviderInvite([FromBody] SendProviderInviteRequest request)
+    [HttpGet("payouts/{id}")]
+    public async Task<ActionResult<ProviderPayoutDetailDto>> GetMyPayout(Guid id)
     {
         try
         {
-            var organizationId = User.FindFirst("OrganizationId")?.Value;
-            if (string.IsNullOrEmpty(organizationId))
-                return BadRequest("Organization not found");
+            var providerId = GetCurrentProviderId();
+            if (providerId == null)
+                return BadRequest("Provider not found");
+
+            var payout = await _unitOfWork.Payouts
+                .GetAsync(p => p.Id == id && p.ProviderId == providerId.Value,
+                    includeProperties: "Provider,Transactions.Item");
+
+            if (payout == null)
+                return NotFound("Payout not found");
+
+            var payoutDetail = new ProviderPayoutDetailDto
+            {
+                PayoutId = payout.Id,
+                PayoutNumber = payout.PayoutNumber,
+                PayoutDate = payout.PaidAt ?? payout.CreatedAt,
+                Amount = payout.TotalAmount,
+                PaymentMethod = payout.Provider.PaymentMethod ?? "Not Set",
+                ItemCount = payout.Transactions.Count(),
+                PaymentReference = payout.PaymentReference ?? "",
+                PeriodStart = payout.PeriodStart,
+                PeriodEnd = payout.PeriodEnd,
+                Items = payout.Transactions
+                    .Select(t => new ProviderSaleDto
+                    {
+                        TransactionId = t.Id,
+                        SaleDate = t.SaleDate,
+                        ItemTitle = t.Item?.Title ?? "Unknown Item",
+                        ItemSku = t.Item?.Sku ?? "",
+                        SalePrice = t.SalePrice,
+                        MyEarnings = t.ProviderAmount,
+                        PayoutStatus = "Paid"
+                    })
+                    .ToList()
+            };
+
+            return Ok(payoutDetail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting provider payout detail");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    // PROFILE
+    [HttpGet("profile")]
+    public async Task<ActionResult<ProviderProfileDto>> GetProfile()
+    {
+        try
+        {
+            var providerId = GetCurrentProviderId();
+            if (providerId == null)
+                return BadRequest("Provider not found");
 
             var provider = await _unitOfWork.Providers
-                .GetByIdAsync(request.ProviderId);
+                .GetAsync(p => p.Id == providerId.Value,
+                    includeProperties: "Organization");
 
-            if (provider == null || provider.OrganizationId != Guid.Parse(organizationId))
+            if (provider == null)
                 return NotFound("Provider not found");
 
-            if (provider.PortalAccess)
-                return BadRequest("Provider already has portal access");
+            var profile = new ProviderProfileDto
+            {
+                ProviderId = provider.Id,
+                FullName = provider.DisplayName,
+                Email = provider.Email,
+                Phone = provider.Phone,
+                CommissionRate = provider.CommissionRate,
+                PreferredPaymentMethod = provider.PaymentMethod,
+                PaymentDetails = provider.PaymentDetails,
+                EmailNotifications = true, // TODO: Add to Provider entity
+                MemberSince = provider.CreatedAt,
+                OrganizationName = provider.Organization.Name
+            };
 
-            // Generate invite code
-            provider.InviteCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
-            provider.InviteExpiry = DateTime.UtcNow.AddDays(7);
+            return Ok(profile);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting provider profile");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpPut("profile")]
+    public async Task<ActionResult<ProviderProfileDto>> UpdateProfile(
+        [FromBody] UpdateProviderProfileRequest request)
+    {
+        try
+        {
+            var providerId = GetCurrentProviderId();
+            if (providerId == null)
+                return BadRequest("Provider not found");
+
+            var provider = await _unitOfWork.Providers
+                .GetAsync(p => p.Id == providerId.Value,
+                    includeProperties: "Organization");
+
+            if (provider == null)
+                return NotFound("Provider not found");
+
+            // Update editable fields
+            provider.DisplayName = request.FullName;
+            provider.Phone = request.Phone;
+            provider.PaymentMethod = request.PreferredPaymentMethod;
+            provider.PaymentDetails = request.PaymentDetails;
+            // TODO: Add EmailNotifications to Provider entity
 
             await _unitOfWork.Providers.UpdateAsync(provider);
             await _unitOfWork.SaveChangesAsync();
 
-            // TODO: Send email with invite link
-            // var inviteLink = $"{_configuration["Frontend:BaseUrl"]}/provider-portal/setup?code={provider.InviteCode}&email={provider.Email}";
-
-            return Ok(new
+            var updatedProfile = new ProviderProfileDto
             {
-                success = true,
-                message = "Invite sent successfully",
-                data = new { inviteCode = provider.InviteCode }
-            });
+                ProviderId = provider.Id,
+                FullName = provider.DisplayName,
+                Email = provider.Email,
+                Phone = provider.Phone,
+                CommissionRate = provider.CommissionRate,
+                PreferredPaymentMethod = provider.PaymentMethod,
+                PaymentDetails = provider.PaymentDetails,
+                EmailNotifications = request.EmailNotifications,
+                MemberSince = provider.CreatedAt,
+                OrganizationName = provider.Organization.Name
+            };
+
+            return Ok(updatedProfile);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending provider invite");
+            _logger.LogError(ex, "Error updating provider profile");
             return StatusCode(500, "Internal server error");
         }
     }
-}
 
-public class SendProviderInviteRequest
-{
-    [Required]
-    public Guid ProviderId { get; set; }
+    // Helper methods
+    private Guid? GetCurrentProviderId()
+    {
+        var providerIdClaim = User.FindFirst("ProviderId")?.Value;
+        if (string.IsNullOrEmpty(providerIdClaim) || !Guid.TryParse(providerIdClaim, out var providerId))
+            return null;
+        return providerId;
+    }
+
+    private string ExtractPrimaryImage(string? photosJson)
+    {
+        // TODO: Parse Photos JSON field and return first image URL
+        // For now return placeholder
+        return "";
+    }
+
+    private List<string> ExtractAllImages(string? photosJson)
+    {
+        // TODO: Parse Photos JSON field and return all image URLs
+        // For now return empty list
+        return new List<string>();
+    }
 }

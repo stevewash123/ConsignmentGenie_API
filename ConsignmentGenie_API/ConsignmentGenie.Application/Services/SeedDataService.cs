@@ -1,5 +1,6 @@
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Core.Extensions;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -83,7 +84,7 @@ public class SeedDataService
                 Phone = "(555) 123-4567",
                 DefaultSplitPercentage = 50.00m,
                 CommissionRate = 50.00m,
-                PaymentMethod = "Venmo",
+                PreferredPaymentMethod = "Venmo",
                 PaymentDetails = "{\"venmo\": \"@jane-doe\"}",
                 Status = ProviderStatus.Active,
                 BusinessName = "Jane's Vintage Collection",
@@ -101,7 +102,7 @@ public class SeedDataService
                 Phone = "(555) 234-5678",
                 DefaultSplitPercentage = 40.00m,
                 CommissionRate = 60.00m,
-                PaymentMethod = "Check",
+                PreferredPaymentMethod = "Check",
                 PaymentDetails = "{\"address\": \"456 Oak Ave, Springfield 12345\"}",
                 Status = ProviderStatus.Active,
                 Notes = "Brings furniture and home decor items"
@@ -115,7 +116,7 @@ public class SeedDataService
                 Phone = "(555) 345-6789",
                 DefaultSplitPercentage = 55.00m,
                 CommissionRate = 45.00m,
-                PaymentMethod = "Zelle",
+                PreferredPaymentMethod = "Zelle",
                 PaymentDetails = "{\"zelle\": \"maria.garcia@email.com\"}",
                 Status = ProviderStatus.Active,
                 BusinessName = "Maria's Designer Finds",
@@ -130,7 +131,7 @@ public class SeedDataService
                 Phone = "(555) 456-7890",
                 DefaultSplitPercentage = 50.00m,
                 CommissionRate = 50.00m,
-                PaymentMethod = "Venmo",
+                PreferredPaymentMethod = "Venmo",
                 PaymentDetails = "{\"venmo\": \"@tom-johnson\"}",
                 Status = ProviderStatus.Active,
                 Notes = "Mid-century modern furniture specialist"
@@ -144,7 +145,7 @@ public class SeedDataService
                 Phone = "(555) 567-8901",
                 DefaultSplitPercentage = 45.00m,
                 CommissionRate = 55.00m,
-                PaymentMethod = "PayPal",
+                PreferredPaymentMethod = "PayPal",
                 PaymentDetails = "{\"paypal\": \"sarah.williams@email.com\"}",
                 Status = ProviderStatus.Active,
                 BusinessName = "Sarah's Jewelry Box",
@@ -159,7 +160,7 @@ public class SeedDataService
                 Phone = "(555) 678-9012",
                 DefaultSplitPercentage = 60.00m,
                 CommissionRate = 40.00m,
-                PaymentMethod = "Check",
+                PreferredPaymentMethod = "Check",
                 PaymentDetails = "{\"address\": \"789 Pine St, Springfield 12345\"}",
                 Status = ProviderStatus.Active,
                 Notes = "Books, electronics, and collectibles"
@@ -173,7 +174,7 @@ public class SeedDataService
                 Phone = "(555) 789-0123",
                 DefaultSplitPercentage = 50.00m,
                 CommissionRate = 50.00m,
-                PaymentMethod = "Venmo",
+                PreferredPaymentMethod = "Venmo",
                 PaymentDetails = "{\"venmo\": \"@lisa-davis\"}",
                 Status = ProviderStatus.Inactive,
                 Notes = "Currently inactive - seasonal provider"
@@ -187,7 +188,7 @@ public class SeedDataService
                 Phone = "(555) 890-1234",
                 DefaultSplitPercentage = 35.00m,
                 CommissionRate = 65.00m,
-                PaymentMethod = "Venmo",
+                PreferredPaymentMethod = "Venmo",
                 PaymentDetails = "{\"venmo\": \"@john-wilson\"}",
                 Status = ProviderStatus.Active,
                 BusinessName = "Wilson's Art Gallery",
@@ -260,18 +261,18 @@ public class SeedDataService
             ItemStatus status;
             if (i < 25) status = ItemStatus.Available;
             else if (i < 35) status = ItemStatus.Sold;
-            else status = ItemStatus.Returned;
+            else status = ItemStatus.Removed;
 
             var item = new Item
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = orgId,
                 ProviderId = provider.Id,
-                SKU = $"WA{1000 + i}",
+                Sku = $"WA{1000 + i}",
                 Title = template.Item1,
                 Description = template.Item2,
                 Price = template.Item3,
-                CostBasis = template.Item3 * 0.6m, // Rough cost basis
+                Condition = Core.Enums.ItemCondition.Good,
                 Category = categories[random.Next(categories.Length)],
                 Status = status,
                 CreatedAt = DateTime.UtcNow.AddDays(-random.Next(1, 90))
@@ -358,7 +359,7 @@ public class SeedDataService
             {
                 transaction.ProviderPaidOut = true;
                 transaction.ProviderPaidOutDate = payoutDate;
-                transaction.PayoutMethod = provider.PaymentMethod;
+                transaction.PayoutMethod = provider.PreferredPaymentMethod;
                 transaction.PayoutNotes = $"Monthly payout - {payoutDate:MMM yyyy}";
             }
         }

@@ -3,6 +3,7 @@ using ConsignmentGenie.Application.DTOs.Transaction;
 using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Core.Extensions;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,8 +50,8 @@ public class TransactionService : ITransactionService
                 ? query.OrderBy(t => t.SalePrice)
                 : query.OrderByDescending(t => t.SalePrice),
             "provider" => queryParams.SortDirection?.ToLower() == "asc"
-                ? query.OrderBy(t => t.Provider.DisplayName)
-                : query.OrderByDescending(t => t.Provider.DisplayName),
+                ? query.OrderBy(t => t.Provider.GetDisplayName())
+                : query.OrderByDescending(t => t.Provider.GetDisplayName()),
             "item" => queryParams.SortDirection?.ToLower() == "asc"
                 ? query.OrderBy(t => t.Item.Title)
                 : query.OrderByDescending(t => t.Item.Title),
@@ -88,7 +89,7 @@ public class TransactionService : ITransactionService
                 Provider = new ProviderSummaryDto
                 {
                     Id = t.Provider.Id,
-                    Name = t.Provider.DisplayName,
+                    Name = t.Provider.GetDisplayName(),
                     Email = t.Provider.Email
                 }
             })
@@ -141,7 +142,7 @@ public class TransactionService : ITransactionService
             Provider = new ProviderSummaryDto
             {
                 Id = transaction.Provider.Id,
-                Name = transaction.Provider.DisplayName,
+                Name = transaction.Provider.GetDisplayName(),
                 Email = transaction.Provider.Email
             }
         };
@@ -225,7 +226,7 @@ public class TransactionService : ITransactionService
             Provider = new ProviderSummaryDto
             {
                 Id = provider.Id,
-                Name = provider.DisplayName,
+                Name = provider.GetDisplayName(),
                 Email = provider.Email
             }
         };
@@ -280,7 +281,7 @@ public class TransactionService : ITransactionService
             Provider = new ProviderSummaryDto
             {
                 Id = transaction.Provider.Id,
-                Name = transaction.Provider.DisplayName,
+                Name = transaction.Provider.GetDisplayName(),
                 Email = transaction.Provider.Email
             }
         };
@@ -336,11 +337,11 @@ public class TransactionService : ITransactionService
         var transactionCount = transactions.Count;
 
         var topProviders = transactions
-            .GroupBy(t => new { t.ProviderId, t.Provider.DisplayName })
+            .GroupBy(t => new { t.ProviderId, ProviderName = t.Provider.FirstName + " " + t.Provider.LastName })
             .Select(g => new ProviderSalesDto
             {
                 ProviderId = g.Key.ProviderId,
-                ProviderName = g.Key.DisplayName,
+                ProviderName = g.Key.ProviderName,
                 TransactionCount = g.Count(),
                 TotalSales = g.Sum(t => t.SalePrice),
                 TotalProviderAmount = g.Sum(t => t.ProviderAmount)

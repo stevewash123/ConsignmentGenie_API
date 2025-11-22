@@ -5,20 +5,17 @@ namespace ConsignmentGenie.Core.Enums;
 public enum ItemCondition
 {
     [Display(Name = "New")]
-    New = 1,
+    New = 1,        // Brand new, tags attached
 
     [Display(Name = "Like New")]
-    LikeNew = 2,
-
-    [Display(Name = "Excellent")]
-    Excellent = 3,
+    LikeNew = 2,    // Excellent condition, barely used
 
     [Display(Name = "Good")]
-    Good = 4,
+    Good = 3,       // Normal wear, good condition
 
     [Display(Name = "Fair")]
-    Fair = 5,
+    Fair = 4,       // Visible wear, still functional
 
     [Display(Name = "Poor")]
-    Poor = 6
+    Poor = 5        // Significant wear, priced accordingly
 }

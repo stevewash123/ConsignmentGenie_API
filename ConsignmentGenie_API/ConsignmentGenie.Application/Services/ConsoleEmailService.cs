@@ -1,4 +1,5 @@
 using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace ConsignmentGenie.Application.Services;
@@ -84,6 +85,35 @@ public class ConsoleEmailService : IEmailService
             "  Integration: {Integration}\n" +
             "  Error: {ErrorMessage}",
             email, integration, integration, errorMessage
+        );
+
+        await Task.Delay(100);
+        return true;
+    }
+
+    public async Task<bool> SendSuggestionNotificationAsync(Suggestion suggestion)
+    {
+        _logger.LogInformation(
+            "[CONSOLE EMAIL] Suggestion Notification\n" +
+            "  From: {UserName} ({UserEmail})\n" +
+            "  Type: {SuggestionType}\n" +
+            "  Message: {Message}",
+            suggestion.UserName, suggestion.UserEmail, suggestion.Type, suggestion.Message
+        );
+
+        await Task.Delay(100);
+        return true;
+    }
+
+    public async Task<bool> SendSimpleEmailAsync(string toEmail, string subject, string body, bool isHtml = true)
+    {
+        _logger.LogInformation(
+            "[CONSOLE EMAIL] Simple Email\n" +
+            "  To: {Email}\n" +
+            "  Subject: {Subject}\n" +
+            "  Body: {Body}\n" +
+            "  HTML: {IsHtml}",
+            toEmail, subject, body, isHtml
         );
 
         await Task.Delay(100);

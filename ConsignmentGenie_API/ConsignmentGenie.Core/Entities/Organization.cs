@@ -14,6 +14,9 @@ public class Organization : BaseEntity
     [MaxLength(50)]
     public string? Subdomain { get; set; }
 
+    [MaxLength(100)]
+    public string? Slug { get; set; }
+
     public string? Settings { get; set; }  // JSON: terminology mappings, defaults
 
     // Stripe (Phase 2 - include fields now)
@@ -53,6 +56,12 @@ public class Organization : BaseEntity
     public DateTime? QuickBooksTokenExpiry { get; set; }
 
     public DateTime? QuickBooksLastSync { get; set; }
+
+    // Registration fields (Phase 4)
+    [MaxLength(20)]
+    public string? StoreCode { get; set; }
+
+    public bool StoreCodeEnabled { get; set; } = true;
 
     // Navigation properties
     public ICollection<User> Users { get; set; } = new List<User>();

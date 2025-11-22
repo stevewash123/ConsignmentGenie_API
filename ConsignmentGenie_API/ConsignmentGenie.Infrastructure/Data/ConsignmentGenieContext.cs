@@ -15,6 +15,8 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Provider> Providers { get; set; }
     public DbSet<Item> Items { get; set; }
+    public DbSet<ItemImage> ItemImages { get; set; }
+    public DbSet<Category> Categories { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<Payout> Payouts { get; set; }
     public DbSet<SubscriptionEvent> SubscriptionEvents { get; set; }
@@ -26,6 +28,12 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<ItemTagAssignment> ItemTagAssignments { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<Suggestion> Suggestions { get; set; }
+    public DbSet<UserNotificationPreference> UserNotificationPreferences { get; set; }
+    public DbSet<NotificationPreferences> NotificationPreferences { get; set; }
+    public DbSet<Statement> Statements { get; set; }
+    public DbSet<Shopper> Shoppers { get; set; }
+    public DbSet<GuestCheckout> GuestCheckouts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +44,7 @@ public class ConsignmentGenieContext : DbContext
         {
             entity.HasIndex(o => o.Name);
             entity.HasIndex(o => o.Subdomain).IsUnique();
+            entity.HasIndex(o => o.Slug).IsUnique();
         });
 
         // User configuration
@@ -51,21 +60,43 @@ public class ConsignmentGenieContext : DbContext
         // Provider configuration
         modelBuilder.Entity<Provider>(entity =>
         {
+            entity.HasIndex(p => new { p.OrganizationId, p.ProviderNumber }).IsUnique();
             entity.HasIndex(p => new { p.OrganizationId, p.Email }).IsUnique();
+            entity.HasIndex(p => new { p.OrganizationId, p.Status });
+            entity.HasIndex(p => p.ApprovalStatus);
+
             entity.HasOne(p => p.Organization)
                   .WithMany(o => o.Providers)
                   .HasForeignKey(p => p.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(p => p.User)
                   .WithOne(u => u.Provider)
                   .HasForeignKey<Provider>(p => p.UserId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(p => p.ApprovedByUser)
+                  .WithMany()
+                  .HasForeignKey(p => p.ApprovedBy)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(p => p.CreatedByUser)
+                  .WithMany()
+                  .HasForeignKey(p => p.CreatedBy)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(p => p.UpdatedByUser)
+                  .WithMany()
+                  .HasForeignKey(p => p.UpdatedBy)
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Item configuration
         modelBuilder.Entity<Item>(entity =>
         {
-            entity.HasIndex(i => new { i.OrganizationId, i.SKU }).IsUnique();
+            entity.HasIndex(i => new { i.OrganizationId, i.Sku }).IsUnique();
+            entity.HasIndex(i => new { i.OrganizationId, i.Status });
+            entity.HasIndex(i => new { i.OrganizationId, i.Category });
             entity.HasOne(i => i.Organization)
                   .WithMany(o => o.Items)
                   .HasForeignKey(i => i.OrganizationId)
@@ -74,6 +105,14 @@ public class ConsignmentGenieContext : DbContext
                   .WithMany(p => p.Items)
                   .HasForeignKey(i => i.ProviderId)
                   .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(i => i.CreatedByUser)
+                  .WithMany()
+                  .HasForeignKey(i => i.CreatedBy)
+                  .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(i => i.UpdatedByUser)
+                  .WithMany()
+                  .HasForeignKey(i => i.UpdatedBy)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Transaction configuration
@@ -191,26 +230,49 @@ public class ConsignmentGenieContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ItemTagAssignment configuration
+        // ItemTagAssignment configuration (junction table)
         modelBuilder.Entity<ItemTagAssignment>(entity =>
         {
-            entity.HasKey(e => new { e.ItemId, e.ItemTagId });
-            entity.HasOne(e => e.Item)
-                  .WithMany(i => i.ItemTagAssignments)
-                  .HasForeignKey(e => e.ItemId)
+            entity.HasKey(ita => new { ita.ItemId, ita.ItemTagId });
+            entity.HasOne(ita => ita.Item)
+                  .WithMany()
+                  .HasForeignKey(ita => ita.ItemId)
                   .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.ItemTag)
-                  .WithMany(t => t.ItemTagAssignments)
-                  .HasForeignKey(e => e.ItemTagId)
+            entity.HasOne(ita => ita.ItemTag)
+                  .WithMany(it => it.ItemTagAssignments)
+                  .HasForeignKey(ita => ita.ItemTagId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Update Item configuration to include new relationships
-        modelBuilder.Entity<Item>(entity =>
+        // ItemImage configuration
+        modelBuilder.Entity<ItemImage>(entity =>
         {
-            entity.HasOne(i => i.ItemCategory)
-                  .WithMany(c => c.Items)
-                  .HasForeignKey(i => i.CategoryId)
+            entity.HasIndex(i => i.ItemId);
+            entity.HasOne(i => i.Item)
+                  .WithMany(item => item.Images)
+                  .HasForeignKey(i => i.ItemId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(i => i.CreatedByUser)
+                  .WithMany()
+                  .HasForeignKey(i => i.CreatedBy)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Category configuration
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.HasIndex(c => new { c.OrganizationId, c.Name }).IsUnique();
+            entity.HasOne(c => c.Organization)
+                  .WithMany()
+                  .HasForeignKey(c => c.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(c => c.CreatedByUser)
+                  .WithMany()
+                  .HasForeignKey(c => c.CreatedBy)
+                  .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(c => c.UpdatedByUser)
+                  .WithMany()
+                  .HasForeignKey(c => c.UpdatedBy)
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -231,20 +293,116 @@ public class ConsignmentGenieContext : DbContext
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // Notification configuration
+        // Notification configuration (Updated for Phase 2)
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasIndex(n => n.OrganizationId);
             entity.HasIndex(n => n.UserId);
+            entity.HasIndex(n => n.ProviderId);
             entity.HasIndex(n => new { n.UserId, n.IsRead });
             entity.HasIndex(n => n.CreatedAt);
+            entity.HasIndex(n => n.Type);
+
             entity.HasOne(n => n.Organization)
                   .WithMany()
                   .HasForeignKey(n => n.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(n => n.User)
                   .WithMany()
                   .HasForeignKey(n => n.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(n => n.Provider)
+                  .WithMany()
+                  .HasForeignKey(n => n.ProviderId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Suggestion configuration
+        modelBuilder.Entity<Suggestion>(entity =>
+        {
+            entity.HasIndex(s => s.OrganizationId);
+            entity.HasIndex(s => s.UserId);
+            entity.HasIndex(s => s.Type);
+            entity.HasIndex(s => s.CreatedAt);
+            entity.HasIndex(s => s.IsProcessed);
+            entity.HasOne(s => s.Organization)
+                  .WithMany()
+                  .HasForeignKey(s => s.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(s => s.User)
+                  .WithMany()
+                  .HasForeignKey(s => s.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserNotificationPreference configuration
+        modelBuilder.Entity<UserNotificationPreference>(entity =>
+        {
+            entity.HasIndex(p => p.UserId);
+            entity.HasIndex(p => p.NotificationType);
+            entity.HasIndex(p => new { p.UserId, p.NotificationType }).IsUnique();
+            entity.HasOne(p => p.User)
+                  .WithMany()
+                  .HasForeignKey(p => p.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // NotificationPreferences configuration (Phase 2)
+        modelBuilder.Entity<NotificationPreferences>(entity =>
+        {
+            entity.HasIndex(p => p.UserId).IsUnique();
+            entity.HasOne(p => p.User)
+                  .WithOne()
+                  .HasForeignKey<NotificationPreferences>(p => p.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Statement configuration (Phase 2)
+        modelBuilder.Entity<Statement>(entity =>
+        {
+            entity.HasIndex(s => s.OrganizationId);
+            entity.HasIndex(s => s.ProviderId);
+            entity.HasIndex(s => new { s.ProviderId, s.PeriodStart }).IsDescending();
+            entity.HasIndex(s => new { s.OrganizationId, s.ProviderId, s.PeriodStart }).IsUnique();
+
+            entity.HasOne(s => s.Organization)
+                  .WithMany()
+                  .HasForeignKey(s => s.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(s => s.Provider)
+                  .WithMany()
+                  .HasForeignKey(s => s.ProviderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Shopper configuration
+        modelBuilder.Entity<Shopper>(entity =>
+        {
+            entity.HasIndex(s => s.OrganizationId);
+            entity.HasIndex(s => s.UserId).IsUnique();
+            entity.HasIndex(s => new { s.OrganizationId, s.Email }).IsUnique();
+            entity.HasOne(s => s.Organization)
+                  .WithMany()
+                  .HasForeignKey(s => s.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(s => s.User)
+                  .WithOne()
+                  .HasForeignKey<Shopper>(s => s.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GuestCheckout configuration
+        modelBuilder.Entity<GuestCheckout>(entity =>
+        {
+            entity.HasIndex(g => g.OrganizationId);
+            entity.HasIndex(g => g.SessionToken).IsUnique();
+            entity.HasIndex(g => g.ExpiresAt);
+            entity.HasOne(g => g.Organization)
+                  .WithMany()
+                  .HasForeignKey(g => g.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -335,10 +493,12 @@ public class ConsignmentGenieContext : DbContext
                 Id = providerId,
                 OrganizationId = orgId,
                 UserId = providerUserId,
-                DisplayName = "Demo Artist",
+                ProviderNumber = "PRV-00001",
+                FirstName = "Demo",
+                LastName = "Artist",
                 Email = "provider@demoshop.com",
                 Phone = "(555) 123-4567",
-                DefaultSplitPercentage = 60.00m,
+                CommissionRate = 0.6000m, // 60%
                 Status = ProviderStatus.Active,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow

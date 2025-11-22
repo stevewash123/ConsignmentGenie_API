@@ -7,7 +7,10 @@ public class Notification : BaseEntity
 {
     public Guid OrganizationId { get; set; }
 
-    public Guid? UserId { get; set; } // If null, it's an organization-wide notification
+    [Required]
+    public Guid UserId { get; set; }
+
+    public Guid? ProviderId { get; set; }
 
     [Required]
     [MaxLength(200)]
@@ -16,30 +19,33 @@ public class Notification : BaseEntity
     [Required]
     public string Message { get; set; } = string.Empty;
 
-    public NotificationType Type { get; set; } = NotificationType.Info;
+    [Required]
+    [MaxLength(50)]
+    public string Type { get; set; } = string.Empty; // item_sold, payout_processed, etc.
 
-    public NotificationPriority Priority { get; set; } = NotificationPriority.Normal;
+    // Related Entities (for linking/navigation)
+    [MaxLength(50)]
+    public string? RelatedEntityType { get; set; } // Item, Transaction, Payout, Statement
+    public Guid? RelatedEntityId { get; set; }
 
     // Status tracking
     public bool IsRead { get; set; } = false;
     public DateTime? ReadAt { get; set; }
-    public bool IsDismissed { get; set; } = false;
-    public DateTime? DismissedAt { get; set; }
 
-    // Action data
-    public string? ActionUrl { get; set; } // URL to navigate to when clicked
-    public string? ActionData { get; set; } // JSON data for the action
-
-    // Delivery tracking
+    // Email Tracking
     public bool EmailSent { get; set; } = false;
     public DateTime? EmailSentAt { get; set; }
-    public bool SmsSent { get; set; } = false;
-    public DateTime? SmsSentAt { get; set; }
+    [MaxLength(255)]
+    public string? EmailFailedReason { get; set; }
+
+    // Metadata (JSON for type-specific data)
+    public string? Metadata { get; set; } // Store as JSON string
 
     // Expiration
     public DateTime? ExpiresAt { get; set; }
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
-    public User? User { get; set; }
+    public User User { get; set; } = null!;
+    public Provider? Provider { get; set; }
 }

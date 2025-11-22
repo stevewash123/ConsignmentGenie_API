@@ -1,6 +1,9 @@
 using ConsignmentGenie.Application.DTOs;
 using ConsignmentGenie.Infrastructure.Data;
+using ConsignmentGenie.Core.DTOs.Admin;
+using ConsignmentGenie.Core.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConsignmentGenie.API.Controllers;
@@ -170,5 +173,127 @@ public class AdminController : ControllerBase
         _context.Providers.Add(provider);
 
         await _context.SaveChangesAsync();
+    }
+
+    // Owner Approval Endpoints
+    [HttpGet("pending-owners")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<PendingOwnerDto>>> GetPendingOwners()
+    {
+        var pendingOwners = await _context.Users
+            .Where(u => u.Role == UserRole.Owner && u.ApprovalStatus == ApprovalStatus.Pending)
+            .Include(u => u.Organization)
+            .Select(u => new PendingOwnerDto
+            {
+                UserId = u.Id,
+                FullName = u.FullName ?? string.Empty,
+                Email = u.Email,
+                Phone = u.Phone,
+                ShopName = u.Organization.Name,
+                RequestedAt = u.CreatedAt
+            })
+            .OrderBy(p => p.RequestedAt)
+            .ToListAsync();
+
+        return Ok(pendingOwners);
+    }
+
+    [HttpPost("{userId}/approve")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> ApproveOwner(Guid userId)
+    {
+        var user = await _context.Users
+            .Include(u => u.Organization)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        if (user.Role != UserRole.Owner)
+        {
+            return BadRequest("User is not an owner");
+        }
+
+        if (user.ApprovalStatus != ApprovalStatus.Pending)
+        {
+            return BadRequest("User is not pending approval");
+        }
+
+        // Approve the user
+        user.ApprovalStatus = ApprovalStatus.Approved;
+        user.ApprovedAt = DateTime.UtcNow;
+        user.ApprovedBy = GetCurrentUserId();
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Generate store code for the organization if it doesn't have one
+        if (string.IsNullOrEmpty(user.Organization.StoreCode))
+        {
+            user.Organization.StoreCode = await GenerateUniqueStoreCode();
+            user.Organization.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    [HttpPost("{userId}/reject")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> RejectOwner(Guid userId, [FromBody] RejectUserRequest request)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        if (user.Role != UserRole.Owner)
+        {
+            return BadRequest("User is not an owner");
+        }
+
+        if (user.ApprovalStatus != ApprovalStatus.Pending)
+        {
+            return BadRequest("User is not pending approval");
+        }
+
+        // Reject the user
+        user.ApprovalStatus = ApprovalStatus.Rejected;
+        user.RejectedReason = request.Reason;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        // Get the current user's ID from the JWT token
+        var userIdClaim = User.FindFirst("userId")?.Value;
+        if (userIdClaim != null && Guid.TryParse(userIdClaim, out var userId))
+        {
+            return userId;
+        }
+
+        // Fallback to admin user ID if not found
+        return new Guid("22222222-2222-2222-2222-222222222222");
+    }
+
+    private async Task<string> GenerateUniqueStoreCode()
+    {
+        var random = new Random();
+        string code;
+
+        do
+        {
+            code = random.Next(1000, 9999).ToString();
+        }
+        while (await _context.Organizations.AnyAsync(o => o.StoreCode == code));
+
+        return code;
     }
 }

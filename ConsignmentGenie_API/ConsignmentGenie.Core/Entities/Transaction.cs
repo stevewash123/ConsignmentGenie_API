@@ -64,14 +64,20 @@ public class Transaction : BaseEntity
 
     public string? Notes { get; set; }
 
-    // Payout tracking (MVP Phase 1)
+    // Payout tracking (Enhanced for Phase 1)
     public bool ProviderPaidOut { get; set; } = false;
     public DateTime? ProviderPaidOutDate { get; set; }
     public string? PayoutMethod { get; set; } // "Check", "Cash", "PayPal", "Bank Transfer"
     public string? PayoutNotes { get; set; }
 
+    // New Payout System Fields
+    public Guid? PayoutId { get; set; }
+    [MaxLength(20)]
+    public string PayoutStatus { get; set; } = "Pending"; // "Pending", "Paid"
+
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public Item Item { get; set; } = null!;
     public Provider Provider { get; set; } = null!;
+    public Payout? Payout { get; set; }
 }

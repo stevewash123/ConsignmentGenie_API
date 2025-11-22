@@ -71,7 +71,7 @@ public class MobileController : ControllerBase
                     name = item.Title,
                     price = item.Price,
                     provider = item.Provider.DisplayName,
-                    barcode = item.SKU
+                    barcode = item.Sku
                 })
                 .ToList();
 
@@ -152,7 +152,7 @@ public class MobileController : ControllerBase
                 return BadRequest("Organization not found");
 
             var item = await _unitOfWork.Items
-                .GetAsync(i => i.SKU == barcode &&
+                .GetAsync(i => i.Sku == barcode &&
                              i.OrganizationId == Guid.Parse(organizationId) &&
                              i.Status == ItemStatus.Available,
                     includeProperties: "Provider,Photos");
