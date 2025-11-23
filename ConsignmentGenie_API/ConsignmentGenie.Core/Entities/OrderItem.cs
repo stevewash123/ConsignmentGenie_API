@@ -13,26 +13,28 @@ public class OrderItem : BaseEntity
     [Required]
     public Guid ProviderId { get; set; }
 
+    // Snapshot at time of order (prices can change)
     [Required]
-    [Range(1, 100)]
-    public int Quantity { get; set; }
+    [MaxLength(200)]
+    public string ItemName { get; set; } = string.Empty;
 
     [Required]
-    public decimal Price { get; set; }
+    public decimal ItemPrice { get; set; }
+
+    // Provider split (for transaction creation)
+    [Required]
+    [Range(0, 100)]
+    public decimal SplitPercentage { get; set; }
 
     [Required]
     public decimal CommissionAmount { get; set; }
-
-    [Required]
-    [Range(0, 100)]
-    public decimal CommissionPercentage { get; set; }
 
     // Navigation properties
     public Order Order { get; set; } = null!;
     public Item Item { get; set; } = null!;
     public Provider Provider { get; set; } = null!;
 
-    // Computed properties
-    public decimal LineTotal => Price * Quantity;
+    // Computed properties - no quantity for consignment
+    public decimal LineTotal => ItemPrice;
     public decimal ProviderAmount => LineTotal - CommissionAmount;
 }

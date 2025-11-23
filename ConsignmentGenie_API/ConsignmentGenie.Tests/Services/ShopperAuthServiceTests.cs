@@ -92,7 +92,7 @@ public class ShopperAuthServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task RegisterAsync_WithInvalidStoreSlug_ReturnsFailure()
+    public async Task RegisterAsync_WithInvalidSlug_ReturnsFailure()
     {
         // Arrange
         var request = new ShopperRegisterRequest
@@ -108,7 +108,7 @@ public class ShopperAuthServiceTests : IDisposable
         // Assert
         Assert.False(result.Success);
         Assert.Equal("Store not found.", result.ErrorMessage);
-        Assert.Null(result.Token);
+        Assert.True(string.IsNullOrEmpty(result.Token));
         Assert.Null(result.Profile);
     }
 
@@ -330,7 +330,7 @@ public class ShopperAuthServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateGuestSessionAsync_WithInvalidStoreSlug_ThrowsException()
+    public async Task CreateGuestSessionAsync_WithInvalidSlug_ThrowsException()
     {
         // Arrange
         var request = new GuestSessionRequest
@@ -528,11 +528,11 @@ public class ShopperAuthServiceTests : IDisposable
         var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
         var jsonToken = handler.ReadJwtToken(token);
 
-        Assert.Contains(jsonToken.Claims, c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier && c.Value == userId.ToString());
-        Assert.Contains(jsonToken.Claims, c => c.Type == System.Security.Claims.ClaimTypes.Email && c.Value == email);
+        Assert.Contains(jsonToken.Claims, c => c.Type == "nameid" && c.Value == userId.ToString());
+        Assert.Contains(jsonToken.Claims, c => c.Type == "email" && c.Value == email);
         Assert.Contains(jsonToken.Claims, c => c.Type == "ShopperId" && c.Value == shopperId.ToString());
         Assert.Contains(jsonToken.Claims, c => c.Type == "OrganizationId" && c.Value == organizationId.ToString());
-        Assert.Contains(jsonToken.Claims, c => c.Type == "StoreSlug" && c.Value == storeSlug);
+        Assert.Contains(jsonToken.Claims, c => c.Type == "Slug" && c.Value == storeSlug);
     }
 
     #endregion

@@ -1,9 +1,11 @@
 using ConsignmentGenie.Application.DTOs;
 using ConsignmentGenie.Application.DTOs.Transaction;
 using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.DTOs.Notifications;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Core.Extensions;
+using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,10 +14,14 @@ namespace ConsignmentGenie.Application.Services;
 public class TransactionService : ITransactionService
 {
     private readonly ConsignmentGenieContext _context;
+    private readonly IProviderNotificationService _notificationService;
 
-    public TransactionService(ConsignmentGenieContext context)
+    public TransactionService(
+        ConsignmentGenieContext context,
+        IProviderNotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<PagedResult<TransactionDto>> GetTransactionsAsync(
@@ -200,6 +206,37 @@ public class TransactionService : ITransactionService
         item.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Send notification to provider about the sale
+        if (provider.UserId.HasValue)
+        {
+            try
+            {
+                await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
+                {
+                    OrganizationId = organizationId,
+                    UserId = provider.UserId.Value,
+                ProviderId = provider.Id,
+                Type = NotificationType.ItemSold,
+                Title = "Item Sold! 🎉",
+                Message = $"Your item \"{item.Title}\" sold for {transaction.SalePrice:C}. Your cut: {transaction.ProviderAmount:C}",
+                RelatedEntityType = "Transaction",
+                RelatedEntityId = transaction.Id,
+                Metadata = new NotificationMetadata
+                {
+                    ItemTitle = item.Title,
+                    ItemSku = item.Sku,
+                    SalePrice = transaction.SalePrice,
+                    EarningsAmount = transaction.ProviderAmount
+                }
+            });
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the transaction if notification fails
+                // TODO: Add proper logging
+            }
+        }
 
         // Return the created transaction with navigation properties
         return new TransactionDto

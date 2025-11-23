@@ -365,7 +365,7 @@ public class ShopperAuthService : IShopperAuthService
             new(ClaimTypes.Role, UserRole.Customer.ToString()), // Using Customer role for shoppers
             new("ShopperId", shopperId.ToString()),
             new("OrganizationId", organizationId.ToString()),
-            new("StoreSlug", storeSlug)
+            new("Slug", storeSlug)
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor

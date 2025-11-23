@@ -11,10 +11,20 @@ public class Transaction : BaseEntity
 
     public Guid ProviderId { get; set; }
 
+    // Link to order (for storefront transactions)
+    public Guid? OrderId { get; set; }
+
     [Column(TypeName = "decimal(10,2)")]
     public decimal SalePrice { get; set; }
 
     public DateTime SaleDate { get; set; }
+
+    // Alias for spec compatibility
+    public DateTime TransactionDate
+    {
+        get => SaleDate;
+        set => SaleDate = value;
+    }
 
     [MaxLength(50)]
     public string Source { get; set; } = "Manual";  // Manual for MVP, Phase 2+ will add: Square, Shopify, SquareOnline
@@ -75,9 +85,13 @@ public class Transaction : BaseEntity
     [MaxLength(20)]
     public string PayoutStatus { get; set; } = "Pending"; // "Pending", "Paid"
 
+    [MaxLength(20)]
+    public string Status { get; set; } = "Completed"; // "Completed", "Pending", "Cancelled"
+
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public Item Item { get; set; } = null!;
     public Provider Provider { get; set; } = null!;
+    public Order? Order { get; set; }
     public Payout? Payout { get; set; }
 }

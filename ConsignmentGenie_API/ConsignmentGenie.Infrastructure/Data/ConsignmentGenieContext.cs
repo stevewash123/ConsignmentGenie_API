@@ -35,6 +35,14 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<Shopper> Shoppers { get; set; }
     public DbSet<GuestCheckout> GuestCheckouts { get; set; }
 
+    // Storefront entities
+    public DbSet<ShoppingCart> ShoppingCarts { get; set; }
+    public DbSet<CartItem> CartItems { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<IntegrationCredentials> IntegrationCredentials { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -406,6 +414,109 @@ public class ConsignmentGenieContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Customer configuration
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.HasIndex(c => c.OrganizationId);
+            entity.HasIndex(c => new { c.OrganizationId, c.Email }).IsUnique();
+            entity.HasOne(c => c.Organization)
+                  .WithMany()
+                  .HasForeignKey(c => c.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ShoppingCart configuration
+        modelBuilder.Entity<ShoppingCart>(entity =>
+        {
+            entity.HasIndex(sc => sc.OrganizationId);
+            entity.HasIndex(sc => sc.SessionId);
+            entity.HasIndex(sc => sc.CustomerId);
+            entity.HasIndex(sc => sc.ExpiresAt);
+            entity.HasIndex(sc => new { sc.OrganizationId, sc.SessionId }).IsUnique();
+            entity.HasIndex(sc => new { sc.OrganizationId, sc.CustomerId }).IsUnique();
+
+            entity.HasOne(sc => sc.Organization)
+                  .WithMany()
+                  .HasForeignKey(sc => sc.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(sc => sc.Customer)
+                  .WithMany(c => c.ShoppingCarts)
+                  .HasForeignKey(sc => sc.CustomerId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // CartItem configuration
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasIndex(ci => ci.CartId);
+            entity.HasIndex(ci => ci.ItemId);
+            entity.HasIndex(ci => new { ci.CartId, ci.ItemId }).IsUnique();
+
+            entity.HasOne(ci => ci.Cart)
+                  .WithMany(sc => sc.CartItems)
+                  .HasForeignKey(ci => ci.CartId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ci => ci.Item)
+                  .WithMany()
+                  .HasForeignKey(ci => ci.ItemId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Order configuration
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasIndex(o => o.OrganizationId);
+            entity.HasIndex(o => o.CustomerId);
+            entity.HasIndex(o => o.OrderNumber);
+            entity.HasIndex(o => o.Status);
+            entity.HasIndex(o => o.CreatedAt);
+            entity.HasIndex(o => new { o.OrganizationId, o.OrderNumber }).IsUnique();
+
+            entity.HasOne(o => o.Organization)
+                  .WithMany()
+                  .HasForeignKey(o => o.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(o => o.Customer)
+                  .WithMany(c => c.Orders)
+                  .HasForeignKey(o => o.CustomerId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // OrderItem configuration
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasIndex(oi => oi.OrderId);
+            entity.HasIndex(oi => oi.ItemId);
+            entity.HasIndex(oi => oi.ProviderId);
+            entity.HasIndex(oi => new { oi.OrderId, oi.ItemId }).IsUnique();
+
+            entity.HasOne(oi => oi.Order)
+                  .WithMany(o => o.OrderItems)
+                  .HasForeignKey(oi => oi.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(oi => oi.Item)
+                  .WithMany()
+                  .HasForeignKey(oi => oi.ItemId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(oi => oi.Provider)
+                  .WithMany()
+                  .HasForeignKey(oi => oi.ProviderId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Add OrderId to Transaction relationship
+        modelBuilder.Entity<Transaction>(entity =>
+        {
+            entity.HasOne(t => t.Order)
+                  .WithMany()
+                  .HasForeignKey(t => t.OrderId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
 
         // Seed Data
         SeedData(modelBuilder);
@@ -504,6 +615,26 @@ public class ConsignmentGenieContext : DbContext
                 UpdatedAt = DateTime.UtcNow
             }
         );
+
+        // IntegrationCredentials configuration
+        modelBuilder.Entity<IntegrationCredentials>(entity =>
+        {
+            entity.HasIndex(ic => ic.OrganizationId);
+            entity.HasIndex(ic => new { ic.OrganizationId, ic.IntegrationType }).IsUnique();
+            entity.HasOne(ic => ic.Organization)
+                  .WithMany()
+                  .HasForeignKey(ic => ic.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Organization indexes for new fields
+        modelBuilder.Entity<Organization>(entity =>
+        {
+            entity.HasIndex(o => o.Slug).IsUnique();
+            entity.HasIndex(o => o.StoreCode).IsUnique();
+            entity.HasIndex(o => o.Status);
+            entity.HasIndex(o => o.SetupStep);
+        });
     }
 
     public override int SaveChanges()

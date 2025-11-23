@@ -5,6 +5,8 @@ obj/
 *.suo
 *.cache
 .vs/
+**/bin/**
+**/obj/**
 
 # Angular
 node_modules/
@@ -26,3 +28,10 @@ Thumbs.db
 
 # Development config with secrets
 appsettings.Development.json
+
+# Documents and non-code files
+Documents/
+*.txt
+*.md
+!README.md
+!CLAUDE.md

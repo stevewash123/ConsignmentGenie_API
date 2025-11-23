@@ -1,10 +1,12 @@
 using ConsignmentGenie.Application.DTOs;
 using ConsignmentGenie.Infrastructure.Data;
-using ConsignmentGenie.Core.DTOs.Admin;
+using ConsignmentGenie.Core.DTOs.Registration;
 using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace ConsignmentGenie.API.Controllers;
 
@@ -14,13 +16,16 @@ public class AdminController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
     private readonly ILogger<AdminController> _logger;
+    private readonly IRegistrationService _registrationService;
 
     public AdminController(
         ConsignmentGenieContext context,
-        ILogger<AdminController> logger)
+        ILogger<AdminController> logger,
+        IRegistrationService registrationService)
     {
         _context = context;
         _logger = logger;
+        _registrationService = registrationService;
     }
 
     [HttpGet("health")]
@@ -48,6 +53,29 @@ public class AdminController : ControllerBase
             // Clear existing data in dependency order
             _logger.LogInformation("Clearing existing data...");
 
+            // Clear dependent data first
+            _context.OrderItems.RemoveRange(_context.OrderItems);
+            _context.Orders.RemoveRange(_context.Orders);
+            _context.CartItems.RemoveRange(_context.CartItems);
+            _context.ShoppingCarts.RemoveRange(_context.ShoppingCarts);
+            _context.GuestCheckouts.RemoveRange(_context.GuestCheckouts);
+            _context.Shoppers.RemoveRange(_context.Shoppers);
+            _context.Customers.RemoveRange(_context.Customers);
+            _context.Statements.RemoveRange(_context.Statements);
+            _context.Notifications.RemoveRange(_context.Notifications);
+            _context.UserNotificationPreferences.RemoveRange(_context.UserNotificationPreferences);
+            _context.NotificationPreferences.RemoveRange(_context.NotificationPreferences);
+            _context.Suggestions.RemoveRange(_context.Suggestions);
+            _context.AuditLogs.RemoveRange(_context.AuditLogs);
+            _context.ItemTagAssignments.RemoveRange(_context.ItemTagAssignments);
+            _context.ItemTags.RemoveRange(_context.ItemTags);
+            _context.ItemCategories.RemoveRange(_context.ItemCategories);
+            _context.PaymentGatewayConnections.RemoveRange(_context.PaymentGatewayConnections);
+            _context.SquareSyncLogs.RemoveRange(_context.SquareSyncLogs);
+            _context.SquareConnections.RemoveRange(_context.SquareConnections);
+            _context.SubscriptionEvents.RemoveRange(_context.SubscriptionEvents);
+            _context.ItemImages.RemoveRange(_context.ItemImages);
+            _context.Categories.RemoveRange(_context.Categories);
             _context.Transactions.RemoveRange(_context.Transactions);
             _context.Payouts.RemoveRange(_context.Payouts);
             _context.Items.RemoveRange(_context.Items);
@@ -66,16 +94,30 @@ public class AdminController : ControllerBase
 
             return Ok(ApiResponse<object>.SuccessResult(new
             {
-                message = "Database reseeded successfully with demo data",
+                message = "Database reseeded successfully with demo data and Cypress test data",
                 timestamp = DateTime.UtcNow,
                 testAccounts = new[]
                 {
-                    new { email = "admin@demoshop.com", role = "Owner", password = "password123" },
-                    new { email = "owner@demoshop.com", role = "Owner", password = "password123" },
-                    new { email = "provider@demoshop.com", role = "Provider", password = "password123" },
-                    new { email = "customer@demoshop.com", role = "Customer", password = "password123" }
+                    new { email = "admin@demoshop.com", role = "Owner", password = "password123", store = "demo-shop" },
+                    new { email = "owner@demoshop.com", role = "Owner", password = "password123", store = "demo-shop" },
+                    new { email = "provider@demoshop.com", role = "Provider", password = "password123", store = "demo-shop" },
+                    new { email = "customer@demoshop.com", role = "Customer", password = "password123", store = "demo-shop" }
+                },
+                cypressTestData = new
+                {
+                    store = new { name = "Cypress Test Store", slug = "test-store", taxRate = 0.085m },
+                    testAccounts = new[]
+                    {
+                        new { email = "cypress.shopper@example.com", role = "Customer", password = "password123" },
+                        new { email = "cypress.guest@example.com", role = "Customer", password = "password123" }
+                    },
+                    testItems = new[]
+                    {
+                        new { id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", title = "Cypress Test Electronics Item", price = 25.99m, category = "Electronics" },
+                        new { id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", title = "Cypress Test Clothing Item", price = 45.50m, category = "Clothing" }
+                    }
                 }
-            }, "Reseed completed"));
+            }, "Reseed completed with Cypress test data"));
         }
         catch (Exception ex)
         {
@@ -94,20 +136,44 @@ public class AdminController : ControllerBase
         var customerUserId = new Guid("55555555-5555-5555-5555-555555555555");
         var providerId = new Guid("66666666-6666-6666-6666-666666666666");
 
+        // Cypress test data IDs
+        var testOrgId = new Guid("77777777-7777-7777-7777-777777777777");
+        var testUserId1 = new Guid("88888888-8888-8888-8888-888888888888");
+        var testUserId2 = new Guid("99999999-9999-9999-9999-999999999999");
+        var testItemId1 = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var testItemId2 = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword("password123");
 
-        // Create Organization
+        // Create Demo Organization
         var organization = new ConsignmentGenie.Core.Entities.Organization
         {
             Id = orgId,
             Name = "Demo Consignment Shop",
+            Slug = "demo-shop",
+            VerticalType = VerticalType.Consignment,
+            SubscriptionStatus = SubscriptionStatus.Active,
+            SubscriptionTier = SubscriptionTier.Basic,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
-        _context.Organizations.Add(organization);
+        // Create Cypress Test Organization
+        var testOrganization = new ConsignmentGenie.Core.Entities.Organization
+        {
+            Id = testOrgId,
+            Name = "Cypress Test Store",
+            Slug = "test-store",
+            VerticalType = VerticalType.Consignment,
+            SubscriptionStatus = SubscriptionStatus.Active,
+            SubscriptionTier = SubscriptionTier.Basic,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
 
-        // Create Users
+        _context.Organizations.AddRange(organization, testOrganization);
+
+        // Create Demo Users
         var users = new[]
         {
             new ConsignmentGenie.Core.Entities.User
@@ -152,7 +218,37 @@ public class AdminController : ControllerBase
             }
         };
 
+        // Create Cypress Test Users
+        var testUsers = new[]
+        {
+            new ConsignmentGenie.Core.Entities.User
+            {
+                Id = testUserId1,
+                Email = "cypress.shopper@example.com",
+                PasswordHash = hashedPassword,
+                Role = ConsignmentGenie.Core.Enums.UserRole.Customer,
+                OrganizationId = testOrgId,
+                FullName = "Cypress Test Shopper",
+                Phone = "555-123-4567",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new ConsignmentGenie.Core.Entities.User
+            {
+                Id = testUserId2,
+                Email = "cypress.guest@example.com",
+                PasswordHash = hashedPassword,
+                Role = ConsignmentGenie.Core.Enums.UserRole.Customer,
+                OrganizationId = testOrgId,
+                FullName = "Cypress Guest User",
+                Phone = "555-987-6543",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }
+        };
+
         _context.Users.AddRange(users);
+        _context.Users.AddRange(testUsers);
 
         // Create Provider entity for the provider user
         var provider = new ConsignmentGenie.Core.Entities.Provider
@@ -170,7 +266,71 @@ public class AdminController : ControllerBase
             UpdatedAt = DateTime.UtcNow
         };
 
-        _context.Providers.Add(provider);
+        // Create Test Provider for Cypress test items
+        var testProviderId = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc");
+        var testProvider = new ConsignmentGenie.Core.Entities.Provider
+        {
+            Id = testProviderId,
+            UserId = testUserId1, // Link to first test user
+            OrganizationId = testOrgId,
+            DisplayName = "Cypress Test Provider",
+            Email = "cypress.shopper@example.com",
+            Phone = "555-123-4567",
+            Address = "123 Test St, Cypress City, CC 12345",
+            CommissionRate = 50.0m,
+            PaymentMethod = "Check",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.Providers.AddRange(provider, testProvider);
+
+        // Create Test Items for Cypress tests
+        var testItems = new[]
+        {
+            new ConsignmentGenie.Core.Entities.Item
+            {
+                Id = testItemId1,
+                OrganizationId = testOrgId,
+                ProviderId = testProviderId, // Use the test provider
+                Sku = "CY-ELEC-001",
+                Title = "Cypress Test Electronics Item",
+                Description = "A test electronic item for Cypress tests",
+                Price = 25.99m,
+                Status = ItemStatus.Available,
+                Category = "Electronics",
+                Brand = "TestBrand",
+                Condition = ItemCondition.Good,
+                Size = "Medium",
+                Color = "Black",
+                ReceivedDate = DateOnly.FromDateTime(DateTime.Now),
+                ListedDate = DateOnly.FromDateTime(DateTime.Now),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new ConsignmentGenie.Core.Entities.Item
+            {
+                Id = testItemId2,
+                OrganizationId = testOrgId,
+                ProviderId = testProviderId, // Use the test provider
+                Sku = "CY-CLOTH-001",
+                Title = "Cypress Test Clothing Item",
+                Description = "A test clothing item for Cypress tests",
+                Price = 45.50m,
+                Status = ItemStatus.Available,
+                Category = "Clothing",
+                Brand = "TestFashion",
+                Condition = ItemCondition.LikeNew,
+                Size = "Large",
+                Color = "Blue",
+                ReceivedDate = DateOnly.FromDateTime(DateTime.Now),
+                ListedDate = DateOnly.FromDateTime(DateTime.Now),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }
+        };
+
+        _context.Items.AddRange(testItems);
 
         await _context.SaveChangesAsync();
     }
@@ -178,96 +338,65 @@ public class AdminController : ControllerBase
     // Owner Approval Endpoints
     [HttpGet("pending-owners")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<List<PendingOwnerDto>>> GetPendingOwners()
+    public async Task<ActionResult<ApiResponse<List<PendingOwnerDto>>>> GetPendingOwners()
     {
-        var pendingOwners = await _context.Users
-            .Where(u => u.Role == UserRole.Owner && u.ApprovalStatus == ApprovalStatus.Pending)
-            .Include(u => u.Organization)
-            .Select(u => new PendingOwnerDto
-            {
-                UserId = u.Id,
-                FullName = u.FullName ?? string.Empty,
-                Email = u.Email,
-                Phone = u.Phone,
-                ShopName = u.Organization.Name,
-                RequestedAt = u.CreatedAt
-            })
-            .OrderBy(p => p.RequestedAt)
-            .ToListAsync();
-
-        return Ok(pendingOwners);
+        try
+        {
+            var pendingOwners = await _registrationService.GetPendingOwnersAsync();
+            return Ok(ApiResponse<List<PendingOwnerDto>>.SuccessResult(pendingOwners));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<List<PendingOwnerDto>>.ErrorResult($"An error occurred while retrieving pending owners: {ex.Message}"));
+        }
     }
 
     [HttpPost("{userId}/approve")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> ApproveOwner(Guid userId)
+    public async Task<ActionResult<ApiResponse<object>>> ApproveOwner(Guid userId)
     {
-        var user = await _context.Users
-            .Include(u => u.Organization)
-            .FirstOrDefaultAsync(u => u.Id == userId);
-
-        if (user == null)
+        try
         {
-            return NotFound("User not found");
+            var approvedByUserId = GetCurrentUserId();
+            await _registrationService.ApproveOwnerAsync(userId, approvedByUserId);
+            return Ok(ApiResponse<object>.SuccessResult(null, "Owner approved successfully"));
         }
-
-        if (user.Role != UserRole.Owner)
+        catch (ArgumentException ex)
         {
-            return BadRequest("User is not an owner");
+            return NotFound(ApiResponse<object>.ErrorResult(ex.Message));
         }
-
-        if (user.ApprovalStatus != ApprovalStatus.Pending)
+        catch (InvalidOperationException ex)
         {
-            return BadRequest("User is not pending approval");
+            return BadRequest(ApiResponse<object>.ErrorResult(ex.Message));
         }
-
-        // Approve the user
-        user.ApprovalStatus = ApprovalStatus.Approved;
-        user.ApprovedAt = DateTime.UtcNow;
-        user.ApprovedBy = GetCurrentUserId();
-        user.UpdatedAt = DateTime.UtcNow;
-
-        // Generate store code for the organization if it doesn't have one
-        if (string.IsNullOrEmpty(user.Organization.StoreCode))
+        catch (Exception ex)
         {
-            user.Organization.StoreCode = await GenerateUniqueStoreCode();
-            user.Organization.UpdatedAt = DateTime.UtcNow;
+            return StatusCode(500, ApiResponse<object>.ErrorResult($"An error occurred while approving owner: {ex.Message}"));
         }
-
-        await _context.SaveChangesAsync();
-
-        return Ok();
     }
 
     [HttpPost("{userId}/reject")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> RejectOwner(Guid userId, [FromBody] RejectUserRequest request)
+    public async Task<ActionResult<ApiResponse<object>>> RejectOwner(Guid userId, [FromBody] RejectUserRequest request)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-
-        if (user == null)
+        try
         {
-            return NotFound("User not found");
+            var rejectedByUserId = GetCurrentUserId();
+            await _registrationService.RejectOwnerAsync(userId, rejectedByUserId, request.Reason);
+            return Ok(ApiResponse<object>.SuccessResult(null, "Owner rejected successfully"));
         }
-
-        if (user.Role != UserRole.Owner)
+        catch (ArgumentException ex)
         {
-            return BadRequest("User is not an owner");
+            return NotFound(ApiResponse<object>.ErrorResult(ex.Message));
         }
-
-        if (user.ApprovalStatus != ApprovalStatus.Pending)
+        catch (InvalidOperationException ex)
         {
-            return BadRequest("User is not pending approval");
+            return BadRequest(ApiResponse<object>.ErrorResult(ex.Message));
         }
-
-        // Reject the user
-        user.ApprovalStatus = ApprovalStatus.Rejected;
-        user.RejectedReason = request.Reason;
-        user.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        return Ok();
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<object>.ErrorResult($"An error occurred while rejecting owner: {ex.Message}"));
+        }
     }
 
     private Guid GetCurrentUserId()

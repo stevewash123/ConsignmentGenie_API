@@ -54,6 +54,30 @@ export class AuthService {
     }
   }
 
+  async registerProvider(request: {
+    storeCode: string;
+    fullName: string;
+    email: string;
+    password: string;
+    phone?: string;
+    preferredPaymentMethod?: string;
+    paymentDetails?: string;
+  }): Promise<{ success: boolean; message?: string; errors?: string[] }> {
+    try {
+      const response = await this.http.post<{ success: boolean; message?: string; errors?: string[] }>(
+        `${this.apiUrl}/auth/register/provider`,
+        request
+      ).toPromise();
+      return response!;
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.error?.message || 'Registration failed',
+        errors: error.error?.errors || [error.message]
+      };
+    }
+  }
+
   async validateStoreCode(code: string): Promise<{
     isValid: boolean;
     shopName?: string;

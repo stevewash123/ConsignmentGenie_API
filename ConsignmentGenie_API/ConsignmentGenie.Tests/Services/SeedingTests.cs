@@ -148,9 +148,10 @@ public class SeedingTests : IDisposable
 
         // Assert
         Assert.NotNull(provider);
-        Assert.Equal("Demo Artist", provider.DisplayName);
+        Assert.Equal("Demo", provider.FirstName);
+        Assert.Equal("Artist", provider.LastName);
         Assert.Equal("provider@demoshop.com", provider.Email);
-        Assert.Equal(60.00m, provider.DefaultSplitPercentage);
+        Assert.Equal(0.6000m, provider.CommissionRate);
         Assert.Equal(ProviderStatus.Active, provider.Status);
         Assert.NotNull(provider.User);
         Assert.Equal(UserRole.Provider, provider.User.Role);

@@ -33,10 +33,10 @@ public class ShopperAccountController : ControllerBase
         {
             var userId = GetUserId();
             var organizationId = GetOrganizationId();
-            var tokenStoreSlug = GetStoreSlug();
+            var tokenSlug = GetSlug();
 
             // Verify the store slug in the URL matches the token
-            if (!string.Equals(storeSlug, tokenStoreSlug, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(storeSlug, tokenSlug, StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(ApiResponse<ShopperProfileDto>.ErrorResult("Invalid store access"));
             }
@@ -52,7 +52,7 @@ public class ShopperAccountController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving shopper profile for store {StoreSlug}", storeSlug);
+            _logger.LogError(ex, "Error retrieving shopper profile for store {Slug}", storeSlug);
             return StatusCode(500, ApiResponse<ShopperProfileDto>.ErrorResult("An error occurred retrieving profile"));
         }
     }
@@ -72,10 +72,10 @@ public class ShopperAccountController : ControllerBase
         {
             var userId = GetUserId();
             var organizationId = GetOrganizationId();
-            var tokenStoreSlug = GetStoreSlug();
+            var tokenSlug = GetSlug();
 
             // Verify the store slug in the URL matches the token
-            if (!string.Equals(storeSlug, tokenStoreSlug, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(storeSlug, tokenSlug, StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(ApiResponse<ShopperProfileDto>.ErrorResult("Invalid store access"));
             }
@@ -87,13 +87,13 @@ public class ShopperAccountController : ControllerBase
                 return NotFound(ApiResponse<ShopperProfileDto>.ErrorResult("Shopper profile not found"));
             }
 
-            _logger.LogInformation("Shopper profile updated for store {StoreSlug}, User {UserId}", storeSlug, userId);
+            _logger.LogInformation("Shopper profile updated for store {Slug}, User {UserId}", storeSlug, userId);
 
             return Ok(ApiResponse<ShopperProfileDto>.SuccessResult(updatedProfile));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating shopper profile for store {StoreSlug}", storeSlug);
+            _logger.LogError(ex, "Error updating shopper profile for store {Slug}", storeSlug);
             return StatusCode(500, ApiResponse<ShopperProfileDto>.ErrorResult("An error occurred updating profile"));
         }
     }
@@ -112,10 +112,10 @@ public class ShopperAccountController : ControllerBase
         try
         {
             var userId = GetUserId();
-            var tokenStoreSlug = GetStoreSlug();
+            var tokenSlug = GetSlug();
 
             // Verify the store slug in the URL matches the token
-            if (!string.Equals(storeSlug, tokenStoreSlug, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(storeSlug, tokenSlug, StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(ApiResponse<object>.ErrorResult("Invalid store access"));
             }
@@ -127,13 +127,13 @@ public class ShopperAccountController : ControllerBase
                 return BadRequest(ApiResponse<object>.ErrorResult("Current password is incorrect"));
             }
 
-            _logger.LogInformation("Password changed for shopper in store {StoreSlug}, User {UserId}", storeSlug, userId);
+            _logger.LogInformation("Password changed for shopper in store {Slug}, User {UserId}", storeSlug, userId);
 
             return Ok(ApiResponse<object>.SuccessResult(new { message = "Password changed successfully" }));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error changing password for shopper in store {StoreSlug}", storeSlug);
+            _logger.LogError(ex, "Error changing password for shopper in store {Slug}", storeSlug);
             return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred changing password"));
         }
     }
@@ -153,10 +153,10 @@ public class ShopperAccountController : ControllerBase
     {
         try
         {
-            var tokenStoreSlug = GetStoreSlug();
+            var tokenSlug = GetSlug();
 
             // Verify the store slug in the URL matches the token
-            if (!string.Equals(storeSlug, tokenStoreSlug, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(storeSlug, tokenSlug, StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(ApiResponse<object>.ErrorResult("Invalid store access"));
             }
@@ -175,7 +175,7 @@ public class ShopperAccountController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving order history for store {StoreSlug}", storeSlug);
+            _logger.LogError(ex, "Error retrieving order history for store {Slug}", storeSlug);
             return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred retrieving order history"));
         }
     }
@@ -191,10 +191,10 @@ public class ShopperAccountController : ControllerBase
     {
         try
         {
-            var tokenStoreSlug = GetStoreSlug();
+            var tokenSlug = GetSlug();
 
             // Verify the store slug in the URL matches the token
-            if (!string.Equals(storeSlug, tokenStoreSlug, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(storeSlug, tokenSlug, StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(ApiResponse<object>.ErrorResult("Invalid store access"));
             }
@@ -204,7 +204,7 @@ public class ShopperAccountController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving order {OrderId} for store {StoreSlug}", orderId, storeSlug);
+            _logger.LogError(ex, "Error retrieving order {OrderId} for store {Slug}", orderId, storeSlug);
             return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred retrieving order"));
         }
     }
@@ -231,9 +231,9 @@ public class ShopperAccountController : ControllerBase
         return organizationId;
     }
 
-    private string GetStoreSlug()
+    private string GetSlug()
     {
-        var storeSlugClaim = User.FindFirst("StoreSlug")?.Value;
+        var storeSlugClaim = User.FindFirst("Slug")?.Value;
         if (string.IsNullOrEmpty(storeSlugClaim))
         {
             throw new UnauthorizedAccessException("Invalid store slug in token");

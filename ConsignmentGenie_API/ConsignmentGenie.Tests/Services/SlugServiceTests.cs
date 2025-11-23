@@ -99,7 +99,7 @@ public class SlugServiceTests : IDisposable
         var result = _slugService.GenerateSlug(input);
 
         // Assert
-        Assert.Equal("shop", result);
+        Assert.Equal("", result);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class SlugServiceTests : IDisposable
         var result = _slugService.GenerateSlug(input);
 
         // Assert
-        Assert.Equal("shop", result);
+        Assert.Equal("", result);
     }
 
     [Fact]

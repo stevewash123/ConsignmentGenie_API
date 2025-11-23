@@ -63,6 +63,109 @@ public class Organization : BaseEntity
 
     public bool StoreCodeEnabled { get; set; } = true;
 
+    public bool AutoApproveProviders { get; set; } = true;  // MVP: auto-approve by default
+
+    // Trial & Subscription Status
+    [MaxLength(20)]
+    public string Status { get; set; } = "pending";  // pending, trial, active, suspended, cancelled
+
+    public DateTime? TrialStartedAt { get; set; }
+
+    public DateTime? TrialEndsAt { get; set; }
+
+    public int TrialExtensionsUsed { get; set; } = 0;
+
+    [MaxLength(50)]
+    public string? StripeSubscriptionStatus { get; set; }
+
+    [MaxLength(50)]
+    public string? SubscriptionPlan { get; set; }  // 'basic', 'pro', 'enterprise'
+
+    public DateTime? SubscriptionStartedAt { get; set; }
+
+    public DateTime? CurrentPeriodEnd { get; set; }
+
+    // Setup Progress
+    public DateTime? SetupCompletedAt { get; set; }
+
+    public int SetupStep { get; set; } = 0;  // Track wizard progress (0 = not started)
+
+    // Shop Profile
+    [MaxLength(200)]
+    public string? ShopName { get; set; }
+
+    public string? ShopDescription { get; set; }
+
+    [MaxLength(500)]
+    public string? ShopLogoUrl { get; set; }
+
+    [MaxLength(500)]
+    public string? ShopBannerUrl { get; set; }
+
+    [MaxLength(200)]
+    public string? ShopAddress1 { get; set; }
+
+    [MaxLength(200)]
+    public string? ShopAddress2 { get; set; }
+
+    [MaxLength(100)]
+    public string? ShopCity { get; set; }
+
+    [MaxLength(50)]
+    public string? ShopState { get; set; }
+
+    [MaxLength(20)]
+    public string? ShopZip { get; set; }
+
+    [MaxLength(50)]
+    public string ShopCountry { get; set; } = "US";
+
+    [MaxLength(50)]
+    public string? ShopPhone { get; set; }
+
+    [MaxLength(255)]
+    public string? ShopEmail { get; set; }
+
+    [MaxLength(255)]
+    public string? ShopWebsite { get; set; }
+
+    [MaxLength(50)]
+    public string ShopTimezone { get; set; } = "America/New_York";
+
+    // Business Settings
+    public decimal DefaultSplitPercentage { get; set; } = 60.00M;  // Provider's cut
+
+    public decimal TaxRate { get; set; } = 0.0000M;
+
+    [MaxLength(3)]
+    public string Currency { get; set; } = "USD";
+
+    // Public Storefront
+
+    public bool StoreEnabled { get; set; } = false;
+
+    public bool ShippingEnabled { get; set; } = false;
+
+    public decimal ShippingFlatRate { get; set; } = 0;
+
+    public bool PickupEnabled { get; set; } = true;
+
+    public string? PickupInstructions { get; set; }
+
+    public bool PayOnPickupEnabled { get; set; } = true;
+
+    public bool OnlinePaymentEnabled { get; set; } = false;
+
+    // Integration Status (connection flags)
+    [MaxLength(50)]
+    public string? QuickBooksCompanyId { get; set; }
+
+    public bool StripeConnected { get; set; } = false;  // For payment processing, not subscription
+
+    public bool SendGridConnected { get; set; } = false;
+
+    public bool CloudinaryConnected { get; set; } = false;
+
     // Navigation properties
     public ICollection<User> Users { get; set; } = new List<User>();
     public ICollection<Provider> Providers { get; set; } = new List<Provider>();

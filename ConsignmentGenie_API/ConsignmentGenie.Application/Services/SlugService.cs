@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
@@ -14,14 +16,32 @@ public class SlugService : ISlugService
         _context = context;
     }
 
+    private static string RemoveDiacritics(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        var normalizedString = text.Normalize(NormalizationForm.FormD);
+        var stringBuilder = new StringBuilder();
+
+        foreach (var c in normalizedString)
+        {
+            var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+            {
+                stringBuilder.Append(c);
+            }
+        }
+
+        return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
     public string GenerateSlug(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
             return string.Empty;
 
-        var slug = input
-            .ToLowerInvariant()
-            .Trim();
+        var slug = RemoveDiacritics(input).ToLowerInvariant().Trim();
 
         // Replace common words and characters
         slug = slug.Replace("&", "and")
@@ -40,16 +60,17 @@ public class SlugService : ISlugService
         // Remove leading and trailing hyphens
         slug = slug.Trim('-');
 
-        // Ensure slug is not empty
-        if (string.IsNullOrEmpty(slug))
-            return "shop";
-
         return slug;
     }
 
     public async Task<string> GenerateUniqueOrganizationSlugAsync(string shopName, Guid? excludeOrganizationId = null)
     {
         var baseSlug = GenerateSlug(shopName);
+
+        // Use fallback if the generated slug is empty
+        if (string.IsNullOrEmpty(baseSlug))
+            baseSlug = "shop";
+
         var slug = baseSlug;
         var counter = 1;
 

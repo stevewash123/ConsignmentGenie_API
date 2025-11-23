@@ -248,6 +248,135 @@ Cypress.Commands.add('clearShopperStorage', (storeSlug: string) => {
   })
 })
 
+// ===== REGISTRATION WORKFLOW COMMANDS =====
+
+// Register as owner command
+Cypress.Commands.add('registerOwner', (ownerData: {
+  fullName: string,
+  email: string,
+  password: string,
+  shopName: string,
+  phone?: string
+}) => {
+  cy.visit('/register/owner')
+
+  cy.get('input[name="fullName"]').type(ownerData.fullName)
+  cy.get('input[name="email"]').type(ownerData.email)
+  if (ownerData.phone) {
+    cy.get('input[name="phone"]').type(ownerData.phone)
+  }
+  cy.get('input[name="password"]').type(ownerData.password)
+  cy.get('input[name="confirmPassword"]').type(ownerData.password)
+  cy.get('input[name="shopName"]').type(ownerData.shopName)
+
+  cy.get('button[type="submit"]').click()
+  cy.url().should('include', '/register/success')
+})
+
+// Register as provider command
+Cypress.Commands.add('registerProvider', (storeCode: string, providerData: {
+  fullName: string,
+  email: string,
+  password: string,
+  phone?: string,
+  preferredPaymentMethod?: string,
+  paymentDetails?: string
+}) => {
+  cy.visit('/register/provider')
+
+  // Step 1: Validate store code
+  cy.get('input[name="storeCode"]').type(storeCode)
+  cy.get('button[type="submit"]').click()
+  cy.get('[data-cy="registration-form"]').should('be.visible')
+
+  // Step 2: Fill registration form
+  cy.get('input[name="fullName"]').type(providerData.fullName)
+  cy.get('input[name="email"]').type(providerData.email)
+  cy.get('input[name="password"]').type(providerData.password)
+
+  if (providerData.phone) {
+    cy.get('input[name="phone"]').type(providerData.phone)
+  }
+
+  if (providerData.preferredPaymentMethod) {
+    cy.get('select[name="preferredPaymentMethod"]').select(providerData.preferredPaymentMethod)
+    if (providerData.paymentDetails) {
+      cy.get('input[name="paymentDetails"]').type(providerData.paymentDetails)
+    }
+  }
+
+  cy.get('button[type="submit"]').click()
+  cy.url().should('include', '/register/success')
+})
+
+// Mock registration APIs
+Cypress.Commands.add('mockRegistrationAPIs', () => {
+  // Mock store code validation
+  cy.intercept('GET', '**/auth/validate-store-code/1234', {
+    statusCode: 200,
+    body: {
+      isValid: true,
+      shopName: 'Demo Consignment Shop'
+    }
+  }).as('validateStoreCode')
+
+  cy.intercept('GET', '**/auth/validate-store-code/9999', {
+    statusCode: 200,
+    body: {
+      isValid: false,
+      errorMessage: 'Invalid or disabled store code'
+    }
+  }).as('validateInvalidStoreCode')
+
+  // Mock owner registration
+  cy.intercept('POST', '**/auth/register/owner', {
+    statusCode: 200,
+    body: {
+      success: true,
+      message: 'Account created successfully. Your request has been sent for admin approval.'
+    }
+  }).as('registerOwner')
+
+  // Mock provider registration
+  cy.intercept('POST', '**/auth/register/provider', {
+    statusCode: 200,
+    body: {
+      success: true,
+      message: 'Account created successfully. Your request has been sent for approval.'
+    }
+  }).as('registerProvider')
+
+  // Mock duplicate email error
+  cy.intercept('POST', '**/auth/register/owner', {
+    statusCode: 400,
+    body: {
+      success: false,
+      message: 'An account with this email already exists',
+      errors: ['Email is already in use']
+    }
+  }).as('registerOwnerDuplicate')
+
+  cy.intercept('POST', '**/auth/register/provider', {
+    statusCode: 400,
+    body: {
+      success: false,
+      message: 'An account with this email already exists',
+      errors: ['Email is already in use']
+    }
+  }).as('registerProviderDuplicate')
+})
+
+// Task to clean up test data (would need backend support)
+Cypress.Commands.add('cleanupTestData', (options: { emails: string[] }) => {
+  // This would typically make API calls to clean up test data
+  // For now, just return a resolved promise
+  return cy.wrap(new Promise(resolve => {
+    cy.log(`Cleaning up test data for emails: ${options.emails.join(', ')}`)
+    // In a real implementation, this would call backend cleanup APIs
+    resolve(true)
+  }))
+})
+
 // Type declarations for custom commands
 declare global {
   namespace Cypress {
@@ -337,6 +466,41 @@ declare global {
        * Clear shopper-specific localStorage
        */
       clearShopperStorage(storeSlug: string): Chainable<void>
+
+      // ===== REGISTRATION WORKFLOW COMMANDS =====
+
+      /**
+       * Register as owner
+       */
+      registerOwner(ownerData: {
+        fullName: string,
+        email: string,
+        password: string,
+        shopName: string,
+        phone?: string
+      }): Chainable<void>
+
+      /**
+       * Register as provider
+       */
+      registerProvider(storeCode: string, providerData: {
+        fullName: string,
+        email: string,
+        password: string,
+        phone?: string,
+        preferredPaymentMethod?: string,
+        paymentDetails?: string
+      }): Chainable<void>
+
+      /**
+       * Clean up test data
+       */
+      cleanupTestData(options: { emails: string[] }): Chainable<void>
+
+      /**
+       * Mock registration APIs
+       */
+      mockRegistrationAPIs(): Chainable<void>
     }
   }
 }

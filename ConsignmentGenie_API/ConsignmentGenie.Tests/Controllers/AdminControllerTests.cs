@@ -4,9 +4,13 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using ConsignmentGenie.API.Controllers;
-using ConsignmentGenie.Core.DTOs.Admin;
+using ConsignmentGenie.Application.DTOs;
+using ConsignmentGenie.Application.Services;
+using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.DTOs.Registration;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Tests.Helpers;
 using Microsoft.AspNetCore.Http;
@@ -22,6 +26,7 @@ namespace ConsignmentGenie.Tests.Controllers
         private readonly ConsignmentGenieContext _context;
         private readonly AdminController _controller;
         private readonly Mock<ILogger<AdminController>> _loggerMock;
+        private readonly IRegistrationService _registrationService;
         private readonly Guid _organizationId = new("11111111-1111-1111-1111-111111111111");
         private readonly Guid _adminUserId = new("22222222-2222-2222-2222-222222222222");
 
@@ -29,7 +34,15 @@ namespace ConsignmentGenie.Tests.Controllers
         {
             _context = TestDbContextFactory.CreateInMemoryContext();
             _loggerMock = new Mock<ILogger<AdminController>>();
-            _controller = new AdminController(_context, _loggerMock.Object);
+
+            // Create mocks for RegistrationService dependencies
+            var emailServiceMock = new Mock<IEmailService>();
+            var storeCodeServiceMock = new Mock<IStoreCodeService>();
+
+            // Create real RegistrationService with mocked dependencies
+            _registrationService = new RegistrationService(_context, emailServiceMock.Object, storeCodeServiceMock.Object);
+
+            _controller = new AdminController(_context, _loggerMock.Object, _registrationService);
 
             // Setup admin user claims
             var claims = new List<Claim>
@@ -132,11 +145,35 @@ namespace ConsignmentGenie.Tests.Controllers
         [Fact]
         public async Task GetPendingOwners_ReturnsAllPendingOwners()
         {
+            // Arrange
+            var expectedPendingOwners = new List<PendingOwnerDto>
+            {
+                new() {
+                    UserId = _context.Users.First(u => u.FullName == "John Pending").Id,
+                    FullName = "John Pending",
+                    Email = "pending1@test.com",
+                    Phone = "555-123-4567",
+                    ShopName = "Pending Shop 1",
+                    RequestedAt = DateTime.UtcNow.AddDays(-2)
+                },
+                new() {
+                    UserId = _context.Users.First(u => u.FullName == "Jane Pending").Id,
+                    FullName = "Jane Pending",
+                    Email = "pending2@test.com",
+                    Phone = "555-987-6543",
+                    ShopName = "Pending Shop 2",
+                    RequestedAt = DateTime.UtcNow.AddDays(-1)
+                }
+            };
+
+            // Real service will query database directly
+
             // Act
             var result = await _controller.GetPendingOwners();
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var actionResult = Assert.IsType<ActionResult<List<PendingOwnerDto>>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             var pendingOwners = Assert.IsType<List<PendingOwnerDto>>(okResult.Value);
 
             Assert.Equal(2, pendingOwners.Count);
@@ -148,11 +185,35 @@ namespace ConsignmentGenie.Tests.Controllers
         [Fact]
         public async Task GetPendingOwners_OrdersByRequestedDate()
         {
+            // Arrange
+            var expectedPendingOwners = new List<PendingOwnerDto>
+            {
+                new() {
+                    UserId = _context.Users.First(u => u.FullName == "John Pending").Id,
+                    FullName = "John Pending",
+                    Email = "pending1@test.com",
+                    Phone = "555-123-4567",
+                    ShopName = "Pending Shop 1",
+                    RequestedAt = DateTime.UtcNow.AddDays(-2)
+                },
+                new() {
+                    UserId = _context.Users.First(u => u.FullName == "Jane Pending").Id,
+                    FullName = "Jane Pending",
+                    Email = "pending2@test.com",
+                    Phone = "555-987-6543",
+                    ShopName = "Pending Shop 2",
+                    RequestedAt = DateTime.UtcNow.AddDays(-1)
+                }
+            };
+
+            // Real service will query database directly
+
             // Act
             var result = await _controller.GetPendingOwners();
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var actionResult = Assert.IsType<ActionResult<List<PendingOwnerDto>>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             var pendingOwners = Assert.IsType<List<PendingOwnerDto>>(okResult.Value);
 
             // Should be ordered by RequestedAt ascending (oldest first)
@@ -170,7 +231,11 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.ApproveOwner(pendingUser.Id);
 
             // Assert
-            var okResult = Assert.IsType<OkResult>(result);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<object>>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+
+            // Clear change tracker to force fresh query
+            _context.ChangeTracker.Clear();
 
             // Verify user was approved
             var approvedUser = await _context.Users.FindAsync(pendingUser.Id);
@@ -313,7 +378,8 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task GenerateUniqueStoreCode_CreatesUniqueCodes()
         {
             // Arrange
-            var controller = new AdminController(_context, _loggerMock.Object);
+            var mockRegistrationService = new Mock<IRegistrationService>();
+            var controller = new AdminController(_context, _loggerMock.Object, mockRegistrationService.Object);
 
             // Use reflection to access the private method
             var method = typeof(AdminController).GetMethod("GenerateUniqueStoreCode",

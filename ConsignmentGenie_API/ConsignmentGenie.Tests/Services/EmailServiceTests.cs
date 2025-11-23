@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SendGrid;
+using System.Net;
 using Xunit;
 
 namespace ConsignmentGenie.Tests.Services;
@@ -21,12 +22,9 @@ public class EmailServiceTests
         _mockLogger = new Mock<ILogger<EmailService>>();
 
         // Setup configuration
-        var templatesSection = new Mock<IConfigurationSection>();
-        templatesSection.Setup(x => x["Welcome"]).Returns("d-welcome123");
-        templatesSection.Setup(x => x["TrialExpiring"]).Returns("d-trial123");
-        templatesSection.Setup(x => x["PaymentFailed"]).Returns("d-payment123");
-
-        _mockConfiguration.Setup(x => x.GetSection("SendGrid:Templates")).Returns(templatesSection.Object);
+        _mockConfiguration.Setup(x => x["SendGrid:Templates:Welcome"]).Returns("d-welcome123");
+        _mockConfiguration.Setup(x => x["SendGrid:Templates:TrialExpiring"]).Returns("d-trial123");
+        _mockConfiguration.Setup(x => x["SendGrid:Templates:PaymentFailed"]).Returns("d-payment123");
         _mockConfiguration.Setup(x => x["SendGrid:FromEmail"]).Returns("noreply@test.com");
         _mockConfiguration.Setup(x => x["SendGrid:FromName"]).Returns("Test App");
 
@@ -37,12 +35,11 @@ public class EmailServiceTests
     public async Task SendWelcomeEmailAsync_ValidInput_ReturnsTrue()
     {
         // Arrange
-        var response = new Mock<Response>();
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
+        var successResponse = new Response(HttpStatusCode.OK, null, null);
 
         _mockSendGridClient
             .Setup(x => x.SendEmailAsync(It.IsAny<SendGrid.Helpers.Mail.SendGridMessage>(), default))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(successResponse);
 
         // Act
         var result = await _emailService.SendWelcomeEmailAsync("test@example.com", "Test Org");
@@ -56,12 +53,11 @@ public class EmailServiceTests
     public async Task SendTrialExpiringEmailAsync_ValidInput_ReturnsTrue()
     {
         // Arrange
-        var response = new Mock<Response>();
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
+        var successResponse = new Response(HttpStatusCode.OK, null, null);
 
         _mockSendGridClient
             .Setup(x => x.SendEmailAsync(It.IsAny<SendGrid.Helpers.Mail.SendGridMessage>(), default))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(successResponse);
 
         // Act
         var result = await _emailService.SendTrialExpiringEmailAsync("test@example.com", 3);
@@ -75,12 +71,11 @@ public class EmailServiceTests
     public async Task SendPaymentFailedEmailAsync_ValidInput_ReturnsTrue()
     {
         // Arrange
-        var response = new Mock<Response>();
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
+        var successResponse = new Response(HttpStatusCode.OK, null, null);
 
         _mockSendGridClient
             .Setup(x => x.SendEmailAsync(It.IsAny<SendGrid.Helpers.Mail.SendGridMessage>(), default))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(successResponse);
 
         // Act
         var result = await _emailService.SendPaymentFailedEmailAsync("test@example.com", 99.99m, DateTime.UtcNow.AddDays(3));
@@ -94,16 +89,12 @@ public class EmailServiceTests
     public async Task SendEmail_SendGridFailure_ReturnsFalse()
     {
         // Arrange
-        var response = new Mock<Response>();
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.BadRequest);
-
         var bodyContent = new System.Net.Http.StringContent("Error message");
-        response.Setup(r => r.Body).Returns(bodyContent);
+        var failureResponse = new Response(HttpStatusCode.BadRequest, bodyContent, null);
 
         _mockSendGridClient
             .Setup(x => x.SendEmailAsync(It.IsAny<SendGrid.Helpers.Mail.SendGridMessage>(), default))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(failureResponse);
 
         // Act
         var result = await _emailService.SendWelcomeEmailAsync("test@example.com", "Test Org");
@@ -117,11 +108,12 @@ public class EmailServiceTests
     public async Task SendEmail_MissingTemplate_ReturnsFalse()
     {
         // Arrange - Clear template configuration
-        var templatesSection = new Mock<IConfigurationSection>();
-        templatesSection.Setup(x => x["Welcome"]).Returns((string?)null);
-        _mockConfiguration.Setup(x => x.GetSection("SendGrid:Templates")).Returns(templatesSection.Object);
+        var mockConfiguration = new Mock<IConfiguration>();
+        mockConfiguration.Setup(x => x["SendGrid:Templates:Welcome"]).Returns((string?)null);
+        mockConfiguration.Setup(x => x["SendGrid:FromEmail"]).Returns("noreply@test.com");
+        mockConfiguration.Setup(x => x["SendGrid:FromName"]).Returns("Test App");
 
-        var emailService = new EmailService(_mockSendGridClient.Object, _mockConfiguration.Object, _mockLogger.Object);
+        var emailService = new EmailService(_mockSendGridClient.Object, mockConfiguration.Object, _mockLogger.Object);
 
         // Act
         var result = await emailService.SendWelcomeEmailAsync("test@example.com", "Test Org");

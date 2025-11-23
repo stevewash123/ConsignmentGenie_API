@@ -10,15 +10,10 @@ import { ProviderDashboard } from '../models/provider.models';
   imports: [CommonModule, RouterModule],
   template: `
     <div class="provider-dashboard">
-      <!-- Header -->
-      <div class="dashboard-header">
-        <div class="header-content">
-          <h1>{{dashboard?.shopName || 'Provider Portal'}}</h1>
-          <button class="logout-btn" (click)="logout()">Logout</button>
-        </div>
-        <div class="welcome-message">
-          <h2>Welcome back, {{dashboard?.providerName || 'Provider'}}!</h2>
-        </div>
+      <!-- Welcome Section -->
+      <div class="welcome-section">
+        <h1>{{dashboard?.shopName || 'Provider Portal'}}</h1>
+        <h2>Welcome back, {{dashboard?.providerName || 'Provider'}}!</h2>
       </div>
 
       <div class="dashboard-content" *ngIf="dashboard">
@@ -108,52 +103,23 @@ import { ProviderDashboard } from '../models/provider.models';
   `,
   styles: [`
     .provider-dashboard {
-      min-height: 100vh;
-      background: #f9fafb;
+      padding: 2rem;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    .dashboard-header {
-      background: white;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 1rem 2rem;
-    }
-
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .welcome-section {
       max-width: 1200px;
-      margin: 0 auto;
+      margin: 0 auto 2rem;
     }
 
-    .header-content h1 {
+    .welcome-section h1 {
       font-size: 1.5rem;
       font-weight: 600;
       color: #111827;
-      margin: 0;
+      margin: 0 0 0.5rem;
     }
 
-    .logout-btn {
-      background: #ef4444;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 0.375rem;
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    .logout-btn:hover {
-      background: #dc2626;
-    }
-
-    .welcome-message {
-      max-width: 1200px;
-      margin: 1rem auto 0;
-    }
-
-    .welcome-message h2 {
+    .welcome-section h2 {
       font-size: 1.875rem;
       font-weight: 700;
       color: #111827;
@@ -353,11 +319,5 @@ export class ProviderDashboardComponent implements OnInit {
       month: 'short',
       day: 'numeric'
     });
-  }
-
-  logout() {
-    // TODO: Implement logout logic
-    localStorage.removeItem('token');
-    window.location.href = '/login';
   }
 }

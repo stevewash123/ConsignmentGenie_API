@@ -1,7 +1,10 @@
 using ConsignmentGenie.Application.DTOs.Payout;
 using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.DTOs.Notifications;
 using ConsignmentGenie.Core.Entities;
+using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Core.Extensions;
+using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -18,11 +21,16 @@ public class ManualPayoutService : IPayoutService
 {
     private readonly ConsignmentGenieContext _context;
     private readonly ILogger<ManualPayoutService> _logger;
+    private readonly IProviderNotificationService _notificationService;
 
-    public ManualPayoutService(ConsignmentGenieContext context, ILogger<ManualPayoutService> logger)
+    public ManualPayoutService(
+        ConsignmentGenieContext context,
+        ILogger<ManualPayoutService> logger,
+        IProviderNotificationService notificationService)
     {
         _context = context;
         _logger = logger;
+        _notificationService = notificationService;
     }
 
     public async Task<PayoutReportDto> GeneratePayoutAsync(Guid providerId, DateTime startDate, DateTime endDate)
@@ -105,6 +113,44 @@ public class ManualPayoutService : IPayoutService
         }
 
         await _context.SaveChangesAsync();
+
+        // Send notification to provider about the payout
+        if (transactions.Any())
+        {
+            try
+            {
+                var provider = await _context.Providers
+                    .FirstOrDefaultAsync(p => p.Id == payoutId);
+
+                if (provider != null && provider.UserId.HasValue)
+                {
+                    var totalAmount = transactions.Sum(t => t.ProviderAmount);
+
+                    await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
+                    {
+                        OrganizationId = provider.OrganizationId,
+                        UserId = provider.UserId.Value,
+                        ProviderId = provider.Id,
+                        Type = NotificationType.PayoutProcessed,
+                        Title = "Payout Processed 💰",
+                        Message = $"A payout of {totalAmount:C} has been processed via {paymentMethod}.",
+                        RelatedEntityType = "Payout",
+                        RelatedEntityId = payoutId, // Using provider ID as payout identifier for MVP
+                        Metadata = new NotificationMetadata
+                        {
+                            PayoutAmount = totalAmount,
+                            PayoutMethod = paymentMethod,
+                            PayoutNumber = $"PAY-{DateTime.UtcNow:yyyyMMdd}-{payoutId.ToString()[..8].ToUpper()}"
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the payout if notification fails
+                _logger.LogError(ex, "Failed to send payout notification for provider {ProviderId}", payoutId);
+            }
+        }
 
         _logger.LogInformation(
             "[MANUAL PAYOUT] Marked {Count} transactions as paid for provider {ProviderId}\n" +

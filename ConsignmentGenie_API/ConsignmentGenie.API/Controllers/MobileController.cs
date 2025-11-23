@@ -107,8 +107,8 @@ public class MobileController : ControllerBase
                 ItemId = item.Id,
                 ProviderId = item.ProviderId,
                 SalePrice = item.Price,
-                ShopAmount = item.Price * ((100 - item.Provider.DefaultSplitPercentage) / 100),
-                ProviderAmount = item.Price * (item.Provider.DefaultSplitPercentage / 100),
+                ShopAmount = item.Price * ((100 - (item.Provider.DefaultSplitPercentage ?? item.Provider.CommissionRate)) / 100),
+                ProviderAmount = item.Price * ((item.Provider.DefaultSplitPercentage ?? item.Provider.CommissionRate) / 100),
                 SaleDate = DateTime.UtcNow,
                 PaymentMethod = request.PaymentMethod ?? "Cash"
             };

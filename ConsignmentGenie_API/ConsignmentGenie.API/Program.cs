@@ -123,14 +123,28 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IShopperAuthService, ShopperAuthService>();
 builder.Services.AddScoped<ISlugService, SlugService>();
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ISplitCalculationService, SplitCalculationService>();
 builder.Services.AddScoped<IStripeService, StripeService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IProviderNotificationService, ProviderNotificationService>();
+builder.Services.AddScoped<IStatementService, StatementService>();
 builder.Services.AddScoped<ISuggestionService, SuggestionService>();
+builder.Services.AddScoped<IReportsService, ReportsService>();
+builder.Services.AddScoped<IRegistrationService, RegistrationService>();
+builder.Services.AddScoped<IStoreCodeService, StoreCodeService>();
+builder.Services.AddScoped<ISetupWizardService, SetupWizardService>();
 builder.Services.AddScoped<SeedDataService>();
+builder.Services.AddScoped<StatementGenerationJob>();
+
+// Storefront services
+builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IStripePaymentService, StripePaymentService>();
 
 // Photo storage implementations
 builder.Services.AddScoped<CloudinaryPhotoService>();
@@ -166,6 +180,16 @@ app.MapControllers();
 
 // Health check endpoint
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+// Schedule background jobs
+using (var scope = app.Services.CreateScope())
+{
+    // Schedule monthly statement generation job (runs on 1st of each month at 2 AM)
+    RecurringJob.AddOrUpdate<StatementGenerationJob>(
+        "generate-monthly-statements",
+        job => job.GenerateMonthlyStatementsAsync(),
+        "0 2 1 * *"); // Cron expression: 2 AM on the 1st day of every month
+}
 
 try
 {

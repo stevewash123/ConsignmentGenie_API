@@ -115,10 +115,7 @@ public class ProvidersController : ControllerBase
                 TotalCount = totalCount,
                 Page = queryParams.Page,
                 PageSize = queryParams.PageSize,
-                TotalPages = (int)Math.Ceiling((double)totalCount / queryParams.PageSize),
-                HasNextPage = queryParams.Page < (int)Math.Ceiling((double)totalCount / queryParams.PageSize),
-                HasPreviousPage = queryParams.Page > 1,
-                OrganizationId = organizationId.ToString()
+                OrganizationId = organizationId
             };
 
             return Ok(result);

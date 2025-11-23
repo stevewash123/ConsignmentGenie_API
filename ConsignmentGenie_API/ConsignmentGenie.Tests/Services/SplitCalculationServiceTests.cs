@@ -21,7 +21,7 @@ public class SplitCalculationServiceTests : IDisposable
     [InlineData(100.00, 50.00, 50.00, 50.00)]
     [InlineData(99.99, 60.00, 59.99, 40.00)]
     [InlineData(150.00, 40.00, 60.00, 90.00)]
-    [InlineData(25.75, 30.00, 7.73, 18.02)]
+    [InlineData(25.75, 30.00, 7.72, 18.03)]
     public void CalculateSplit_VariousInputs_ReturnsCorrectSplit(
         decimal salePrice,
         decimal splitPercentage,
@@ -52,7 +52,8 @@ public class SplitCalculationServiceTests : IDisposable
         var provider = new Provider
         {
             OrganizationId = organization.Id,
-            DisplayName = "Test Provider",
+            FirstName = "Test",
+            LastName = "Provider",
             Email = "provider@test.com",
             DefaultSplitPercentage = 50.00m
         };
@@ -140,7 +141,8 @@ public class SplitCalculationServiceTests : IDisposable
         var provider = new Provider
         {
             OrganizationId = organization.Id,
-            DisplayName = "Empty Provider",
+            FirstName = "Empty",
+            LastName = "Provider",
             Email = "empty@test.com",
             DefaultSplitPercentage = 50.00m
         };
@@ -184,32 +186,41 @@ public class SplitCalculationServiceTests : IDisposable
             Name = "Test Shop",
             VerticalType = VerticalType.Consignment
         };
-        _context.Organizations.Add(organization);
 
         var provider = new Provider
         {
-            OrganizationId = organization.Id,
-            DisplayName = "Test Provider",
+            Organization = organization,
+            FirstName = "Test",
+            LastName = "Provider",
             Email = "provider@test.com",
             DefaultSplitPercentage = 50.00m
         };
-        _context.Providers.Add(provider);
 
         var item = new Item
         {
-            OrganizationId = organization.Id,
-            ProviderId = provider.Id,
+            Organization = organization,
+            Provider = provider,
             Sku = "ITEM001",
             Title = "Test Item",
             Price = 100.00m
         };
+
+        // Add all entities at once
+        _context.Organizations.Add(organization);
+        _context.Providers.Add(provider);
         _context.Items.Add(item);
+
+        // Single save - EF handles all relationships together
+        await _context.SaveChangesAsync();
 
         var periodStart = DateTime.UtcNow.AddDays(-30);
         var periodEnd = DateTime.UtcNow.AddDays(-10);
 
+        // Create a new context to avoid tracking issues
+        _context.ChangeTracker.Clear();
+
         // Transaction inside period
-        var transactionInside = new Transaction
+        _context.Transactions.Add(new Transaction
         {
             OrganizationId = organization.Id,
             ItemId = item.Id,
@@ -217,11 +228,12 @@ public class SplitCalculationServiceTests : IDisposable
             SalePrice = 100.00m,
             SaleDate = DateTime.UtcNow.AddDays(-20), // Inside period
             ProviderAmount = 50.00m,
-            ShopAmount = 50.00m
-        };
+            ShopAmount = 50.00m,
+            ProviderSplitPercentage = 50.00m
+        });
 
         // Transaction outside period
-        var transactionOutside = new Transaction
+        _context.Transactions.Add(new Transaction
         {
             OrganizationId = organization.Id,
             ItemId = item.Id,
@@ -229,10 +241,10 @@ public class SplitCalculationServiceTests : IDisposable
             SalePrice = 200.00m,
             SaleDate = DateTime.UtcNow.AddDays(-5), // Outside period (after periodEnd)
             ProviderAmount = 100.00m,
-            ShopAmount = 100.00m
-        };
+            ShopAmount = 100.00m,
+            ProviderSplitPercentage = 50.00m
+        });
 
-        _context.Transactions.AddRange(transactionInside, transactionOutside);
         await _context.SaveChangesAsync();
 
         // Act

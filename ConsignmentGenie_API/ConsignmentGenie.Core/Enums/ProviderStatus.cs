@@ -4,7 +4,8 @@ public enum ProviderStatus
 {
     Pending = 0,
     Active = 1,
-    Inactive = 2,
-    Deactivated = 3,
-    Rejected = 4
+    Approved = 2,  // Added for statements
+    Inactive = 3,
+    Deactivated = 4,
+    Rejected = 5
 }

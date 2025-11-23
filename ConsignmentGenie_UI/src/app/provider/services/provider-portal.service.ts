@@ -13,7 +13,13 @@ import {
   UpdateProviderProfile,
   PagedResult,
   ProviderItemQuery,
-  ProviderSaleQuery
+  ProviderSaleQuery,
+  NotificationDto,
+  NotificationQueryParams,
+  NotificationPreferencesDto,
+  UpdateNotificationPreferencesRequest,
+  StatementListDto,
+  StatementDto
 } from '../models/provider.models';
 
 @Injectable({
@@ -77,5 +83,70 @@ export class ProviderPortalService {
 
   updateProfile(profile: UpdateProviderProfile): Observable<ProviderProfile> {
     return this.http.put<ProviderProfile>(`${this.apiUrl}/profile`, profile);
+  }
+
+  // Notifications
+  getNotifications(query?: NotificationQueryParams): Observable<PagedResult<NotificationDto>> {
+    let params = new HttpParams();
+
+    if (query?.unreadOnly) params = params.set('unreadOnly', query.unreadOnly.toString());
+    if (query?.type) params = params.set('type', query.type);
+    if (query?.page) params = params.set('page', query.page.toString());
+    if (query?.pageSize) params = params.set('pageSize', query.pageSize.toString());
+
+    return this.http.get<PagedResult<NotificationDto>>(`${this.apiUrl}/notifications`, { params });
+  }
+
+  getUnreadNotificationCount(): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${this.apiUrl}/notifications/unread-count`);
+  }
+
+  markNotificationAsRead(notificationId: string): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/notifications/${notificationId}/read`, {});
+  }
+
+  markAllNotificationsAsRead(): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/notifications/mark-all-read`, {});
+  }
+
+  deleteNotification(notificationId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/notifications/${notificationId}`);
+  }
+
+  getNotificationPreferences(): Observable<NotificationPreferencesDto> {
+    return this.http.get<NotificationPreferencesDto>(`${this.apiUrl}/notifications/preferences`);
+  }
+
+  updateNotificationPreferences(preferences: UpdateNotificationPreferencesRequest): Observable<NotificationPreferencesDto> {
+    return this.http.put<NotificationPreferencesDto>(`${this.apiUrl}/notifications/preferences`, preferences);
+  }
+
+  // Statements
+  getStatements(): Observable<StatementListDto[]> {
+    return this.http.get<StatementListDto[]>(`${this.apiUrl}/statements`);
+  }
+
+  getStatement(statementId: string): Observable<StatementDto> {
+    return this.http.get<StatementDto>(`${this.apiUrl}/statements/${statementId}`);
+  }
+
+  getStatementByPeriod(year: number, month: number): Observable<StatementDto> {
+    return this.http.get<StatementDto>(`${this.apiUrl}/statements/period/${year}/${month}`);
+  }
+
+  downloadStatementPdf(statementId: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/statements/${statementId}/pdf`, {
+      responseType: 'blob'
+    });
+  }
+
+  downloadStatementPdfByPeriod(year: number, month: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/statements/period/${year}/${month}/pdf`, {
+      responseType: 'blob'
+    });
+  }
+
+  regenerateStatement(statementId: string): Observable<StatementDto> {
+    return this.http.post<StatementDto>(`${this.apiUrl}/statements/${statementId}/regenerate`, {});
   }
 }

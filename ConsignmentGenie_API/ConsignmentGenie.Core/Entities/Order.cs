@@ -6,37 +6,77 @@ namespace ConsignmentGenie.Core.Entities;
 public class Order : BaseEntity
 {
     [Required]
-    public Guid CustomerId { get; set; }
-
-    [Required]
     public Guid OrganizationId { get; set; }
 
     [Required]
     [MaxLength(20)]
     public string OrderNumber { get; set; } = string.Empty;
 
-    [Required]
-    public decimal SubTotal { get; set; }
-
-    public decimal Tax { get; set; } = 0;
-
-    public decimal Shipping { get; set; } = 0;
+    // Customer info (may or may not have account)
+    public Guid? CustomerId { get; set; }  // Nullable for guest checkout
 
     [Required]
-    public decimal Total { get; set; }
+    [MaxLength(255)]
+    public string CustomerEmail { get; set; } = string.Empty;
 
-    public OrderStatus Status { get; set; } = OrderStatus.Pending;
+    [Required]
+    [MaxLength(200)]
+    public string CustomerName { get; set; } = string.Empty;
+
+    [MaxLength(50)]
+    public string? CustomerPhone { get; set; }
+
+    // Shipping/Pickup
+    [Required]
+    [MaxLength(20)]
+    public string FulfillmentType { get; set; } = "pickup";  // 'pickup', 'shipping'
+
+    // Shipping address (if shipping)
+    [MaxLength(200)]
+    public string? ShippingAddress1 { get; set; }
+
+    [MaxLength(200)]
+    public string? ShippingAddress2 { get; set; }
 
     [MaxLength(100)]
-    public string? StripePaymentIntentId { get; set; }
+    public string? ShippingCity { get; set; }
 
-    public string? ShippingAddress { get; set; } // JSON
+    [MaxLength(50)]
+    public string? ShippingState { get; set; }
 
-    public string? BillingAddress { get; set; } // JSON
+    [MaxLength(20)]
+    public string? ShippingZip { get; set; }
 
-    public string? CustomerNotes { get; set; }
+    [MaxLength(50)]
+    public string ShippingCountry { get; set; } = "US";
 
-    public string? InternalNotes { get; set; }
+    // Totals
+    [Required]
+    public decimal Subtotal { get; set; }
+
+    public decimal TaxAmount { get; set; } = 0;
+
+    public decimal ShippingAmount { get; set; } = 0;
+
+    [Required]
+    public decimal TotalAmount { get; set; }
+
+    // Payment
+    [MaxLength(50)]
+    public string? PaymentMethod { get; set; }  // 'card', 'cash_on_pickup'
+
+    [MaxLength(20)]
+    public string PaymentStatus { get; set; } = "pending";  // 'pending', 'paid', 'refunded'
+
+    [MaxLength(100)]
+    public string? PaymentIntentId { get; set; }  // Stripe PaymentIntent ID
+
+    public DateTime? PaidAt { get; set; }
+
+    // Order status
+    public OrderStatus Status { get; set; } = OrderStatus.Pending;
+
+    public string? Notes { get; set; }
 
     public DateTime? ShippedAt { get; set; }
 
@@ -46,11 +86,11 @@ public class Order : BaseEntity
     public string? TrackingNumber { get; set; }
 
     // Navigation properties
-    public Customer Customer { get; set; } = null!;
+    public Customer? Customer { get; set; }  // Nullable for guest checkout
     public Organization Organization { get; set; } = null!;
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
-    // Computed properties
+    // Computed properties - updated for consignment
     public decimal Commission => OrderItems.Sum(item => item.CommissionAmount);
-    public int ItemCount => OrderItems.Sum(item => item.Quantity);
+    public int ItemCount => OrderItems.Count;
 }

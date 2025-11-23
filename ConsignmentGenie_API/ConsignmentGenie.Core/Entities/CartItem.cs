@@ -10,16 +10,12 @@ public class CartItem : BaseEntity
     [Required]
     public Guid ItemId { get; set; }
 
-    [Required]
-    [Range(1, 100)]
-    public int Quantity { get; set; } = 1;
-
     public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
     public ShoppingCart Cart { get; set; } = null!;
     public Item Item { get; set; } = null!;
 
-    // Computed properties
-    public decimal LineTotal => Item.Price * Quantity;
+    // Computed properties - no quantity for consignment items
+    public decimal LineTotal => Item.Price;
 }

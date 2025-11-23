@@ -127,21 +127,18 @@ describe('ShopperCatalogService', () => {
     it('should get categories', () => {
       const mockResponse = {
         success: true,
-        data: {
-          categories: ['Electronics', 'Clothing', 'Books'],
-          categoryCounts: [
-            { category: 'Electronics', count: 10 },
-            { category: 'Clothing', count: 15 },
-            { category: 'Books', count: 8 }
-          ]
-        }
+        data: [
+          { name: 'Electronics', itemCount: 10 },
+          { name: 'Clothing', itemCount: 15 },
+          { name: 'Books', itemCount: 8 }
+        ]
       };
 
       service.getCategories(mockStoreSlug).subscribe(response => {
         expect(response.success).toBe(true);
-        expect(response.data.categories.length).toBe(3);
-        expect(response.data.categoryCounts.length).toBe(3);
-        expect(response.data.categories).toContain('Electronics');
+        expect(response.data!.length).toBe(3);
+        expect(response.data![0].name).toBe('Electronics');
+        expect(response.data![0].itemCount).toBe(10);
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/shop/test-store/categories`);
@@ -152,7 +149,7 @@ describe('ShopperCatalogService', () => {
 
   describe('Search', () => {
     it('should search items', () => {
-      const query = 'test search';
+      const searchRequest = { searchQuery: 'test search' };
       const mockResponse = {
         success: true,
         data: {
@@ -162,34 +159,38 @@ describe('ShopperCatalogService', () => {
               title: 'Test Item',
               price: 50.00,
               category: 'Electronics',
-              condition: 'Good'
+              condition: 'Good',
+              images: []
             }
           ],
           totalCount: 1,
-          query: query
+          page: 1,
+          pageSize: 20,
+          totalPages: 1,
+          searchQuery: 'test search',
+          filters: {}
         }
       };
 
-      service.searchItems(mockStoreSlug, query).subscribe(response => {
+      service.searchItems(mockStoreSlug, searchRequest).subscribe(response => {
         expect(response.success).toBe(true);
-        expect(response.data.query).toBe(query);
-        expect(response.data.items.length).toBe(1);
+        expect(response.data!.searchQuery).toBe('test search');
+        expect(response.data!.items.length).toBe(1);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/shop/test-store/search?query=${encodeURIComponent(query)}`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/shop/test-store/search?searchQuery=${encodeURIComponent(searchRequest.searchQuery)}`);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
 
-    it('should search items with limit', () => {
-      const query = 'test';
-      const limit = 5;
+    it('should search items with page size', () => {
+      const searchRequest = { searchQuery: 'test', pageSize: 5 };
 
-      service.searchItems(mockStoreSlug, query, limit).subscribe();
+      service.searchItems(mockStoreSlug, searchRequest).subscribe();
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/shop/test-store/search?query=${query}&limit=${limit}`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/shop/test-store/search?searchQuery=${searchRequest.searchQuery}&pageSize=${searchRequest.pageSize}`);
       expect(req.request.method).toBe('GET');
-      req.flush({ success: true, data: { items: [], totalCount: 0, query } });
+      req.flush({ success: true, data: { items: [], totalCount: 0, page: 1, pageSize: 5, totalPages: 0, searchQuery: 'test', filters: {} } });
     });
   });
 
@@ -234,12 +235,12 @@ describe('ShopperCatalogService', () => {
       // Test categories endpoint
       service.getCategories('my-store').subscribe();
       req = httpMock.expectOne(`${environment.apiUrl}/api/shop/my-store/categories`);
-      req.flush({ success: true, data: { categories: [] } });
+      req.flush({ success: true, data: [] });
 
       // Test search endpoint
-      service.searchItems('my-store', 'search-term').subscribe();
-      req = httpMock.expectOne(`${environment.apiUrl}/api/shop/my-store/search?query=search-term`);
-      req.flush({ success: true, data: { items: [], query: 'search-term' } });
+      service.searchItems('my-store', { searchQuery: 'search-term' }).subscribe();
+      req = httpMock.expectOne(`${environment.apiUrl}/api/shop/my-store/search?searchQuery=search-term`);
+      req.flush({ success: true, data: { items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0, searchQuery: 'search-term', filters: {} } });
     });
   });
 });

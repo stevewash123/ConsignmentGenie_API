@@ -111,6 +111,8 @@ public class Provider : BaseEntity
     [MaxLength(50)]
     public string? InviteCode { get; set; } // Temporary invite code for portal access
 
+    public DateTime? InviteExpiry { get; set; } // When the invite code expires
+
     // Audit fields (inherited from BaseEntity: Id, CreatedAt, UpdatedAt)
     public Guid? CreatedBy { get; set; }
     public Guid? UpdatedBy { get; set; }

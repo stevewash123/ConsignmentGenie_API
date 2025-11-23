@@ -38,14 +38,14 @@ public class ShopperAuthController : ControllerBase
                 return BadRequest(ApiResponse<AuthResultDto>.ErrorResult(result.ErrorMessage ?? "Registration failed"));
             }
 
-            _logger.LogInformation("Shopper registered successfully for store {StoreSlug}: {Email}",
+            _logger.LogInformation("Shopper registered successfully for store {Slug}: {Email}",
                 storeSlug, request.Email);
 
             return Ok(ApiResponse<AuthResultDto>.SuccessResult(result));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error registering shopper for store {StoreSlug}: {Email}",
+            _logger.LogError(ex, "Error registering shopper for store {Slug}: {Email}",
                 storeSlug, request.Email);
             return StatusCode(500, ApiResponse<AuthResultDto>.ErrorResult("An error occurred during registration"));
         }
@@ -71,14 +71,14 @@ public class ShopperAuthController : ControllerBase
                 return BadRequest(ApiResponse<AuthResultDto>.ErrorResult(result.ErrorMessage ?? "Login failed"));
             }
 
-            _logger.LogInformation("Shopper logged in successfully for store {StoreSlug}: {Email}",
+            _logger.LogInformation("Shopper logged in successfully for store {Slug}: {Email}",
                 storeSlug, request.Email);
 
             return Ok(ApiResponse<AuthResultDto>.SuccessResult(result));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during shopper login for store {StoreSlug}: {Email}",
+            _logger.LogError(ex, "Error during shopper login for store {Slug}: {Email}",
                 storeSlug, request.Email);
             return StatusCode(500, ApiResponse<AuthResultDto>.ErrorResult("An error occurred during login"));
         }
@@ -99,19 +99,19 @@ public class ShopperAuthController : ControllerBase
         {
             var result = await _shopperAuthService.CreateGuestSessionAsync(request, storeSlug);
 
-            _logger.LogInformation("Guest session created for store {StoreSlug}: {Email}",
+            _logger.LogInformation("Guest session created for store {Slug}: {Email}",
                 storeSlug, request.Email);
 
             return Ok(ApiResponse<GuestSessionDto>.SuccessResult(result));
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning("Invalid store slug provided: {StoreSlug}", storeSlug);
+            _logger.LogWarning("Invalid store slug provided: {Slug}", storeSlug);
             return BadRequest(ApiResponse<GuestSessionDto>.ErrorResult("Store not found"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating guest session for store {StoreSlug}: {Email}",
+            _logger.LogError(ex, "Error creating guest session for store {Slug}: {Email}",
                 storeSlug, request.Email);
             return StatusCode(500, ApiResponse<GuestSessionDto>.ErrorResult("An error occurred creating guest session"));
         }
@@ -137,7 +137,7 @@ public class ShopperAuthController : ControllerBase
             // 3. Send password reset email
             // 4. Return success (don't reveal if email exists for security)
 
-            _logger.LogInformation("Password reset requested for store {StoreSlug}: {Email}",
+            _logger.LogInformation("Password reset requested for store {Slug}: {Email}",
                 storeSlug, request.Email);
 
             // For now, return success without actual implementation
@@ -145,7 +145,7 @@ public class ShopperAuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing forgot password for store {StoreSlug}: {Email}",
+            _logger.LogError(ex, "Error processing forgot password for store {Slug}: {Email}",
                 storeSlug, request.Email);
             return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred processing password reset"));
         }
@@ -171,7 +171,7 @@ public class ShopperAuthController : ControllerBase
             // 3. Update the password
             // 4. Invalidate the reset token
 
-            _logger.LogInformation("Password reset attempted for store {StoreSlug}: {Email}",
+            _logger.LogInformation("Password reset attempted for store {Slug}: {Email}",
                 storeSlug, request.Email);
 
             // For now, return success without actual implementation
@@ -179,7 +179,7 @@ public class ShopperAuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error resetting password for store {StoreSlug}: {Email}",
+            _logger.LogError(ex, "Error resetting password for store {Slug}: {Email}",
                 storeSlug, request.Email);
             return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred resetting password"));
         }
