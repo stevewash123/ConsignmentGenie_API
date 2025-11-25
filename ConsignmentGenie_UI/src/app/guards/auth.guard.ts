@@ -35,8 +35,21 @@ export class AuthGuard implements CanActivate {
     let userData: UserData;
     try {
       userData = JSON.parse(userDataStr);
+
+      // Validate that userData has required properties
+      if (!userData.userId || !userData.email || userData.role === undefined || !userData.organizationId) {
+        console.error('User data missing required properties:', userData);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        localStorage.removeItem('tokenExpiry');
+        this.router.navigate(['/login']);
+        return false;
+      }
     } catch (error) {
-      console.error('Invalid user data in localStorage');
+      console.error('Invalid user data in localStorage:', error, 'Raw data:', userDataStr);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_data');
+      localStorage.removeItem('tokenExpiry');
       this.router.navigate(['/login']);
       return false;
     }
