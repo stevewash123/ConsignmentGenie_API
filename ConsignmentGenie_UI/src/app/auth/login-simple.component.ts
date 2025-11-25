@@ -302,7 +302,9 @@ export class LoginSimpleComponent {
     this.authService.login(loginRequest).subscribe({
       next: (response) => {
         console.log('Login successful:', response);
-        this.redirectBasedOnUser(response.user);
+        // Handle different API response formats
+        const userData = this.extractUserData(response);
+        this.redirectBasedOnUser(userData);
       },
       error: (error) => {
         console.error('Login error:', error);
@@ -320,6 +322,23 @@ export class LoginSimpleComponent {
         this.isLoading.set(false);
       }
     });
+  }
+
+  private extractUserData(response: any): any {
+    // Type guard for wrapped response with nested user
+    if (response.data?.user) {
+      return response.data.user;
+    }
+    // Type guard for wrapped response with direct user data
+    if (response.data && !response.user) {
+      return response.data;
+    }
+    // Direct user response
+    if (response.user) {
+      return response.user;
+    }
+    // Fallback to response itself
+    return response;
   }
 
   private redirectBasedOnUser(userData: any) {
@@ -360,6 +379,14 @@ export class LoginSimpleComponent {
   }
 
   private normalizeRole(role: string | number): string {
+    // Validate input - null and undefined should throw
+    if (role === null) {
+      throw new Error('Role cannot be null');
+    }
+    if (role === undefined) {
+      throw new Error('Role cannot be undefined');
+    }
+
     // Handle numeric role values (enum numbers from API)
     if (typeof role === 'number' || !isNaN(Number(role))) {
       const roleMap: { [key: number]: string } = {

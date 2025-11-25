@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, BehaviorSubject, catchError, of } from 'rxjs';
-import { LoginRequest, RegisterRequest, AuthResponse, User, TokenInfo } from '../models/auth.model';
+import { LoginRequest, RegisterRequest, AuthResponse, User, TokenInfo, LoginResponse } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,11 +18,24 @@ export class AuthService {
     this.loadStoredAuth();
   }
 
-  login(request: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, request)
+  login(request: LoginRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, request)
       .pipe(
-        tap(response => this.setAuthData(response))
+        tap(response => {
+          // Handle wrapped API response format
+          const authData = this.extractAuthData(response);
+          this.setAuthData(authData);
+        })
       );
+  }
+
+  private extractAuthData(response: LoginResponse): AuthResponse {
+    // Type guard to check if it's a wrapped response
+    if ('success' in response && 'data' in response) {
+      return response.data;
+    }
+    // Otherwise it's a direct AuthResponse
+    return response;
   }
 
   register(request: RegisterRequest): Observable<AuthResponse> {
@@ -143,21 +156,29 @@ export class AuthService {
   }
 
   public loadStoredAuth(): void {
-    const token = localStorage.getItem('auth_token');
-    const userJson = localStorage.getItem('user_data');
-    const expiryStr = localStorage.getItem('tokenExpiry');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const userJson = localStorage.getItem('user_data');
+      const expiryStr = localStorage.getItem('tokenExpiry');
 
-    if (token && userJson && expiryStr) {
-      const user = JSON.parse(userJson);
-      const expiry = new Date(expiryStr);
+      // Validate that we have valid values (not null, undefined, or the string "undefined")
+      if (token && userJson && expiryStr &&
+          token !== 'undefined' && userJson !== 'undefined' && expiryStr !== 'undefined') {
+        const user = JSON.parse(userJson);
+        const expiry = new Date(expiryStr);
 
-      if (expiry > new Date()) {
-        this.currentUserSubject.next(user);
-        this.tokenInfo.set({ token, expiresAt: expiry });
-        this.isLoggedIn.set(true);
-      } else {
-        this.logout();
+        if (expiry > new Date()) {
+          this.currentUserSubject.next(user);
+          this.tokenInfo.set({ token, expiresAt: expiry });
+          this.isLoggedIn.set(true);
+        } else {
+          this.logout();
+        }
       }
+    } catch (error) {
+      console.error('Error loading stored auth data:', error);
+      // Clear potentially corrupted localStorage data
+      this.logout();
     }
   }
 }

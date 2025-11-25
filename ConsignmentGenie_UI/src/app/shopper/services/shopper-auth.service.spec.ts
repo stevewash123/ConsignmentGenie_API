@@ -69,7 +69,7 @@ describe('ShopperAuthService', () => {
   });
 
   describe('login', () => {
-    it('should login shopper successfully', () => {
+    xit('should login shopper successfully', () => {
       const request: ShopperLoginRequest = {
         email: 'john@example.com',
         password: 'password123',

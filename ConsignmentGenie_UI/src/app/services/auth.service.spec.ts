@@ -31,6 +31,32 @@ describe('AuthService', () => {
 
   it('should login successfully', fakeAsync(() => {
     const loginRequest = { email: 'test@test.com', password: 'password' };
+    const authData = {
+      token: 'mock-token',
+      refreshToken: 'mock-refresh',
+      user: { id: 1, email: 'test@test.com', businessName: 'Test', ownerName: 'Test User', organizationId: 1, role: 'Owner' },
+      expiresAt: new Date(Date.now() + 3600000).toISOString()
+    };
+    const mockResponse = {
+      success: true,
+      data: authData,
+      message: 'Login successful'
+    };
+
+    mockHttpClient.post.and.returnValue(of(mockResponse));
+
+    service.login(loginRequest).subscribe(response => {
+      expect(response).toEqual(mockResponse);
+      expect(service.isLoggedIn()).toBeTruthy();
+    });
+
+    tick();
+
+    expect(mockHttpClient.post).toHaveBeenCalledWith('http://localhost:5000/api/auth/login', loginRequest);
+  }));
+
+  it('should login successfully with direct response format', fakeAsync(() => {
+    const loginRequest = { email: 'test@test.com', password: 'password' };
     const mockResponse = {
       token: 'mock-token',
       refreshToken: 'mock-refresh',
