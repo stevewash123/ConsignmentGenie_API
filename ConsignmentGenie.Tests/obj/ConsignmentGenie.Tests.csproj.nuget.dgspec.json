@@ -1,0 +1,497 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\ConsignmentGenie.Tests.csproj": {}
+  },
+  "projects": {
+    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj",
+        "projectName": "ConsignmentGenie.API",
+        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj",
+        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
+        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj"
+              },
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "AutoMapper.Extensions.Microsoft.DependencyInjection": {
+              "target": "Package",
+              "version": "[12.0.1, )"
+            },
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.0.3, )"
+            },
+            "FluentValidation.AspNetCore": {
+              "target": "Package",
+              "version": "[11.3.0, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[8.0.20, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Serilog.Extensions.Hosting": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Serilog.Sinks.Console": {
+              "target": "Package",
+              "version": "[6.1.1, )"
+            },
+            "Serilog.Sinks.PostgreSQL": {
+              "target": "Package",
+              "version": "[2.3.0, )"
+            },
+            "Stripe.net": {
+              "target": "Package",
+              "version": "[50.0.0, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.6.2, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.0.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj",
+        "projectName": "ConsignmentGenie.Application",
+        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj",
+        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
+        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj"
+              },
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Azure.Storage.Blobs": {
+              "target": "Package",
+              "version": "[12.21.2, )"
+            },
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.0.3, )"
+            },
+            "CloudinaryDotNet": {
+              "target": "Package",
+              "version": "[1.27.8, )"
+            },
+            "Hangfire.AspNetCore": {
+              "target": "Package",
+              "version": "[1.8.14, )"
+            },
+            "Hangfire.MemoryStorage": {
+              "target": "Package",
+              "version": "[1.8.1, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.Extensions.Configuration.Abstractions": {
+              "target": "Package",
+              "version": "[10.0.0, )"
+            },
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[10.0.0, )"
+            },
+            "QuestPDF": {
+              "target": "Package",
+              "version": "[2025.7.4, )"
+            },
+            "SixLabors.ImageSharp": {
+              "target": "Package",
+              "version": "[3.1.7, )"
+            },
+            "Stripe.net": {
+              "target": "Package",
+              "version": "[44.13.0, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.0.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj",
+        "projectName": "ConsignmentGenie.Core",
+        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj",
+        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
+        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj",
+        "projectName": "ConsignmentGenie.Infrastructure",
+        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
+        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.0.3, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[8.0.10, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\ConsignmentGenie.Tests.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\ConsignmentGenie.Tests.csproj",
+        "projectName": "ConsignmentGenie.Tests",
+        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\ConsignmentGenie.Tests.csproj",
+        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
+        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj"
+              },
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj"
+              },
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj"
+              },
+              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj": {
+                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.Extensions.Logging.Abstractions": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Microsoft.NET.Test.Sdk": {
+              "target": "Package",
+              "version": "[17.8.0, )"
+            },
+            "Moq": {
+              "target": "Package",
+              "version": "[4.20.70, )"
+            },
+            "coverlet.collector": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[6.0.4, )"
+            },
+            "xunit": {
+              "target": "Package",
+              "version": "[2.6.2, )"
+            },
+            "xunit.runner.visualstudio": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.5.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

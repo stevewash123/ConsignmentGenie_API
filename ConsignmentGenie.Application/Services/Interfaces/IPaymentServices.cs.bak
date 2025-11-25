@@ -1,0 +1,55 @@
+using ConsignmentGenie.Core.DTOs.Payment;
+
+namespace ConsignmentGenie.Application.Services.Interfaces;
+
+/// <summary>
+/// Interface for payment processing operations
+/// Primary Implementation: StripePaymentService
+/// Limited fallbacks: InternalPaymentService (for cash/check only)
+/// Note: Stripe is unique - most operations don't have meaningful fallbacks
+/// </summary>
+public interface IPaymentProcessor
+{
+    // Core payment processing
+    Task<PaymentTransactionDto> ProcessPaymentAsync(CreatePaymentTransactionDto transaction);
+    Task<PaymentTransactionDto?> GetTransactionAsync(string transactionId);
+    Task<IEnumerable<PaymentTransactionDto>> GetTransactionsAsync(DateTime? startDate = null, DateTime? endDate = null);
+
+    // Refund operations
+    Task<PaymentRefundDto> ProcessRefundAsync(CreatePaymentRefundDto refund);
+    Task<PaymentRefundDto?> GetRefundAsync(string refundId);
+    Task<IEnumerable<PaymentRefundDto>> GetRefundsAsync(string transactionId);
+
+    // Configuration and capabilities
+    IEnumerable<PaymentMethod> GetSupportedPaymentMethods();
+    bool IsPaymentMethodSupported(PaymentMethod method);
+    PaymentGateway GetGatewayInfo();
+}
+
+/// <summary>
+/// Interface for payment analytics and reporting
+/// Implementations: StripeAnalyticsService, InternalAnalyticsService
+/// </summary>
+public interface IPaymentAnalytics
+{
+    Task<PaymentSummaryDto> GetPaymentSummaryAsync(DateTime startDate, DateTime endDate);
+    Task<IEnumerable<PaymentTransactionDto>> GetFailedTransactionsAsync(DateTime startDate, DateTime endDate);
+    Task<IEnumerable<ChargebackDto>> GetChargebacksAndDisputesAsync(DateTime startDate, DateTime endDate);
+    Task<byte[]> ExportTransactionsAsync(DateTime startDate, DateTime endDate);
+    Task<RevenueReportDto> GenerateRevenueReportAsync(DateTime startDate, DateTime endDate);
+}
+
+/// <summary>
+/// Interface for payment method and gateway configuration
+/// Implementations: StripeConfigService, InternalConfigService
+/// </summary>
+public interface IPaymentConfiguration
+{
+    Task<IEnumerable<PaymentMethodConfigDto>> GetPaymentMethodConfigsAsync();
+    Task UpdatePaymentMethodConfigAsync(PaymentMethod method, PaymentMethodConfigDto config);
+    Task EnablePaymentMethodAsync(PaymentMethod method);
+    Task DisablePaymentMethodAsync(PaymentMethod method);
+    Task<bool> TestGatewayConnectionAsync(PaymentGateway gateway);
+    Task<GatewayConfigurationDto> GetGatewayConfigurationAsync(PaymentGateway gateway);
+    Task UpdateGatewayConfigurationAsync(PaymentGateway gateway, GatewayConfigurationDto config);
+}

@@ -1,0 +1,466 @@
+using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.Entities;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
+
+namespace ConsignmentGenie.Application.Services;
+
+public class ResendEmailService : IEmailService
+{
+    private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<ResendEmailService> _logger;
+    private readonly string _apiKey;
+
+    public ResendEmailService(IConfiguration configuration, ILogger<ResendEmailService> logger)
+    {
+        _configuration = configuration;
+        _logger = logger;
+        _apiKey = _configuration["Resend:ApiKey"] ?? "";
+        _httpClient = new HttpClient();
+        _httpClient.BaseAddress = new Uri("https://api.resend.com/");
+        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "ConsignmentGenie/1.0");
+    }
+
+    public async Task<bool> SendWelcomeEmailAsync(string email, string organizationName)
+    {
+        try
+        {
+            var subject = "Welcome to ConsignmentGenie!";
+            var htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""utf-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
+    <title>Welcome to ConsignmentGenie</title>
+</head>
+<body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
+    <div style=""background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
+        <h1 style=""margin: 0; font-size: 28px;"">Welcome to ConsignmentGenie!</h1>
+    </div>
+
+    <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
+        <h2 style=""color: #667eea; margin-top: 0;"">Hello {organizationName}!</h2>
+
+        <p>Welcome to ConsignmentGenie - your complete consignment management solution. We're excited to help you streamline your consignment business operations.</p>
+
+        <div style=""background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;"">
+            <h3 style=""margin-top: 0; color: #667eea;"">Getting Started:</h3>
+            <ul style=""padding-left: 20px;"">
+                <li>Set up your organization profile</li>
+                <li>Add your first providers (consigners)</li>
+                <li>Start tracking inventory and transactions</li>
+                <li>Generate payout reports with ease</li>
+            </ul>
+        </div>
+
+        <p>If you have any questions, our support team is here to help. Simply reply to this email or check out our documentation.</p>
+
+        <div style=""text-align: center; margin: 30px 0;"">
+            <a href=""http://localhost:4200/owner/dashboard"" style=""display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;"">Get Started</a>
+        </div>
+
+        <hr style=""border: none; border-top: 1px solid #eee; margin: 30px 0;"">
+
+        <p style=""color: #666; font-size: 14px; text-align: center;"">
+            Best regards,<br>
+            The ConsignmentGenie Team<br>
+            <a href=""mailto:support@microsaasbuilders.com"" style=""color: #667eea;"">support@microsaasbuilders.com</a>
+        </p>
+    </div>
+</body>
+</html>";
+
+            var textContent = $@"
+Welcome to ConsignmentGenie, {organizationName}!
+
+We're excited to help you streamline your consignment business operations.
+
+Getting Started:
+- Set up your organization profile
+- Add your first providers (consigners)
+- Start tracking inventory and transactions
+- Generate payout reports with ease
+
+If you have any questions, our support team is here to help. Simply reply to this email.
+
+Get started: http://localhost:4200/owner/dashboard
+
+Best regards,
+The ConsignmentGenie Team
+support@microsaasbuilders.com
+";
+
+            return await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send welcome email to {Email}", email);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendTrialExpiringEmailAsync(string email, int daysRemaining)
+    {
+        try
+        {
+            var subject = $"Your ConsignmentGenie trial expires in {daysRemaining} days";
+            var htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""utf-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
+    <title>Trial Expiring Soon</title>
+</head>
+<body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
+    <div style=""background: #f39c12; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
+        <h1 style=""margin: 0; font-size: 28px;"">Trial Expiring Soon</h1>
+    </div>
+
+    <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
+        <p>Your ConsignmentGenie trial expires in <strong>{daysRemaining} days</strong>.</p>
+
+        <p>Don't lose access to your consignment management tools! Upgrade now to continue using:</p>
+
+        <ul style=""padding-left: 20px;"">
+            <li>Provider management</li>
+            <li>Inventory tracking</li>
+            <li>Transaction recording</li>
+            <li>Automated payout calculations</li>
+            <li>Financial reporting</li>
+        </ul>
+
+        <div style=""text-align: center; margin: 30px 0;"">
+            <a href=""http://localhost:4200/billing"" style=""display: inline-block; background: #f39c12; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;"">Upgrade Now</a>
+        </div>
+
+        <p style=""color: #666; font-size: 14px; text-align: center;"">Questions? Contact us at support@microsaasbuilders.com</p>
+    </div>
+</body>
+</html>";
+
+            var textContent = $@"
+Your ConsignmentGenie trial expires in {daysRemaining} days.
+
+Don't lose access to your consignment management tools! Upgrade now to continue using:
+- Provider management
+- Inventory tracking
+- Transaction recording
+- Automated payout calculations
+- Financial reporting
+
+Upgrade now: http://localhost:4200/billing
+
+Questions? Contact us at support@microsaasbuilders.com
+";
+
+            return await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send trial expiring email to {Email}", email);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendPaymentFailedEmailAsync(string email, decimal amount, DateTime retryDate)
+    {
+        try
+        {
+            var subject = "Payment failed - Please update your payment method";
+            var htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""utf-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
+    <title>Payment Failed</title>
+</head>
+<body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
+    <div style=""background: #e74c3c; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
+        <h1 style=""margin: 0; font-size: 28px;"">Payment Failed</h1>
+    </div>
+
+    <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
+        <p>We were unable to process your payment of <strong>{amount:C}</strong> for your ConsignmentGenie subscription.</p>
+
+        <p>We'll automatically retry the payment on <strong>{retryDate:MMMM dd, yyyy}</strong>. To avoid any service interruption, please update your payment method before then.</p>
+
+        <div style=""text-align: center; margin: 30px 0;"">
+            <a href=""http://localhost:4200/billing"" style=""display: inline-block; background: #e74c3c; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;"">Update Payment Method</a>
+        </div>
+
+        <p style=""color: #666; font-size: 14px; text-align: center;"">Questions? Contact us at support@microsaasbuilders.com</p>
+    </div>
+</body>
+</html>";
+
+            var textContent = $@"
+Payment Failed
+
+We were unable to process your payment of {amount:C} for your ConsignmentGenie subscription.
+
+We'll automatically retry the payment on {retryDate:MMMM dd, yyyy}. To avoid any service interruption, please update your payment method before then.
+
+Update payment method: http://localhost:4200/billing
+
+Questions? Contact us at support@microsaasbuilders.com
+";
+
+            return await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send payment failed email to {Email}", email);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendPaymentReceiptAsync(string email, decimal amount, string invoiceUrl)
+    {
+        try
+        {
+            var subject = "Payment received - Thank you!";
+            var htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""utf-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
+    <title>Payment Received</title>
+</head>
+<body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
+    <div style=""background: #27ae60; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
+        <h1 style=""margin: 0; font-size: 28px;"">Payment Received</h1>
+    </div>
+
+    <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
+        <p>Thank you! We've successfully received your payment of <strong>{amount:C}</strong> for your ConsignmentGenie subscription.</p>
+
+        <p>Your service will continue uninterrupted. You can view and download your invoice using the link below:</p>
+
+        <div style=""text-align: center; margin: 30px 0;"">
+            <a href=""{invoiceUrl}"" style=""display: inline-block; background: #27ae60; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;"">View Invoice</a>
+        </div>
+
+        <p>Thank you for choosing ConsignmentGenie for your business needs.</p>
+
+        <p style=""color: #666; font-size: 14px; text-align: center;"">Questions? Contact us at support@microsaasbuilders.com</p>
+    </div>
+</body>
+</html>";
+
+            var textContent = $@"
+Payment Received
+
+Thank you! We've successfully received your payment of {amount:C} for your ConsignmentGenie subscription.
+
+Your service will continue uninterrupted. View your invoice: {invoiceUrl}
+
+Thank you for choosing ConsignmentGenie for your business needs.
+
+Questions? Contact us at support@microsaasbuilders.com
+";
+
+            return await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send payment receipt email to {Email}", email);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendSyncErrorEmailAsync(string email, string integration, string errorMessage)
+    {
+        try
+        {
+            var subject = $"{integration} sync failed";
+            var htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""utf-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
+    <title>Sync Error</title>
+</head>
+<body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
+    <div style=""background: #e74c3c; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
+        <h1 style=""margin: 0; font-size: 28px;"">Sync Error</h1>
+    </div>
+
+    <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
+        <p>We encountered an error while syncing your <strong>{integration}</strong> data with ConsignmentGenie.</p>
+
+        <div style=""background: #fff3cd; border: 1px solid #ffeeba; border-radius: 5px; padding: 15px; margin: 20px 0;"">
+            <h4 style=""margin-top: 0; color: #856404;"">Error Details:</h4>
+            <p style=""margin-bottom: 0; font-family: monospace; font-size: 14px; color: #856404;"">{errorMessage}</p>
+        </div>
+
+        <p>Please check your {integration} integration settings and try again. If the problem persists, contact our support team.</p>
+
+        <div style=""text-align: center; margin: 30px 0;"">
+            <a href=""http://localhost:4200/owner/integrations"" style=""display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;"">Check Integration Settings</a>
+        </div>
+
+        <p style=""color: #666; font-size: 14px; text-align: center;"">Questions? Contact us at support@microsaasbuilders.com</p>
+    </div>
+</body>
+</html>";
+
+            var textContent = $@"
+Sync Error
+
+We encountered an error while syncing your {integration} data with ConsignmentGenie.
+
+Error Details:
+{errorMessage}
+
+Please check your {integration} integration settings and try again. If the problem persists, contact our support team.
+
+Check integration settings: http://localhost:4200/owner/integrations
+
+Questions? Contact us at support@microsaasbuilders.com
+";
+
+            return await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send sync error email to {Email}", email);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendSuggestionNotificationAsync(Suggestion suggestion)
+    {
+        try
+        {
+            var developerEmail = _configuration["DeveloperEmail"] ?? "swashcode@outlook.com";
+            var subject = $"New Suggestion: {suggestion.Type} from {suggestion.UserName}";
+
+            var htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""utf-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
+    <title>New Suggestion Received</title>
+</head>
+<body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
+    <div style=""background: #667eea; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
+        <h1 style=""margin: 0; font-size: 28px;"">New Suggestion Received</h1>
+    </div>
+
+    <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
+        <div style=""background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;"">
+            <p><strong>From:</strong> {suggestion.UserName} ({suggestion.UserEmail})</p>
+            <p><strong>Type:</strong> {suggestion.Type}</p>
+            <p><strong>Submitted:</strong> {suggestion.CreatedAt:yyyy-MM-dd HH:mm:ss} UTC</p>
+        </div>
+
+        <h3 style=""color: #667eea; margin: 30px 0 15px 0;"">Message:</h3>
+        <div style=""background: #f5f5f5; padding: 15px; border-left: 4px solid #047857; margin: 10px 0; border-radius: 5px;"">
+            {suggestion.Message.Replace("\n", "<br/>")}
+        </div>
+
+        <hr style=""border: none; border-top: 1px solid #eee; margin: 30px 0;"">
+        <p style=""color: #666; font-size: 14px; text-align: center; margin: 0;""><em>ConsignmentGenie Suggestion System</em></p>
+    </div>
+</body>
+</html>";
+
+            var textContent = $@"
+New Suggestion Received
+
+From: {suggestion.UserName} ({suggestion.UserEmail})
+Type: {suggestion.Type}
+Submitted: {suggestion.CreatedAt:yyyy-MM-dd HH:mm:ss} UTC
+
+Message:
+{suggestion.Message}
+
+---
+ConsignmentGenie Suggestion System
+";
+
+            return await SendSimpleEmailAsync(developerEmail, subject, htmlContent, textContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send suggestion notification for suggestion {SuggestionId}", suggestion.Id);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendSimpleEmailAsync(string toEmail, string subject, string body, bool isHtml = true)
+    {
+        var htmlBody = isHtml ? body : $"<pre>{body}</pre>";
+        var textBody = isHtml ? null : body;
+
+        return await SendSimpleEmailAsync(toEmail, subject, htmlBody, textBody);
+    }
+
+    private async Task<bool> SendSimpleEmailAsync(string toEmail, string subject, string htmlBody, string? textBody)
+    {
+        try
+        {
+            var fromEmail = _configuration["Resend:FromEmail"] ?? "noreply@microsaasbuilders.com";
+            var fromName = _configuration["Resend:FromName"] ?? "ConsignmentGenie";
+
+            var emailData = new
+            {
+                from = $"{fromName} <{fromEmail}>",
+                to = new[] { toEmail },
+                subject = subject,
+                html = htmlBody,
+                text = textBody
+            };
+
+            var json = JsonSerializer.Serialize(emailData);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("emails", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent);
+                var messageId = responseData.TryGetProperty("id", out var id) ? id.GetString() : "unknown";
+
+                _logger.LogInformation("Email sent successfully to {Email} via Resend. Message ID: {MessageId}", toEmail, messageId);
+                return true;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Failed to send email to {Email} via Resend. Status: {Status}, Response: {Response}",
+                    toEmail, response.StatusCode, errorContent);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending email to {Email} via Resend", toEmail);
+            return false;
+        }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _httpClient?.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+}
