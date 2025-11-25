@@ -12,9 +12,12 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   token: string;
-  refreshToken: string;
+  userId: string;
+  email: string;
+  role: number;
+  organizationId: string;
+  organizationName: string;
   expiresAt: string;
-  user: User;
 }
 
 export interface WrappedAuthResponse {
