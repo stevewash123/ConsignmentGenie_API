@@ -43,6 +43,8 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<IntegrationCredentials> IntegrationCredentials { get; set; }
+    public DbSet<ProviderInvitation> ProviderInvitations { get; set; }
+    public DbSet<OwnerInvitation> OwnerInvitations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -654,6 +656,37 @@ public class ConsignmentGenieContext : DbContext
             entity.HasIndex(o => o.StoreCode).IsUnique();
             entity.HasIndex(o => o.Status);
             entity.HasIndex(o => o.SetupStep);
+        });
+
+        // ProviderInvitation configuration
+        modelBuilder.Entity<ProviderInvitation>(entity =>
+        {
+            entity.HasIndex(pi => pi.OrganizationId);
+            entity.HasIndex(pi => pi.Token).IsUnique();
+            entity.HasIndex(pi => new { pi.OrganizationId, pi.Email });
+            entity.HasIndex(pi => pi.Status);
+            entity.HasIndex(pi => pi.ExpiresAt);
+            entity.HasOne(pi => pi.Organization)
+                  .WithMany()
+                  .HasForeignKey(pi => pi.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(pi => pi.InvitedBy)
+                  .WithMany()
+                  .HasForeignKey(pi => pi.InvitedById)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // OwnerInvitation configuration
+        modelBuilder.Entity<OwnerInvitation>(entity =>
+        {
+            entity.HasIndex(oi => oi.Token).IsUnique();
+            entity.HasIndex(oi => oi.Email);
+            entity.HasIndex(oi => oi.Status);
+            entity.HasIndex(oi => oi.ExpiresAt);
+            entity.HasOne(oi => oi.InvitedBy)
+                  .WithMany()
+                  .HasForeignKey(oi => oi.InvitedById)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
     }
 

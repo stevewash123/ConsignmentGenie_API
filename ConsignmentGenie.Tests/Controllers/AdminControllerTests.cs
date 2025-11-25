@@ -42,7 +42,8 @@ namespace ConsignmentGenie.Tests.Controllers
             // Create real RegistrationService with mocked dependencies
             _registrationService = new RegistrationService(_context, emailServiceMock.Object, storeCodeServiceMock.Object);
 
-            _controller = new AdminController(_context, _loggerMock.Object, _registrationService);
+            var ownerInvitationServiceMock = new Mock<IOwnerInvitationService>();
+            _controller = new AdminController(_context, _loggerMock.Object, _registrationService, ownerInvitationServiceMock.Object);
 
             // Setup admin user claims
             var claims = new List<Claim>
@@ -404,7 +405,8 @@ namespace ConsignmentGenie.Tests.Controllers
         {
             // Arrange
             var mockRegistrationService = new Mock<IRegistrationService>();
-            var controller = new AdminController(_context, _loggerMock.Object, mockRegistrationService.Object);
+            var mockOwnerInvitationService = new Mock<IOwnerInvitationService>();
+            var controller = new AdminController(_context, _loggerMock.Object, mockRegistrationService.Object, mockOwnerInvitationService.Object);
 
             // Use reflection to access the private method
             var method = typeof(AdminController).GetMethod("GenerateUniqueStoreCode",

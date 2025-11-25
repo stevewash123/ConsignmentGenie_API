@@ -40,4 +40,20 @@ public class RegistrationController : ControllerBase
         var result = await _registrationService.RegisterProviderAsync(request);
         return Ok(result);
     }
+
+    [HttpGet("validate-invitation/{token}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<InvitationValidationDto>> ValidateInvitation(string token)
+    {
+        var result = await _registrationService.ValidateInvitationTokenAsync(token);
+        return Ok(result);
+    }
+
+    [HttpPost("register/provider/invitation")]
+    [AllowAnonymous]
+    public async Task<ActionResult<RegistrationResultDto>> RegisterProviderFromInvitation([FromBody] RegisterProviderFromInvitationRequest request)
+    {
+        var result = await _registrationService.RegisterProviderFromInvitationAsync(request);
+        return Ok(result);
+    }
 }

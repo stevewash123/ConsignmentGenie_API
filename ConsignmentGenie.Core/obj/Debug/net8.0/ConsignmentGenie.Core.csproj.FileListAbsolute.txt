@@ -22,3 +22,15 @@ C:/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Debu
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Debug/net8.0/refint/ConsignmentGenie.Core.dll
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Debug/net8.0/ConsignmentGenie.Core.pdb
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Debug/net8.0/ref/ConsignmentGenie.Core.dll
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\bin\Debug\net8.0\ConsignmentGenie.Core.deps.json
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\bin\Debug\net8.0\ConsignmentGenie.Core.dll
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\bin\Debug\net8.0\ConsignmentGenie.Core.pdb
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\ConsignmentGenie.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\ConsignmentGenie.Core.AssemblyInfoInputs.cache
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\ConsignmentGenie.Core.AssemblyInfo.cs
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\ConsignmentGenie.Core.csproj.CoreCompileInputs.cache
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\ConsignmentGenie.Core.sourcelink.json
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\ConsignmentGenie.Core.dll
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\refint\ConsignmentGenie.Core.dll
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\ConsignmentGenie.Core.pdb
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Core\obj\Debug\net8.0\ref\ConsignmentGenie.Core.dll

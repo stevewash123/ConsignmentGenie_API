@@ -14,4 +14,6 @@ public interface IRegistrationService
     Task<List<PendingOwnerDto>> GetPendingOwnersAsync();
     Task ApproveOwnerAsync(Guid userId, Guid approvedByUserId);
     Task RejectOwnerAsync(Guid userId, Guid rejectedByUserId, string? reason);
+    Task<InvitationValidationDto> ValidateInvitationTokenAsync(string token);
+    Task<RegistrationResultDto> RegisterProviderFromInvitationAsync(RegisterProviderFromInvitationRequest request);
 }

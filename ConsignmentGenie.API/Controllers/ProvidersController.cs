@@ -6,6 +6,8 @@ using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Application.DTOs;
 using ConsignmentGenie.Core.DTOs.Items;
+using ProviderDTOs = ConsignmentGenie.Application.DTOs.Provider;
+using ConsignmentGenie.Application.Services.Interfaces;
 using System.Security.Claims;
 
 namespace ConsignmentGenie.API.Controllers;
@@ -17,11 +19,13 @@ public class ProvidersController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
     private readonly ILogger<ProvidersController> _logger;
+    private readonly IProviderInvitationService _invitationService;
 
-    public ProvidersController(ConsignmentGenieContext context, ILogger<ProvidersController> logger)
+    public ProvidersController(ConsignmentGenieContext context, ILogger<ProvidersController> logger, IProviderInvitationService invitationService)
     {
         _context = context;
         _logger = logger;
+        _invitationService = invitationService;
     }
 
     // LIST - Get providers with filtering/pagination
@@ -580,16 +584,138 @@ public class ProvidersController : ControllerBase
         return $"PRV-{nextNumber:D5}";
     }
 
+    #region Provider Invitations
+
+    // CREATE INVITATION - Send invitation to new provider
+    [HttpPost("invitations")]
+    public async Task<ActionResult<ProviderDTOs.ProviderInvitationResultDto>> CreateInvitation([FromBody] ProviderDTOs.CreateProviderInvitationDto request)
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+            var invitedById = GetUserId();
+
+            var result = await _invitationService.CreateInvitationAsync(request, organizationId, invitedById);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating provider invitation");
+            return StatusCode(500, new ProviderDTOs.ProviderInvitationResultDto
+            {
+                Success = false,
+                Message = "Internal server error occurred while creating invitation."
+            });
+        }
+    }
+
+    // GET PENDING INVITATIONS - List all pending invitations
+    [HttpGet("invitations")]
+    public async Task<ActionResult<IEnumerable<ProviderDTOs.ProviderInvitationDto>>> GetPendingInvitations()
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+            var invitations = await _invitationService.GetPendingInvitationsAsync(organizationId);
+            return Ok(invitations);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving pending invitations");
+            return StatusCode(500, "Internal server error occurred while retrieving invitations.");
+        }
+    }
+
+    // CANCEL INVITATION - Cancel a pending invitation
+    [HttpDelete("invitations/{invitationId}")]
+    public async Task<ActionResult> CancelInvitation(Guid invitationId)
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+            var success = await _invitationService.CancelInvitationAsync(invitationId, organizationId);
+
+            if (!success)
+            {
+                return NotFound("Invitation not found or cannot be cancelled.");
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelling invitation {InvitationId}", invitationId);
+            return StatusCode(500, "Internal server error occurred while cancelling invitation.");
+        }
+    }
+
+    // RESEND INVITATION - Resend a pending invitation
+    [HttpPost("invitations/{invitationId}/resend")]
+    public async Task<ActionResult> ResendInvitation(Guid invitationId)
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+            var success = await _invitationService.ResendInvitationAsync(invitationId, organizationId);
+
+            if (!success)
+            {
+                return NotFound("Invitation not found or cannot be resent.");
+            }
+
+            return Ok(new { message = "Invitation resent successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resending invitation {InvitationId}", invitationId);
+            return StatusCode(500, "Internal server error occurred while resending invitation.");
+        }
+    }
+
+    #endregion
+
     private Guid GetOrganizationId()
     {
-        var orgIdClaim = User.FindFirst("organizationId")?.Value;
-        return orgIdClaim != null ? Guid.Parse(orgIdClaim) : Guid.Empty;
+        // Debug: Log all available claims
+        Console.WriteLine("=== JWT CLAIMS DEBUG ===");
+        foreach (var claim in User.Claims)
+        {
+            Console.WriteLine($"Claim Type: '{claim.Type}', Value: '{claim.Value}'");
+        }
+        Console.WriteLine("========================");
+
+        // Try both case variations
+        var orgIdClaimLower = User.FindFirst("organizationId")?.Value;
+        var orgIdClaimUpper = User.FindFirst("OrganizationId")?.Value;
+
+        Console.WriteLine($"organizationId (lowercase): {orgIdClaimLower}");
+        Console.WriteLine($"OrganizationId (uppercase): {orgIdClaimUpper}");
+
+        var finalValue = orgIdClaimLower ?? orgIdClaimUpper;
+        Console.WriteLine($"Final OrganizationId: {finalValue}");
+
+        return finalValue != null ? Guid.Parse(finalValue) : Guid.Empty;
     }
 
     private Guid GetUserId()
     {
+        // Try both standard claim types
         var userIdClaim = User.FindFirst("userId")?.Value;
-        return userIdClaim != null ? Guid.Parse(userIdClaim) : Guid.Empty;
+        var nameIdentifierClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        Console.WriteLine($"userId claim: {userIdClaim}");
+        Console.WriteLine($"NameIdentifier claim: {nameIdentifierClaim}");
+
+        var finalValue = userIdClaim ?? nameIdentifierClaim;
+        Console.WriteLine($"Final UserId: {finalValue}");
+
+        return finalValue != null ? Guid.Parse(finalValue) : Guid.Empty;
     }
 
     #endregion

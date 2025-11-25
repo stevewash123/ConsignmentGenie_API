@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj": {}
+    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {}
   },
   "projects": {
-    "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj": {
+    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj",
+        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj",
         "projectName": "ConsignmentGenie.Core",
-        "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj",
-        "packagesPath": "/home/swash/.nuget/packages/",
-        "outputPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/",
+        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj",
+        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
+        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/swash/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -37,7 +37,8 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        }
+        },
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net8.0": {
@@ -58,7 +59,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.414/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

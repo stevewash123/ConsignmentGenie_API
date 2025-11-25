@@ -128,6 +128,8 @@ builder.Services.AddScoped<IEmailService, ResendEmailService>();
 builder.Services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IProviderNotificationService, ProviderNotificationService>();
+builder.Services.AddScoped<IProviderInvitationService, ProviderInvitationService>();
+builder.Services.AddScoped<IOwnerInvitationService, OwnerInvitationService>();
 builder.Services.AddScoped<IStatementService, StatementService>();
 builder.Services.AddScoped<ISuggestionService, SuggestionService>();
 // Report services (focused single-responsibility services)
