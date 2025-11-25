@@ -525,6 +525,11 @@ export class LoginComponent {
         this.router.navigate(['/owner/dashboard']);
         break;
 
+      // case 'Manager':
+      //   // Managers get owner dashboard access (planned feature)
+      //   this.router.navigate(['/owner/dashboard']);
+      //   break;
+
       case 'Provider':
         // For now, redirect to customer area - could be separate provider portal later
         this.router.navigate(['/customer/dashboard']);
@@ -546,6 +551,7 @@ export class LoginComponent {
       const roleMap: { [key: number]: string } = {
         0: 'Admin',
         1: 'Owner',
+        // 2: 'Manager', // Planned feature - commented out for now
         2: 'Provider',
         3: 'Customer'
       };

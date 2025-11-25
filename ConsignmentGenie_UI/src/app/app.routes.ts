@@ -48,7 +48,7 @@ export const routes: Routes = [
   // Authentication routes (no auth required)
   {
     path: 'login',
-    loadComponent: () => import('./auth/login.component').then(m => m.LoginComponent)
+    loadComponent: () => import('./auth/login-simple.component').then(m => m.LoginSimpleComponent)
   },
   {
     path: 'register',

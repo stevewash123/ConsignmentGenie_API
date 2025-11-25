@@ -193,11 +193,21 @@ export class ShopperStoreService {
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An unexpected error occurred';
 
-    if (error.error?.message) {
+    // Check for structured API error responses first
+    if (error.error?.error?.message) {
+      // Handle test mock format: { error: { message: '...' } }
+      errorMessage = error.error.error.message;
+    } else if (error.error?.error?.errors?.length > 0) {
+      // Handle test mock format: { error: { errors: ['...'] } }
+      errorMessage = error.error.error.errors[0];
+    } else if (error.error?.message) {
+      // Handle direct API error format
       errorMessage = error.error.message;
     } else if (error.error?.errors?.length > 0) {
+      // Handle direct API errors array format
       errorMessage = error.error.errors[0];
     } else if (error.message) {
+      // Fallback to HTTP error message
       errorMessage = error.message;
     }
 

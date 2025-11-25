@@ -131,7 +131,7 @@ describe('LoginComponent', () => {
           token: 'test-token',
           userId: '123',
           email: 'customer@test.com',
-          role: 7,
+          role: 3,
           organizationId: 'org123',
           organizationName: 'Test Org',
           expiresAt: new Date().toISOString()
@@ -153,15 +153,15 @@ describe('LoginComponent', () => {
         data: {
           token: 'test-token',
           userId: '123',
-          email: 'admin@demoshop.com',
-          role: 1,
+          email: 'admin@microsaasbuilders.com',
+          role: 0,
           organizationId: 'org123',
           organizationName: 'Test Org',
           expiresAt: new Date().toISOString()
         }
       };
 
-      component.credentials.email = 'admin@demoshop.com';
+      component.credentials.email = 'admin@microsaasbuilders.com';
       component.credentials.password = 'password123';
 
       mockHttpClient.post.and.returnValue(of(mockResponse));
@@ -291,13 +291,10 @@ describe('LoginComponent', () => {
 
   describe('normalizeRole', () => {
     it('should convert numeric role to string', () => {
+      expect(component['normalizeRole'](0)).toBe('Admin');
       expect(component['normalizeRole'](1)).toBe('Owner');
-      expect(component['normalizeRole'](2)).toBe('Manager');
-      expect(component['normalizeRole'](3)).toBe('Staff');
-      expect(component['normalizeRole'](4)).toBe('Cashier');
-      expect(component['normalizeRole'](5)).toBe('Accountant');
-      expect(component['normalizeRole'](6)).toBe('Provider');
-      expect(component['normalizeRole'](7)).toBe('Customer');
+      expect(component['normalizeRole'](2)).toBe('Provider');
+      expect(component['normalizeRole'](3)).toBe('Customer');
     });
 
     it('should return Owner for unknown numeric role', () => {
@@ -309,14 +306,16 @@ describe('LoginComponent', () => {
     });
 
     it('should handle string numbers', () => {
+      expect(component['normalizeRole']('0')).toBe('Admin');
       expect(component['normalizeRole']('1')).toBe('Owner');
-      expect(component['normalizeRole']('7')).toBe('Customer');
+      expect(component['normalizeRole']('2')).toBe('Provider');
+      expect(component['normalizeRole']('3')).toBe('Customer');
     });
   });
 
   describe('redirectBasedOnRole', () => {
     it('should redirect admin email to admin dashboard', () => {
-      component['redirectBasedOnRole']('1', 'admin@demoshop.com');
+      component['redirectBasedOnRole']('0', 'admin@microsaasbuilders.com');
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/dashboard']);
     });
 
@@ -325,18 +324,18 @@ describe('LoginComponent', () => {
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/owner/dashboard']);
     });
 
-    it('should redirect manager to owner dashboard', () => {
-      component['redirectBasedOnRole']('2', 'manager@example.com');
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/owner/dashboard']);
-    });
+    // it('should redirect manager to owner dashboard', () => {
+    //   component['redirectBasedOnRole']('2', 'manager@example.com');
+    //   expect(mockRouter.navigate).toHaveBeenCalledWith(['/owner/dashboard']);
+    // });
 
     it('should redirect provider to customer dashboard', () => {
-      component['redirectBasedOnRole']('6', 'provider@example.com');
+      component['redirectBasedOnRole']('2', 'provider@example.com');
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/customer/dashboard']);
     });
 
     it('should redirect customer to customer dashboard', () => {
-      component['redirectBasedOnRole']('7', 'customer@example.com');
+      component['redirectBasedOnRole']('3', 'customer@example.com');
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/customer/dashboard']);
     });
 

@@ -44,9 +44,9 @@ describe('RegisterComponent', () => {
     expect(titleElement.nativeElement.textContent).toContain('ConsignmentGenie');
   });
 
-  it('should render "Create Your Account" heading', () => {
+  it('should render "Join Consignment Genie" heading', () => {
     const headingElement = fixture.debugElement.query(By.css('h2'));
-    expect(headingElement.nativeElement.textContent).toContain('Create Your Account');
+    expect(headingElement.nativeElement.textContent).toContain('Join Consignment Genie');
   });
 
   it('should render shop owner role card', () => {
@@ -54,10 +54,10 @@ describe('RegisterComponent', () => {
     expect(ownerCard).toBeTruthy();
 
     const ownerTitle = ownerCard.query(By.css('h3'));
-    expect(ownerTitle.nativeElement.textContent).toContain('Shop Owner');
+    expect(ownerTitle.nativeElement.textContent).toContain('Open a Consignment Shop');
 
     const ownerDescription = ownerCard.query(By.css('p'));
-    expect(ownerDescription.nativeElement.textContent).toContain("I'm starting or managing a consignment shop");
+    expect(ownerDescription.nativeElement.textContent).toContain('→ Shop setup wizard');
   });
 
   it('should render provider role card', () => {
@@ -65,10 +65,10 @@ describe('RegisterComponent', () => {
     expect(providerCard).toBeTruthy();
 
     const providerTitle = providerCard.query(By.css('h3'));
-    expect(providerTitle.nativeElement.textContent).toContain('Provider');
+    expect(providerTitle.nativeElement.textContent).toContain('Consign Items at a Shop');
 
     const providerDescription = providerCard.query(By.css('p'));
-    expect(providerDescription.nativeElement.textContent).toContain('I consign items with a shop');
+    expect(providerDescription.nativeElement.textContent).toContain('→ Basic signup');
   });
 
   it('should render login link', () => {
