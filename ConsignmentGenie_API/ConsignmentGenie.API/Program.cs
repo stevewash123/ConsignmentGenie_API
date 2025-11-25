@@ -9,7 +9,6 @@ using Hangfire.MemoryStorage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SendGrid;
 using System.Text;
 using Serilog;
 using Serilog.Sinks.PostgreSQL;
@@ -102,8 +101,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // External services
-builder.Services.AddSingleton<ISendGridClient>(provider =>
-    new SendGridClient(builder.Configuration["SendGrid:ApiKey"]));
 
 builder.Services.AddSingleton<BlobServiceClient>(provider =>
     new BlobServiceClient(builder.Configuration["Azure:Storage:ConnectionString"]));
@@ -127,13 +124,19 @@ builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ISplitCalculationService, SplitCalculationService>();
 builder.Services.AddScoped<IStripeService, StripeService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailService, ResendEmailService>();
 builder.Services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IProviderNotificationService, ProviderNotificationService>();
 builder.Services.AddScoped<IStatementService, StatementService>();
 builder.Services.AddScoped<ISuggestionService, SuggestionService>();
-builder.Services.AddScoped<IReportsService, ReportsService>();
+// Report services (focused single-responsibility services)
+builder.Services.AddScoped<ISalesReportService, SalesReportService>();
+builder.Services.AddScoped<IInventoryReportService, InventoryReportService>();
+builder.Services.AddScoped<IPayoutReportService, PayoutReportService>();
+builder.Services.AddScoped<IProviderReportService, ProviderReportService>();
+builder.Services.AddScoped<IPdfReportGenerator, PdfReportGenerator>();
+builder.Services.AddScoped<ICsvExportService, CsvExportService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IStoreCodeService, StoreCodeService>();
 builder.Services.AddScoped<ISetupWizardService, SetupWizardService>();
@@ -181,15 +184,21 @@ app.MapControllers();
 // Health check endpoint
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
-// Schedule background jobs
-using (var scope = app.Services.CreateScope())
+// Schedule background jobs after Hangfire is initialized
+app.MapHangfireDashboard();
+
+// Use a startup filter to schedule jobs after the application starts
+app.Lifetime.ApplicationStarted.Register(() =>
 {
+    using var scope = app.Services.CreateScope();
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+
     // Schedule monthly statement generation job (runs on 1st of each month at 2 AM)
-    RecurringJob.AddOrUpdate<StatementGenerationJob>(
+    recurringJobManager.AddOrUpdate<StatementGenerationJob>(
         "generate-monthly-statements",
         job => job.GenerateMonthlyStatementsAsync(),
         "0 2 1 * *"); // Cron expression: 2 AM on the 1st day of every month
-}
+});
 
 try
 {
