@@ -115,6 +115,36 @@ interface CartItem {
                       class="form-control"
                       placeholder="(555) 123-4567">
                   </div>
+
+                  <!-- Optional Account Creation -->
+                  <div class="form-group account-creation" *ngIf="!isAuthenticated">
+                    <div class="account-option">
+                      <label class="checkbox-container">
+                        <input
+                          type="checkbox"
+                          formControlName="createAccount"
+                          (change)="onCreateAccountChange($event)">
+                        <span class="checkmark"></span>
+                        Save my info for faster checkout next time
+                      </label>
+                    </div>
+
+                    <div class="password-section" *ngIf="contactForm.get('createAccount')?.value">
+                      <div class="form-group">
+                        <label for="password">Password *</label>
+                        <input
+                          id="password"
+                          type="password"
+                          formControlName="password"
+                          class="form-control"
+                          placeholder="Create a password"
+                          [class.is-invalid]="isFieldInvalid('password', contactForm)">
+                        <div class="invalid-feedback" *ngIf="isFieldInvalid('password', contactForm)">
+                          Password must be at least 8 characters
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </form>
 
                 <div class="form-actions">
@@ -491,6 +521,42 @@ interface CartItem {
       margin-top: 0.25rem;
     }
 
+    .account-creation {
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 0.375rem;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .account-option {
+      margin-bottom: 1rem;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #495057;
+      gap: 0.75rem;
+    }
+
+    .checkbox-container input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
+
+    .password-section {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #dee2e6;
+    }
+
+    .password-section .form-group {
+      margin-bottom: 0;
+    }
+
     .payment-notice {
       margin-bottom: 2rem;
     }
@@ -823,7 +889,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['']
+      phone: [''],
+      createAccount: [false],
+      password: ['']
     });
 
     this.shippingForm = this.fb.group({
@@ -895,6 +963,19 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     return this.getSubtotal() + this.getShipping() + this.getTax();
   }
 
+  onCreateAccountChange(event: any): void {
+    const createAccount = event.target.checked;
+    const passwordControl = this.contactForm.get('password');
+
+    if (createAccount) {
+      passwordControl?.setValidators([Validators.required, Validators.minLength(8)]);
+    } else {
+      passwordControl?.clearValidators();
+      passwordControl?.setValue('');
+    }
+    passwordControl?.updateValueAndValidity();
+  }
+
   submitOrder(): void {
     if (!this.contactForm.valid || !this.shippingForm.valid) {
       return;
@@ -902,16 +983,51 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     this.isSubmitting = true;
 
+    // Prepare order data
+    const orderData = {
+      contact: this.contactForm.value,
+      shipping: this.shippingForm.value,
+      items: this.cartItems,
+      totals: {
+        subtotal: this.getSubtotal(),
+        shipping: this.getShipping(),
+        tax: this.getTax(),
+        total: this.getTotal()
+      },
+      createAccount: this.contactForm.get('createAccount')?.value || false
+    };
+
     // Simulate order submission
     setTimeout(() => {
       this.isSubmitting = false;
-      // TODO: Implement actual order submission to API
+
+      // If user chose to create account, create it
+      if (orderData.createAccount && orderData.contact.password) {
+        this.createCustomerAccount(orderData.contact);
+      }
 
       // Clear cart and redirect to success page
       this.clearCart();
-      alert('Order submitted successfully! You will receive a confirmation email shortly.');
+      alert('Order submitted successfully! You will receive a confirmation email shortly.' +
+            (orderData.createAccount ? ' Your account has been created for faster future checkouts.' : ''));
       this.router.navigate(['/shop', this.storeSlug, 'account', 'orders']);
     }, 2000);
+  }
+
+  private createCustomerAccount(contactData: any): void {
+    // TODO: Implement customer account creation API call
+    // This would call the backend to create a customer account with the provided data
+    const customerData = {
+      firstName: contactData.firstName,
+      lastName: contactData.lastName,
+      email: contactData.email,
+      phone: contactData.phone,
+      password: contactData.password,
+      storeSlug: this.storeSlug
+    };
+
+    console.log('Creating customer account:', customerData);
+    // Future implementation would call shopper auth service to create account
   }
 
   private loadCartFromStorage(): void {

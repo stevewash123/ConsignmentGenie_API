@@ -30,9 +30,15 @@ public class ProviderNotificationService : IProviderNotificationService
 
     public async Task CreateNotificationAsync(CreateNotificationRequest request)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         try
         {
-            // Create in-app notification
+            // 🏗️ AGGREGATE ROOT PATTERN: Create notification aggregate root
             var notification = new Notification
             {
                 OrganizationId = request.OrganizationId,
@@ -150,6 +156,12 @@ public class ProviderNotificationService : IProviderNotificationService
 
     public async Task MarkAsReadAsync(Guid notificationId, Guid userId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var notification = await _context.Notifications
             .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
 
@@ -163,6 +175,12 @@ public class ProviderNotificationService : IProviderNotificationService
 
     public async Task MarkAllAsReadAsync(Guid userId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var unreadNotifications = await _context.Notifications
             .Where(n => n.UserId == userId && !n.IsRead)
             .ToListAsync();
@@ -178,6 +196,12 @@ public class ProviderNotificationService : IProviderNotificationService
 
     public async Task DeleteAsync(Guid notificationId, Guid userId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var notification = await _context.Notifications
             .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
 
@@ -231,11 +255,18 @@ public class ProviderNotificationService : IProviderNotificationService
 
     public async Task<NotificationPreferencesDto> UpdatePreferencesAsync(Guid userId, UpdateNotificationPreferencesRequest request)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var preferences = await _context.NotificationPreferences
             .FirstOrDefaultAsync(p => p.UserId == userId);
 
         if (preferences == null)
         {
+            // 🏗️ AGGREGATE ROOT PATTERN: Create notification preferences aggregate
             preferences = new NotificationPreferences
             {
                 UserId = userId

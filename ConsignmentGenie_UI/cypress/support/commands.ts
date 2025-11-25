@@ -248,6 +248,51 @@ Cypress.Commands.add('clearShopperStorage', (storeSlug: string) => {
   })
 })
 
+// ===== EMAIL ENVIRONMENT COMMANDS =====
+
+Cypress.Commands.add('setupEmailEnvironment', () => {
+  const sendReal = Cypress.env('SEND_REAL_EMAILS')
+
+  if (sendReal) {
+    cy.log('🚨 REAL EMAIL MODE: Emails will be sent!')
+    // Allow real emails to be sent - no API mocking
+  } else {
+    cy.log('🔧 MOCK EMAIL MODE: No real emails will be sent')
+    // Could add email API mocking here if needed
+  }
+})
+
+Cypress.Commands.add('generateTestEmail', (): Cypress.Chainable<string> => {
+  const sendReal = Cypress.env('SEND_REAL_EMAILS')
+  const domain = Cypress.env('REAL_EMAIL_DOMAIN')
+
+  if (sendReal) {
+    // Generate real email address with timestamp for uniqueness
+    const timestamp = Date.now()
+    const email = `cypress-test-${timestamp}@${domain}`
+    cy.log(`📧 Generated real email: ${email}`)
+    return cy.wrap(email)
+  } else {
+    // Generate fake email for testing
+    const fakeEmail = `cypress-fake-${Date.now()}@example.com`
+    cy.log(`🔧 Generated mock email: ${fakeEmail}`)
+    return cy.wrap(fakeEmail)
+  }
+})
+
+Cypress.Commands.add('verifyEmailSent', (options: { to: string; type: string }) => {
+  const sendReal = Cypress.env('SEND_REAL_EMAILS')
+
+  if (sendReal) {
+    cy.log(`📧 Real ${options.type} email sent to: ${options.to}`)
+    // In a real implementation, could verify via email provider API
+    // For now, just log that real email was expected to be sent
+  } else {
+    cy.log(`🔧 Mock ${options.type} email verified for: ${options.to}`)
+    // Verify that the registration/approval API was called successfully
+  }
+})
+
 // ===== REGISTRATION WORKFLOW COMMANDS =====
 
 // Register as owner command
@@ -501,6 +546,23 @@ declare global {
        * Mock registration APIs
        */
       mockRegistrationAPIs(): Chainable<void>
+
+      // ===== EMAIL ENVIRONMENT COMMANDS =====
+
+      /**
+       * Setup email environment (real vs mock)
+       */
+      setupEmailEnvironment(): Chainable<void>
+
+      /**
+       * Generate test email based on environment
+       */
+      generateTestEmail(): Chainable<string>
+
+      /**
+       * Verify email was sent (real or mock)
+       */
+      verifyEmailSent(options: { to: string; type: string }): Chainable<void>
     }
   }
 }

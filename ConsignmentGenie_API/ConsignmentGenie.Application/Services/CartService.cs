@@ -27,6 +27,12 @@ public class CartService : ICartService
 
     public async Task<CartDto> AddItemToCartAsync(Guid organizationId, Guid itemId, string? sessionId, Guid? customerId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         // Check if item exists and is available
         var item = await _context.Items
             .FirstOrDefaultAsync(i => i.Id == itemId && i.OrganizationId == organizationId);
@@ -74,6 +80,12 @@ public class CartService : ICartService
 
     public async Task<CartDto> RemoveItemFromCartAsync(Guid organizationId, Guid itemId, string? sessionId, Guid? customerId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var cart = await FindCartAsync(organizationId, sessionId, customerId);
 
         if (cart != null)
@@ -96,6 +108,12 @@ public class CartService : ICartService
 
     public async Task<bool> ClearCartAsync(Guid organizationId, string? sessionId, Guid? customerId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var cart = await FindCartAsync(organizationId, sessionId, customerId);
 
         if (cart != null)
@@ -114,6 +132,12 @@ public class CartService : ICartService
 
     public async Task<CartDto> MergeCartAsync(Guid organizationId, string sessionId, Guid customerId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var anonymousCart = await _context.ShoppingCarts
             .Include(sc => sc.CartItems)
             .ThenInclude(ci => ci.Item)
@@ -159,6 +183,12 @@ public class CartService : ICartService
 
     public async Task CleanupExpiredCartsAsync()
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var expiredCarts = await _context.ShoppingCarts
             .Where(sc => sc.ExpiresAt.HasValue && sc.ExpiresAt < DateTime.UtcNow)
             .ToListAsync();
@@ -183,6 +213,7 @@ public class CartService : ICartService
 
         if (cart == null)
         {
+            // 🏗️ AGGREGATE ROOT PATTERN: Create new cart aggregate
             cart = new ShoppingCart
             {
                 OrganizationId = organizationId,

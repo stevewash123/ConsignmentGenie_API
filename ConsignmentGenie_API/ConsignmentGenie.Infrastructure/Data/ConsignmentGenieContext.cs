@@ -13,6 +13,7 @@ public class ConsignmentGenieContext : DbContext
 
     public DbSet<Organization> Organizations { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<UserRoleAssignment> UserRoleAssignments { get; set; }
     public DbSet<Provider> Providers { get; set; }
     public DbSet<Item> Items { get; set; }
     public DbSet<ItemImage> ItemImages { get; set; }
@@ -62,6 +63,25 @@ public class ConsignmentGenieContext : DbContext
             entity.HasOne(u => u.Organization)
                   .WithMany(o => o.Users)
                   .HasForeignKey(u => u.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserRoleAssignment configuration
+        modelBuilder.Entity<UserRoleAssignment>(entity =>
+        {
+            entity.HasIndex(ura => ura.UserId);
+            entity.HasIndex(ura => ura.OrganizationId);
+            entity.HasIndex(ura => new { ura.UserId, ura.Role, ura.OrganizationId }).IsUnique();
+            entity.HasIndex(ura => new { ura.UserId, ura.IsActive });
+
+            entity.HasOne(ura => ura.User)
+                  .WithMany(u => u.RoleAssignments)
+                  .HasForeignKey(ura => ura.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ura => ura.Organization)
+                  .WithMany()
+                  .HasForeignKey(ura => ura.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -555,20 +575,20 @@ public class ConsignmentGenieContext : DbContext
             new User
             {
                 Id = adminUserId,
-                Email = "admin@demoshop.com",
+                Email = "admin@microsaasbuilders.com",
                 PasswordHash = hashedPassword,
                 Role = UserRole.Owner,
                 OrganizationId = orgId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             },
-            // Shop Owner (Manager role)
+            // Shop Owner (Owner role)
             new User
             {
                 Id = shopOwnerUserId,
-                Email = "owner@demoshop.com",
+                Email = "owner1@microsaasbuilders.com",
                 PasswordHash = hashedPassword,
-                Role = UserRole.Manager,
+                Role = UserRole.Owner,
                 OrganizationId = orgId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -577,7 +597,7 @@ public class ConsignmentGenieContext : DbContext
             new User
             {
                 Id = providerUserId,
-                Email = "provider@demoshop.com",
+                Email = "provider1@microsaasbuilders.com",
                 PasswordHash = hashedPassword,
                 Role = UserRole.Provider,
                 OrganizationId = orgId,
@@ -588,7 +608,7 @@ public class ConsignmentGenieContext : DbContext
             new User
             {
                 Id = customerUserId,
-                Email = "customer@demoshop.com",
+                Email = "customer1@microsaasbuilders.com",
                 PasswordHash = hashedPassword,
                 Role = UserRole.Customer,
                 OrganizationId = orgId,
@@ -607,7 +627,7 @@ public class ConsignmentGenieContext : DbContext
                 ProviderNumber = "PRV-00001",
                 FirstName = "Demo",
                 LastName = "Artist",
-                Email = "provider@demoshop.com",
+                Email = "provider1@microsaasbuilders.com",
                 Phone = "(555) 123-4567",
                 CommissionRate = 0.6000m, // 60%
                 Status = ProviderStatus.Active,

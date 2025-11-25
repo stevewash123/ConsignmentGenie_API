@@ -65,9 +65,9 @@ public class PublicStoreControllerTests
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<StoreInfoDto>>>(result);
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(notFoundResult.Value);
+        var response = Assert.IsType<ApiResponse<StoreInfoDto>>(notFoundResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Store not found", response.Message);
+        Assert.Contains("Store not found", response.Errors);
     }
 
     [Fact]
@@ -93,9 +93,9 @@ public class PublicStoreControllerTests
         var result = await _controller.GetItems(storeSlug, category: "Electronics", page: 1, pageSize: 10);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<object>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<Application.DTOs.PagedResult<PublicItemDto>>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse<Application.DTOs.PagedResult<PublicItemDto>>>(okResult.Value);
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
     }
@@ -107,14 +107,16 @@ public class PublicStoreControllerTests
         var storeSlug = "test-store";
         _mockStoreService.Setup(x => x.GetItemsAsync(storeSlug, It.IsAny<ItemQueryParams>()))
                         .ReturnsAsync((new List<PublicItemDto>(), 0));
+        _mockStoreService.Setup(x => x.GetStoreInfoAsync(storeSlug))
+                        .ReturnsAsync(new StoreInfoDto { Slug = storeSlug, Name = "Test Store" });
 
         // Act
         var result = await _controller.GetItems(storeSlug, page: 1, pageSize: 10);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<object>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<Application.DTOs.PagedResult<PublicItemDto>>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse<Application.DTOs.PagedResult<PublicItemDto>>>(okResult.Value);
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
     }
@@ -126,12 +128,14 @@ public class PublicStoreControllerTests
         var storeSlug = "test-store";
         _mockStoreService.Setup(x => x.GetItemsAsync(storeSlug, It.IsAny<ItemQueryParams>()))
                         .ReturnsAsync((new List<PublicItemDto>(), 0));
+        _mockStoreService.Setup(x => x.GetStoreInfoAsync(storeSlug))
+                        .ReturnsAsync(new StoreInfoDto { Slug = storeSlug, Name = "Test Store" });
 
         // Act
         var result = await _controller.GetItems(storeSlug, page: 1, pageSize: 0); // Invalid page size should use default
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<object>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<Application.DTOs.PagedResult<PublicItemDto>>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
         _mockStoreService.Verify(x => x.GetItemsAsync(storeSlug,
             It.Is<ItemQueryParams>(q => q.PageSize == 0)), Times.Once); // Controller passes through the value as-is
@@ -183,9 +187,9 @@ public class PublicStoreControllerTests
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<PublicItemDetailDto>>>(result);
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(notFoundResult.Value);
+        var response = Assert.IsType<ApiResponse<PublicItemDetailDto>>(notFoundResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Item not found", response.Message);
+        Assert.Contains("Item not found or not available", response.Errors);
     }
 
     [Fact]
@@ -245,12 +249,12 @@ public class PublicStoreControllerTests
         var result = await _controller.GetItems(storeSlug, page: 1, pageSize: 10);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<object>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<Application.DTOs.PagedResult<PublicItemDto>>>>(result);
         var statusResult = Assert.IsType<ObjectResult>(actionResult.Result);
         Assert.Equal(500, statusResult.StatusCode);
-        var response = Assert.IsType<ApiResponse<object>>(statusResult.Value);
+        var response = Assert.IsType<ApiResponse<Application.DTOs.PagedResult<PublicItemDto>>>(statusResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("error occurred", response.Message);
+        Assert.Contains("An error occurred retrieving items", response.Errors);
     }
 
     [Fact]
@@ -268,9 +272,9 @@ public class PublicStoreControllerTests
         var actionResult = Assert.IsType<ActionResult<ApiResponse<StoreInfoDto>>>(result);
         var statusResult = Assert.IsType<ObjectResult>(actionResult.Result);
         Assert.Equal(500, statusResult.StatusCode);
-        var response = Assert.IsType<ApiResponse<object>>(statusResult.Value);
+        var response = Assert.IsType<ApiResponse<StoreInfoDto>>(statusResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("error occurred", response.Message);
+        Assert.Contains("An error occurred retrieving store information", response.Errors);
     }
 
     [Fact]
@@ -289,9 +293,9 @@ public class PublicStoreControllerTests
         var actionResult = Assert.IsType<ActionResult<ApiResponse<PublicItemDetailDto>>>(result);
         var statusResult = Assert.IsType<ObjectResult>(actionResult.Result);
         Assert.Equal(500, statusResult.StatusCode);
-        var response = Assert.IsType<ApiResponse<object>>(statusResult.Value);
+        var response = Assert.IsType<ApiResponse<PublicItemDetailDto>>(statusResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("error occurred", response.Message);
+        Assert.Contains("An error occurred retrieving item", response.Errors);
     }
 
     [Theory]
@@ -310,7 +314,7 @@ public class PublicStoreControllerTests
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<StoreInfoDto>>>(result);
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(notFoundResult.Value);
+        var response = Assert.IsType<ApiResponse<StoreInfoDto>>(notFoundResult.Value);
         Assert.False(response.Success);
     }
 

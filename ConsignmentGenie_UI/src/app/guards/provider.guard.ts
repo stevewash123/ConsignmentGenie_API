@@ -24,8 +24,7 @@ export class ProviderGuard implements CanActivate {
       // Note: Owners can also access provider areas for their shop's providers
       const allowedRoles = [
         UserRole.Provider,
-        UserRole.Owner,  // Owners can see provider pages for their shop
-        UserRole.Manager // Managers can also manage providers
+        UserRole.Owner  // Owners can see provider pages for their shop
       ];
 
       if (allowedRoles.includes(userData.role)) {
@@ -44,10 +43,8 @@ export class ProviderGuard implements CanActivate {
 
   private redirectToUserDashboard(userRole: number) {
     switch (userRole) {
-      case UserRole.Staff:
-      case UserRole.Cashier:
-      case UserRole.Accountant:
-        this.router.navigate(['/owner/dashboard']);
+      case UserRole.Admin:
+        this.router.navigate(['/admin/dashboard']);
         break;
       case UserRole.Customer:
         this.router.navigate(['/customer/dashboard']);

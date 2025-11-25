@@ -32,6 +32,12 @@ public class StoreCodeService : IStoreCodeService
 
     public async Task<StoreCodeDto> RegenerateStoreCodeAsync(Guid organizationId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var organization = await _context.Organizations
             .FirstOrDefaultAsync(o => o.Id == organizationId);
 
@@ -53,6 +59,12 @@ public class StoreCodeService : IStoreCodeService
 
     public async Task ToggleStoreCodeAsync(Guid organizationId, bool enabled)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var organization = await _context.Organizations
             .FirstOrDefaultAsync(o => o.Id == organizationId);
 

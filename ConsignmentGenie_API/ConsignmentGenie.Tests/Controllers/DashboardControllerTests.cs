@@ -65,12 +65,18 @@ namespace ConsignmentGenie.Tests.Controllers
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-            dynamic response = okResult.Value;
 
-            Assert.True(response.success);
-            Assert.True(response.data.autoApproveProviders);
-            Assert.True(response.data.storeCodeEnabled);
-            Assert.Equal("TEST", response.data.storeCode);
+            // Serialize and deserialize to work around anonymous type issues
+            var responseString = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+            var response = doc.RootElement;
+
+            Assert.True(response.GetProperty("success").GetBoolean());
+
+            var data = response.GetProperty("data");
+            Assert.True(data.GetProperty("autoApproveProviders").GetBoolean());
+            Assert.True(data.GetProperty("storeCodeEnabled").GetBoolean());
+            Assert.Equal("TEST", data.GetProperty("storeCode").GetString());
         }
 
         [Fact]
@@ -85,11 +91,17 @@ namespace ConsignmentGenie.Tests.Controllers
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-            dynamic response = okResult.Value;
 
-            Assert.True(response.success);
-            Assert.Contains("auto-approval enabled", (string)response.message);
-            Assert.True(response.data.autoApproveProviders);
+            // Serialize and deserialize to work around anonymous type issues
+            var responseString = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+            var response = doc.RootElement;
+
+            Assert.True(response.GetProperty("success").GetBoolean());
+            Assert.Contains("auto-approval enabled", response.GetProperty("message").GetString());
+
+            var data = response.GetProperty("data");
+            Assert.True(data.GetProperty("autoApproveProviders").GetBoolean());
 
             // Verify in database
             var organization = await _context.Organizations.FindAsync(_organizationId);
@@ -108,11 +120,17 @@ namespace ConsignmentGenie.Tests.Controllers
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-            dynamic response = okResult.Value;
 
-            Assert.True(response.success);
-            Assert.Contains("auto-approval disabled", (string)response.message);
-            Assert.False(response.data.autoApproveProviders);
+            // Serialize and deserialize to work around anonymous type issues
+            var responseString = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+            var response = doc.RootElement;
+
+            Assert.True(response.GetProperty("success").GetBoolean());
+            Assert.Contains("auto-approval disabled", response.GetProperty("message").GetString());
+
+            var data = response.GetProperty("data");
+            Assert.False(data.GetProperty("autoApproveProviders").GetBoolean());
 
             // Verify in database
             var organization = await _context.Organizations.FindAsync(_organizationId);

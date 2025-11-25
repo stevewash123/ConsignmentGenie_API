@@ -9,6 +9,8 @@ import {
   NotificationQueryParams,
   PagedResult
 } from '../models/provider.models';
+import { LoadingService } from '../../shared/services/loading.service';
+import { LOADING_KEYS } from '../constants/loading-keys';
 
 @Component({
   selector: 'app-provider-notifications',
@@ -29,8 +31,8 @@ import {
           <button
             class="btn btn-primary"
             (click)="markAllAsRead()"
-            [disabled]="!hasUnreadNotifications">
-            Mark All Read
+            [disabled]="!hasUnreadNotifications || loadingService.isLoading(KEYS.NOTIFICATION_MARK_READ)">
+            {{ loadingService.isLoading(KEYS.NOTIFICATION_MARK_READ) ? 'Marking...' : 'Mark All Read' }}
           </button>
         </div>
       </div>
@@ -52,20 +54,20 @@ import {
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="loading-container">
+      <div *ngIf="loadingService.isLoading(KEYS.NOTIFICATIONS)" class="loading-container">
         <div class="loading-spinner"></div>
         <p>Loading notifications...</p>
       </div>
 
       <!-- Empty State -->
-      <div *ngIf="!loading && (!notifications || notifications.length === 0)" class="empty-state">
+      <div *ngIf="!loadingService.isLoading(KEYS.NOTIFICATIONS) && (!notifications || notifications.length === 0)" class="empty-state">
         <div class="empty-icon">🔔</div>
         <h3>{{ showUnreadOnly ? 'No unread notifications' : 'No notifications' }}</h3>
         <p>{{ showUnreadOnly ? 'All caught up!' : "You'll see updates about your items, sales, and payouts here." }}</p>
       </div>
 
       <!-- Notifications List -->
-      <div *ngIf="!loading && notifications && notifications.length > 0" class="notifications-list">
+      <div *ngIf="!loadingService.isLoading(KEYS.NOTIFICATIONS) && notifications && notifications.length > 0" class="notifications-list">
         <div
           *ngFor="let notification of notifications; trackBy: trackByNotificationId"
           class="notification-item"
@@ -108,12 +110,14 @@ import {
               *ngIf="!notification.isRead"
               class="btn btn-sm btn-outline"
               (click)="markAsRead(notification, $event)"
+              [disabled]="loadingService.isLoading(KEYS.NOTIFICATION_MARK_READ)"
               title="Mark as read">
               ✓
             </button>
             <button
               class="btn btn-sm btn-outline btn-danger"
               (click)="deleteNotification(notification, $event)"
+              [disabled]="loadingService.isLoading(KEYS.NOTIFICATION_DELETE)"
               title="Delete">
               🗑️
             </button>
@@ -482,13 +486,18 @@ export class ProviderNotificationsComponent implements OnInit, OnDestroy {
 
   notifications: NotificationDto[] = [];
   pagedResult: PagedResult<NotificationDto> | null = null;
-  loading = false;
   showUnreadOnly = false;
   selectedType = '';
   currentPage = 1;
   pageSize = 10;
 
-  constructor(private providerService: ProviderPortalService) {}
+  // Expose for template
+  readonly KEYS = LOADING_KEYS;
+
+  constructor(
+    private providerService: ProviderPortalService,
+    public loadingService: LoadingService
+  ) {}
 
   ngOnInit() {
     this.loadNotifications();
@@ -509,7 +518,7 @@ export class ProviderNotificationsComponent implements OnInit, OnDestroy {
   }
 
   loadNotifications() {
-    this.loading = true;
+    this.loadingService.start(LOADING_KEYS.NOTIFICATIONS);
 
     const query: NotificationQueryParams = {
       unreadOnly: this.showUnreadOnly,
@@ -524,11 +533,12 @@ export class ProviderNotificationsComponent implements OnInit, OnDestroy {
         next: (result) => {
           this.pagedResult = result;
           this.notifications = result.items;
-          this.loading = false;
         },
         error: (error) => {
           console.error('Error loading notifications:', error);
-          this.loading = false;
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.NOTIFICATIONS);
         }
       });
   }
@@ -542,6 +552,12 @@ export class ProviderNotificationsComponent implements OnInit, OnDestroy {
   markAsRead(notification: NotificationDto, event: Event) {
     event.stopPropagation();
 
+    if (this.loadingService.isLoading(LOADING_KEYS.NOTIFICATION_MARK_READ)) {
+      return;
+    }
+
+    this.loadingService.start(LOADING_KEYS.NOTIFICATION_MARK_READ);
+
     this.providerService.markNotificationAsRead(notification.notificationId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -550,11 +566,20 @@ export class ProviderNotificationsComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error marking notification as read:', error);
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.NOTIFICATION_MARK_READ);
         }
       });
   }
 
   markAllAsRead() {
+    if (this.loadingService.isLoading(LOADING_KEYS.NOTIFICATION_MARK_READ)) {
+      return;
+    }
+
+    this.loadingService.start(LOADING_KEYS.NOTIFICATION_MARK_READ);
+
     this.providerService.markAllNotificationsAsRead()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -563,6 +588,9 @@ export class ProviderNotificationsComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error marking all notifications as read:', error);
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.NOTIFICATION_MARK_READ);
         }
       });
   }
@@ -570,7 +598,13 @@ export class ProviderNotificationsComponent implements OnInit, OnDestroy {
   deleteNotification(notification: NotificationDto, event: Event) {
     event.stopPropagation();
 
+    if (this.loadingService.isLoading(LOADING_KEYS.NOTIFICATION_DELETE)) {
+      return;
+    }
+
     if (confirm('Are you sure you want to delete this notification?')) {
+      this.loadingService.start(LOADING_KEYS.NOTIFICATION_DELETE);
+
       this.providerService.deleteNotification(notification.notificationId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -579,6 +613,9 @@ export class ProviderNotificationsComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('Error deleting notification:', error);
+          },
+          complete: () => {
+            this.loadingService.stop(LOADING_KEYS.NOTIFICATION_DELETE);
           }
         });
     }

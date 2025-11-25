@@ -222,7 +222,18 @@ export class ProviderListComponent implements OnInit {
     this.isLoading.set(true);
     this.providerService.getProviders().subscribe({
       next: (providers) => {
-        this.providers.set(providers);
+        console.log('Providers API response:', providers);
+
+        // Handle API response - might be wrapped in response object
+        let providersArray = providers;
+        if (providers && typeof providers === 'object' && !Array.isArray(providers)) {
+          const response = providers as any;
+          providersArray = response.data || response.providers || [];
+        }
+
+        // Ensure we have an array
+        const finalProviders = Array.isArray(providersArray) ? providersArray : [];
+        this.providers.set(finalProviders);
         this.applyFilters();
       },
       error: (error) => {
@@ -245,6 +256,11 @@ export class ProviderListComponent implements OnInit {
 
   applyFilters(): void {
     let filtered = this.providers();
+
+    // Ensure filtered is an array before applying filters
+    if (!Array.isArray(filtered)) {
+      filtered = [];
+    }
 
     if (this.showActiveOnly()) {
       filtered = filtered.filter(p => p.isActive);

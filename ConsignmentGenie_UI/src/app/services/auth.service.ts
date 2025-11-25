@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, BehaviorSubject } from 'rxjs';
+import { Observable, tap, BehaviorSubject, catchError, of } from 'rxjs';
 import { LoginRequest, RegisterRequest, AuthResponse, User, TokenInfo } from '../models/auth.model';
 
 @Injectable({
@@ -32,29 +32,28 @@ export class AuthService {
       );
   }
 
-  async registerOwner(request: {
+  registerOwner(request: {
     fullName: string;
     email: string;
     phone?: string;
     password: string;
     shopName: string;
-  }): Promise<{ success: boolean; message?: string; errors?: string[] }> {
-    try {
-      const response = await this.http.post<{ success: boolean; message?: string; errors?: string[] }>(
-        `${this.apiUrl}/auth/register/owner`,
-        request
-      ).toPromise();
-      return response!;
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.error?.message || 'Registration failed',
-        errors: error.error?.errors || [error.message]
-      };
-    }
+  }): Observable<{ success: boolean; message?: string; errors?: string[] }> {
+    return this.http.post<{ success: boolean; message?: string; errors?: string[] }>(
+      `${this.apiUrl}/auth/register/owner`,
+      request
+    ).pipe(
+      catchError((error: any) => {
+        return of({
+          success: false,
+          message: error.error?.message || 'Registration failed',
+          errors: error.error?.errors || [error.message]
+        });
+      })
+    );
   }
 
-  async registerProvider(request: {
+  registerProvider(request: {
     storeCode: string;
     fullName: string;
     email: string;
@@ -62,40 +61,38 @@ export class AuthService {
     phone?: string;
     preferredPaymentMethod?: string;
     paymentDetails?: string;
-  }): Promise<{ success: boolean; message?: string; errors?: string[] }> {
-    try {
-      const response = await this.http.post<{ success: boolean; message?: string; errors?: string[] }>(
-        `${this.apiUrl}/auth/register/provider`,
-        request
-      ).toPromise();
-      return response!;
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.error?.message || 'Registration failed',
-        errors: error.error?.errors || [error.message]
-      };
-    }
+  }): Observable<{ success: boolean; message?: string; errors?: string[] }> {
+    return this.http.post<{ success: boolean; message?: string; errors?: string[] }>(
+      `${this.apiUrl}/auth/register/provider`,
+      request
+    ).pipe(
+      catchError((error: any) => {
+        return of({
+          success: false,
+          message: error.error?.message || 'Registration failed',
+          errors: error.error?.errors || [error.message]
+        });
+      })
+    );
   }
 
-  async validateStoreCode(code: string): Promise<{
+  validateStoreCode(code: string): Observable<{
     isValid: boolean;
     shopName?: string;
     errorMessage?: string;
   }> {
-    try {
-      const response = await this.http.get<{
-        isValid: boolean;
-        shopName?: string;
-        errorMessage?: string;
-      }>(`${this.apiUrl}/auth/validate-store-code/${code}`).toPromise();
-      return response!;
-    } catch (error: any) {
-      return {
-        isValid: false,
-        errorMessage: 'Unable to validate store code'
-      };
-    }
+    return this.http.get<{
+      isValid: boolean;
+      shopName?: string;
+      errorMessage?: string;
+    }>(`${this.apiUrl}/auth/validate-store-code/${code}`).pipe(
+      catchError((error: any) => {
+        return of({
+          isValid: false,
+          errorMessage: 'Unable to validate store code'
+        });
+      })
+    );
   }
 
   logout(): void {
@@ -132,9 +129,9 @@ export class AuthService {
   }
 
   private setAuthData(response: AuthResponse): void {
-    localStorage.setItem('token', response.token);
+    localStorage.setItem('auth_token', response.token);
     localStorage.setItem('refreshToken', response.refreshToken);
-    localStorage.setItem('user', JSON.stringify(response.user));
+    localStorage.setItem('user_data', JSON.stringify(response.user));
     localStorage.setItem('tokenExpiry', response.expiresAt);
 
     this.currentUserSubject.next(response.user);

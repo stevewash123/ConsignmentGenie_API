@@ -304,6 +304,13 @@ public class RegistrationService : IRegistrationService
 
     public async Task ApproveUserAsync(Guid userId, Guid approvedByUserId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
+        // Load user with organization for business logic
         var user = await _context.Users
             .Include(u => u.Organization)
             .FirstOrDefaultAsync(u => u.Id == userId);
@@ -319,7 +326,7 @@ public class RegistrationService : IRegistrationService
         user.ApprovedBy = approvedByUserId;
         user.ApprovedAt = DateTime.UtcNow;
 
-        // If this is a provider, create Provider record
+        // 🏗️ AGGREGATE ROOT PATTERN: If provider, create provider record
         if (user.Role == UserRole.Provider)
         {
             var provider = new Provider
@@ -333,7 +340,8 @@ public class RegistrationService : IRegistrationService
                 PreferredPaymentMethod = "Check", // Default, can be updated later
                 Status = ProviderStatus.Active,
                 ApprovalStatus = "Approved",
-                ApprovedBy = approvedByUserId
+                ApprovedBy = approvedByUserId,
+                ProviderNumber = await GenerateProviderNumberAsync(user.OrganizationId)
             };
 
             _context.Providers.Add(provider);
@@ -425,7 +433,70 @@ public class RegistrationService : IRegistrationService
 
     public async Task ApproveOwnerAsync(Guid userId, Guid approvedByUserId)
     {
-        await ApproveUserAsync(userId, approvedByUserId);
+        // Load user with organization
+        var user = await _context.Users
+            .Include(u => u.Organization)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+        
+        if (user == null)
+            throw new ArgumentException("User not found");
+        
+        // ✅ FIX BUG 1: Validate user is an owner
+        if (user.Role != UserRole.Owner)
+            throw new InvalidOperationException("User is not an owner");
+        
+        if (user.ApprovalStatus != ApprovalStatus.Pending)
+            throw new InvalidOperationException("User is not pending approval");
+        
+        // Update user status
+        user.ApprovalStatus = ApprovalStatus.Approved;
+        user.ApprovedBy = approvedByUserId;
+        user.ApprovedAt = DateTime.UtcNow;
+        
+        // ✅ FIX BUG 2: Generate store code for owner's organization
+        if (user.Organization != null && string.IsNullOrEmpty(user.Organization.StoreCode))
+        {
+            user.Organization.StoreCode = await GenerateStoreCodeAsync();
+        }
+        
+        await _context.SaveChangesAsync();
+        
+        // Send approval email
+        var emailBody = $@"
+            <h2>Your Shop is Ready! 🎉</h2>
+            <p>Hi {user.FullName},</p>
+            <p>Great news! {user.Organization?.ShopName} has been approved and is ready to go.</p>
+            <p>Your store code for providers is: <strong>{user.Organization?.StoreCode}</strong></p>
+            <p>Share this with consigners so they can register and join your shop.</p>
+            <p>Welcome to ConsignmentGenie!</p>
+            <p>- The ConsignmentGenie Team</p>";
+        
+        await _emailService.SendSimpleEmailAsync(
+            user.Email,
+            "Your Shop is Ready! 🎉",
+            emailBody);
+    }
+
+    private async Task<string> GenerateStoreCodeAsync()
+    {
+        string storeCode;
+        do
+        {
+            // Generate 6-character alphanumeric code
+            storeCode = GenerateRandomCode(6);
+        }
+        while (await _context.Organizations.AnyAsync(o => o.StoreCode == storeCode));
+        
+        return storeCode;
+    }
+
+    private string GenerateRandomCode(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, length)
+            .Select(s => s[random.Next(s.Length)])
+            .ToArray());
     }
 
     public async Task RejectOwnerAsync(Guid userId, Guid rejectedByUserId, string? reason)
@@ -445,5 +516,12 @@ public class RegistrationService : IRegistrationService
         if (string.IsNullOrWhiteSpace(fullName)) return string.Empty;
         var parts = fullName.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         return parts.Length > 1 ? parts[1] : string.Empty;
+    }
+
+    private async Task<string> GenerateProviderNumberAsync(Guid organizationId)
+    {
+        var count = await _context.Providers
+            .CountAsync(p => p.OrganizationId == organizationId);
+        return $"PRV-{(count + 1):D5}";
     }
 }

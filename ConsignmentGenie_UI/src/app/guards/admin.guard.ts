@@ -20,8 +20,8 @@ export class AdminGuard implements CanActivate {
     try {
       const userData = JSON.parse(userDataStr);
 
-      // Only allow system admin access (Owner role for demo, but you could create a separate Admin role)
-      if (userData.role === UserRole.Owner && userData.email === 'admin@demoshop.com') {
+      // Only allow system admin access
+      if (userData.role === UserRole.Admin || (userData.role === UserRole.Owner && userData.email === 'admin@microsaasbuilders.com')) {
         return true;
       }
 
@@ -37,11 +37,10 @@ export class AdminGuard implements CanActivate {
 
   private redirectToUserDashboard(userRole: number) {
     switch (userRole) {
+      case UserRole.Admin:
+        this.router.navigate(['/admin/dashboard']);
+        break;
       case UserRole.Owner:
-      case UserRole.Manager:
-      case UserRole.Staff:
-      case UserRole.Cashier:
-      case UserRole.Accountant:
         this.router.navigate(['/owner/dashboard']);
         break;
       case UserRole.Provider:

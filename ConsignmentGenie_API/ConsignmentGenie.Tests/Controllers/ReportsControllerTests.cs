@@ -16,16 +16,33 @@ namespace ConsignmentGenie.Tests.Controllers
 {
     public class ReportsControllerTests
     {
-        private readonly Mock<IReportsService> _reportsServiceMock;
+        private readonly Mock<ISalesReportService> _salesReportServiceMock;
+        private readonly Mock<IInventoryReportService> _inventoryReportServiceMock;
+        private readonly Mock<IPayoutReportService> _payoutReportServiceMock;
+        private readonly Mock<IProviderReportService> _providerReportServiceMock;
+        private readonly Mock<IPdfReportGenerator> _pdfReportGeneratorMock;
+        private readonly Mock<ICsvExportService> _csvExportServiceMock;
         private readonly Mock<ILogger<ReportsController>> _loggerMock;
         private readonly ReportsController _controller;
         private readonly Guid _organizationId = new("11111111-1111-1111-1111-111111111111");
 
         public ReportsControllerTests()
         {
-            _reportsServiceMock = new Mock<IReportsService>();
+            _salesReportServiceMock = new Mock<ISalesReportService>();
+            _inventoryReportServiceMock = new Mock<IInventoryReportService>();
+            _payoutReportServiceMock = new Mock<IPayoutReportService>();
+            _providerReportServiceMock = new Mock<IProviderReportService>();
+            _pdfReportGeneratorMock = new Mock<IPdfReportGenerator>();
+            _csvExportServiceMock = new Mock<ICsvExportService>();
             _loggerMock = new Mock<ILogger<ReportsController>>();
-            _controller = new ReportsController(_reportsServiceMock.Object, _loggerMock.Object);
+            _controller = new ReportsController(
+                _salesReportServiceMock.Object,
+                _inventoryReportServiceMock.Object,
+                _payoutReportServiceMock.Object,
+                _providerReportServiceMock.Object,
+                _pdfReportGeneratorMock.Object,
+                _csvExportServiceMock.Object,
+                _loggerMock.Object);
 
             // Setup controller context with organization claim
             var claims = new List<Claim>
@@ -59,7 +76,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Transactions = new List<SalesLineItemDto>()
             };
 
-            _reportsServiceMock
+            _salesReportServiceMock
                 .Setup(s => s.GetSalesReportAsync(It.IsAny<Guid>(), It.IsAny<SalesReportFilterDto>()))
                 .ReturnsAsync(ServiceResult<SalesReportDto>.SuccessResult(salesReportDto));
 
@@ -78,7 +95,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.NotNull(response);
 
             // Verify service was called with correct parameters
-            _reportsServiceMock.Verify(
+            _salesReportServiceMock.Verify(
                 s => s.GetSalesReportAsync(_organizationId, It.IsAny<SalesReportFilterDto>()),
                 Times.Once);
         }
@@ -87,7 +104,7 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task GetSalesReport_WithServiceFailure_ReturnsBadRequest()
         {
             // Arrange
-            _reportsServiceMock
+            _salesReportServiceMock
                 .Setup(s => s.GetSalesReportAsync(It.IsAny<Guid>(), It.IsAny<SalesReportFilterDto>()))
                 .ReturnsAsync(ServiceResult<SalesReportDto>.FailureResult("Service error", new List<string> { "Error details" }));
 
@@ -105,7 +122,14 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task GetSalesReport_WithoutOrganizationClaim_ReturnsBadRequest()
         {
             // Arrange
-            var controllerWithoutClaims = new ReportsController(_reportsServiceMock.Object, _loggerMock.Object);
+            var controllerWithoutClaims = new ReportsController(
+                _salesReportServiceMock.Object,
+                _inventoryReportServiceMock.Object,
+                _payoutReportServiceMock.Object,
+                _providerReportServiceMock.Object,
+                _pdfReportGeneratorMock.Object,
+                _csvExportServiceMock.Object,
+                _loggerMock.Object);
             controllerWithoutClaims.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
@@ -128,15 +152,20 @@ namespace ConsignmentGenie.Tests.Controllers
         {
             // Arrange
             var csvData = System.Text.Encoding.UTF8.GetBytes("CSV,Content,Here");
-            _reportsServiceMock
-                .Setup(s => s.ExportSalesReportAsync(It.IsAny<Guid>(), It.IsAny<SalesReportFilterDto>(), "csv"))
+            _salesReportServiceMock
+                .Setup(s => s.GetSalesReportAsync(It.IsAny<Guid>(), It.IsAny<SalesReportFilterDto>()))
+                .ReturnsAsync(ServiceResult<SalesReportDto>.SuccessResult(new SalesReportDto()));
+
+            _csvExportServiceMock
+                .Setup(s => s.ExportSalesReportAsync(It.IsAny<SalesReportDto>()))
                 .ReturnsAsync(ServiceResult<byte[]>.SuccessResult(csvData));
 
             // Act
             var result = await _controller.ExportSalesReport("csv");
 
             // Assert
-            var fileResult = Assert.IsType<FileContentResult>(result);
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+        var fileResult = Assert.IsType<FileContentResult>(actionResult.Result);
             Assert.Equal("text/csv", fileResult.ContentType);
             Assert.Contains(".csv", fileResult.FileDownloadName);
             Assert.Equal(csvData, fileResult.FileContents);
@@ -149,7 +178,8 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.ExportSalesReport("xml");
 
             // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
             Assert.Equal("Unsupported format. Use 'csv' or 'pdf'", badRequestResult.Value);
         }
 
@@ -167,7 +197,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Providers = new List<ProviderPerformanceLineDto>()
             };
 
-            _reportsServiceMock
+            _providerReportServiceMock
                 .Setup(s => s.GetProviderPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ProviderPerformanceFilterDto>()))
                 .ReturnsAsync(ServiceResult<ProviderPerformanceReportDto>.SuccessResult(providerPerformanceDto));
 
@@ -179,7 +209,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             Assert.NotNull(okResult.Value);
 
-            _reportsServiceMock.Verify(
+            _providerReportServiceMock.Verify(
                 s => s.GetProviderPerformanceReportAsync(_organizationId, It.IsAny<ProviderPerformanceFilterDto>()),
                 Times.Once);
         }
@@ -199,7 +229,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Items = new List<AgingItemDto>()
             };
 
-            _reportsServiceMock
+            _inventoryReportServiceMock
                 .Setup(s => s.GetInventoryAgingReportAsync(It.IsAny<Guid>(), It.IsAny<InventoryAgingFilterDto>()))
                 .ReturnsAsync(ServiceResult<InventoryAgingReportDto>.SuccessResult(inventoryAgingDto));
 
@@ -211,7 +241,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             Assert.NotNull(okResult.Value);
 
-            _reportsServiceMock.Verify(
+            _inventoryReportServiceMock.Verify(
                 s => s.GetInventoryAgingReportAsync(_organizationId, It.Is<InventoryAgingFilterDto>(f => f.AgeThreshold == 30)),
                 Times.Once);
         }
@@ -230,7 +260,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Providers = new List<PayoutSummaryLineDto>()
             };
 
-            _reportsServiceMock
+            _payoutReportServiceMock
                 .Setup(s => s.GetPayoutSummaryReportAsync(It.IsAny<Guid>(), It.IsAny<PayoutSummaryFilterDto>()))
                 .ReturnsAsync(ServiceResult<PayoutSummaryReportDto>.SuccessResult(payoutSummaryDto));
 
@@ -242,7 +272,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             Assert.NotNull(okResult.Value);
 
-            _reportsServiceMock.Verify(
+            _payoutReportServiceMock.Verify(
                 s => s.GetPayoutSummaryReportAsync(_organizationId, It.IsAny<PayoutSummaryFilterDto>()),
                 Times.Once);
         }
@@ -264,7 +294,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Transactions = new List<ReconciliationLineDto>()
             };
 
-            _reportsServiceMock
+            _salesReportServiceMock
                 .Setup(s => s.GetDailyReconciliationReportAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>()))
                 .ReturnsAsync(ServiceResult<DailyReconciliationDto>.SuccessResult(reconciliationDto));
 
@@ -276,7 +306,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             Assert.NotNull(okResult.Value);
 
-            _reportsServiceMock.Verify(
+            _salesReportServiceMock.Verify(
                 s => s.GetDailyReconciliationReportAsync(_organizationId, It.IsAny<DateOnly>()),
                 Times.Once);
         }
@@ -303,7 +333,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Transactions = new List<ReconciliationLineDto>()
             };
 
-            _reportsServiceMock
+            _salesReportServiceMock
                 .Setup(s => s.SaveDailyReconciliationAsync(It.IsAny<Guid>(), It.IsAny<DailyReconciliationRequestDto>()))
                 .ReturnsAsync(ServiceResult<DailyReconciliationDto>.SuccessResult(reconciliationDto));
 
@@ -315,7 +345,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             Assert.NotNull(okResult.Value);
 
-            _reportsServiceMock.Verify(
+            _salesReportServiceMock.Verify(
                 s => s.SaveDailyReconciliationAsync(_organizationId, request),
                 Times.Once);
         }
@@ -337,7 +367,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 }
             };
 
-            _reportsServiceMock
+            _salesReportServiceMock
                 .Setup(s => s.GetTrendsReportAsync(It.IsAny<Guid>(), It.IsAny<TrendsFilterDto>()))
                 .ReturnsAsync(ServiceResult<TrendsReportDto>.SuccessResult(trendsDto));
 
@@ -349,7 +379,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             Assert.NotNull(okResult.Value);
 
-            _reportsServiceMock.Verify(
+            _salesReportServiceMock.Verify(
                 s => s.GetTrendsReportAsync(_organizationId, It.IsAny<TrendsFilterDto>()),
                 Times.Once);
         }
@@ -369,7 +399,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 ProviderBreakdown = new List<ProviderBreakdownDto>()
             };
 
-            _reportsServiceMock
+            _inventoryReportServiceMock
                 .Setup(s => s.GetInventoryOverviewAsync(It.IsAny<Guid>()))
                 .ReturnsAsync(ServiceResult<InventoryOverviewDto>.SuccessResult(inventoryOverviewDto));
 
@@ -381,7 +411,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             Assert.NotNull(okResult.Value);
 
-            _reportsServiceMock.Verify(
+            _inventoryReportServiceMock.Verify(
                 s => s.GetInventoryOverviewAsync(_organizationId),
                 Times.Once);
         }
@@ -391,15 +421,20 @@ namespace ConsignmentGenie.Tests.Controllers
         {
             // Arrange
             var pdfData = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // PDF header bytes
-            _reportsServiceMock
-                .Setup(s => s.ExportProviderPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ProviderPerformanceFilterDto>(), "pdf"))
+            _providerReportServiceMock
+                .Setup(s => s.GetProviderPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ProviderPerformanceFilterDto>()))
+                .ReturnsAsync(ServiceResult<ProviderPerformanceReportDto>.SuccessResult(new ProviderPerformanceReportDto()));
+
+            _pdfReportGeneratorMock
+                .Setup(s => s.GenerateProviderPerformanceReportPdfAsync(It.IsAny<ProviderPerformanceReportDto>(), It.IsAny<string>()))
                 .ReturnsAsync(ServiceResult<byte[]>.SuccessResult(pdfData));
 
             // Act
             var result = await _controller.ExportProviderPerformanceReport("pdf");
 
             // Assert
-            var fileResult = Assert.IsType<FileContentResult>(result);
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+        var fileResult = Assert.IsType<FileContentResult>(actionResult.Result);
             Assert.Equal("application/pdf", fileResult.ContentType);
             Assert.Contains(".pdf", fileResult.FileDownloadName);
             Assert.Equal(pdfData, fileResult.FileContents);
@@ -409,15 +444,20 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task ExportInventoryAgingReport_WithExportFailure_ReturnsBadRequest()
         {
             // Arrange
-            _reportsServiceMock
-                .Setup(s => s.ExportInventoryAgingReportAsync(It.IsAny<Guid>(), It.IsAny<InventoryAgingFilterDto>(), "csv"))
+            _inventoryReportServiceMock
+                .Setup(s => s.GetInventoryAgingReportAsync(It.IsAny<Guid>(), It.IsAny<InventoryAgingFilterDto>()))
+                .ReturnsAsync(ServiceResult<InventoryAgingReportDto>.SuccessResult(new InventoryAgingReportDto()));
+
+            _csvExportServiceMock
+                .Setup(s => s.ExportInventoryAgingReportAsync(It.IsAny<InventoryAgingReportDto>()))
                 .ReturnsAsync(ServiceResult<byte[]>.FailureResult("Export failed", new List<string> { "Internal error" }));
 
             // Act
             var result = await _controller.ExportInventoryAgingReport("csv");
 
             // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
             var response = badRequestResult.Value;
             Assert.NotNull(response);
         }
@@ -432,7 +472,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var categories = new List<string> { "Electronics", "Clothing" };
             var paymentMethods = new List<string> { "Cash", "Card" };
 
-            _reportsServiceMock
+            _salesReportServiceMock
                 .Setup(s => s.GetSalesReportAsync(It.IsAny<Guid>(), It.IsAny<SalesReportFilterDto>()))
                 .ReturnsAsync(ServiceResult<SalesReportDto>.SuccessResult(new SalesReportDto()));
 
@@ -443,7 +483,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var actionResult = Assert.IsType<ActionResult<object>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
 
-            _reportsServiceMock.Verify(
+            _salesReportServiceMock.Verify(
                 s => s.GetSalesReportAsync(_organizationId, It.Is<SalesReportFilterDto>(f =>
                     f.StartDate == startDate &&
                     f.EndDate == endDate &&
@@ -462,7 +502,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var includeInactive = true;
             var minItemsThreshold = 5;
 
-            _reportsServiceMock
+            _providerReportServiceMock
                 .Setup(s => s.GetProviderPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ProviderPerformanceFilterDto>()))
                 .ReturnsAsync(ServiceResult<ProviderPerformanceReportDto>.SuccessResult(new ProviderPerformanceReportDto()));
 
@@ -473,7 +513,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var actionResult = Assert.IsType<ActionResult<object>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
 
-            _reportsServiceMock.Verify(
+            _providerReportServiceMock.Verify(
                 s => s.GetProviderPerformanceReportAsync(_organizationId, It.Is<ProviderPerformanceFilterDto>(f =>
                     f.StartDate == startDate &&
                     f.EndDate == endDate &&
@@ -492,7 +532,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var minPrice = 10m;
             var maxPrice = 500m;
 
-            _reportsServiceMock
+            _inventoryReportServiceMock
                 .Setup(s => s.GetInventoryAgingReportAsync(It.IsAny<Guid>(), It.IsAny<InventoryAgingFilterDto>()))
                 .ReturnsAsync(ServiceResult<InventoryAgingReportDto>.SuccessResult(new InventoryAgingReportDto()));
 
@@ -503,7 +543,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var actionResult = Assert.IsType<ActionResult<object>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
 
-            _reportsServiceMock.Verify(
+            _inventoryReportServiceMock.Verify(
                 s => s.GetInventoryAgingReportAsync(_organizationId, It.Is<InventoryAgingFilterDto>(f =>
                     f.AgeThreshold == ageThreshold &&
                     f.Categories == categories &&

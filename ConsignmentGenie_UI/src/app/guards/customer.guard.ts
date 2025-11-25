@@ -44,11 +44,10 @@ export class CustomerGuard implements CanActivate {
   private redirectToUserDashboard(userRole: number) {
     switch (userRole) {
       case UserRole.Owner:
-      case UserRole.Manager:
-      case UserRole.Staff:
-      case UserRole.Cashier:
-      case UserRole.Accountant:
         this.router.navigate(['/owner/dashboard']);
+        break;
+      case UserRole.Admin:
+        this.router.navigate(['/admin/dashboard']);
         break;
       default:
         this.router.navigate(['/login']);

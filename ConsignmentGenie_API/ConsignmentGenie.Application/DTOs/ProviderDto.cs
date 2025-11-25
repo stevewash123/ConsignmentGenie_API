@@ -36,6 +36,33 @@ public class ProviderListDto
     public DateTime CreatedAt { get; set; }
 }
 
+// Summary View DTO (for approvals and simple lists)
+public class ProviderApprovalSummaryDto
+{
+    public Guid ProviderId { get; set; }
+    public string ProviderNumber { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    public decimal CommissionRate { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+// Approval History DTO
+public class ProviderApprovalHistoryDto
+{
+    public Guid ProviderId { get; set; }
+    public string ProviderNumber { get; set; } = string.Empty;
+    public string ProviderName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? ApprovalStatus { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? ApprovedByName { get; set; }
+    public string? RejectedReason { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
 // Detail View DTO
 public class ProviderDetailDto
 {
@@ -121,6 +148,74 @@ public class ProviderMetricsDto
     // Averages
     public decimal AverageItemPrice { get; set; }
     public decimal AverageDaysToSell { get; set; }
+}
+
+// Dashboard Metrics DTO
+public class ProviderDashboardMetricsDto
+{
+    public int TotalProviders { get; set; }
+    public int ActiveProviders { get; set; }
+    public int PendingProviders { get; set; }
+    public int DeactivatedProviders { get; set; }
+    public int NewProvidersThisMonth { get; set; }
+    public decimal ProviderGrowthRate { get; set; }
+    public List<ProviderTopPerformerDto> TopProvidersByBalance { get; set; } = new();
+}
+
+// Top Performer DTO
+public class ProviderTopPerformerDto
+{
+    public Guid ProviderId { get; set; }
+    public string ProviderName { get; set; } = string.Empty;
+    public decimal PendingBalance { get; set; }
+    public decimal TotalEarnings { get; set; }
+    public int ActiveItems { get; set; }
+    public int TotalItems { get; set; }
+}
+
+// Activity DTO
+public class ProviderActivityDto
+{
+    public Guid ProviderId { get; set; }
+    public string ProviderName { get; set; } = string.Empty;
+    public int DaysRange { get; set; }
+    public List<ProviderActivityTransactionDto> RecentTransactions { get; set; } = new();
+    public List<ProviderActivityItemDto> RecentItems { get; set; } = new();
+    public List<ProviderActivityPayoutDto> RecentPayouts { get; set; } = new();
+    public int TotalTransactions { get; set; }
+    public int TotalItemsAdded { get; set; }
+    public int TotalPayouts { get; set; }
+}
+
+// Activity Transaction DTO
+public class ProviderActivityTransactionDto
+{
+    public Guid TransactionId { get; set; }
+    public DateTime SaleDate { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public decimal SalePrice { get; set; }
+    public decimal ProviderAmount { get; set; }
+    public string PaymentMethod { get; set; } = string.Empty;
+}
+
+// Activity Item DTO
+public class ProviderActivityItemDto
+{
+    public Guid ItemId { get; set; }
+    public string ItemName { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+// Activity Payout DTO
+public class ProviderActivityPayoutDto
+{
+    public Guid PayoutId { get; set; }
+    public decimal Amount { get; set; }
+    public DateTime PayoutDate { get; set; }
+    public string Method { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
 }
 
 // Create Request
@@ -224,6 +319,17 @@ public class StoreCodeDto
 public class ToggleStoreCodeRequest
 {
     public bool IsEnabled { get; set; }
+}
+
+// Settings Summary DTO
+public class ProviderSettingsSummaryDto
+{
+    public bool AllowSelfRegistration { get; set; }
+    public string RegistrationCode { get; set; } = string.Empty;
+    public string RegistrationUrl { get; set; } = string.Empty;
+    public int TotalProviders { get; set; }
+    public int PendingRegistrations { get; set; }
+    public decimal DefaultCommissionRate { get; set; }
 }
 
 // Payment Methods Lookup

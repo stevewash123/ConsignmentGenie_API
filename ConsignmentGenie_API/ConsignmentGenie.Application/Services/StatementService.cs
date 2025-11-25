@@ -23,6 +23,12 @@ public class StatementService : IStatementService
 
     public async Task<StatementDto> GenerateStatementAsync(Guid providerId, DateOnly periodStart, DateOnly periodEnd)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var provider = await _context.Providers
             .Include(p => p.Organization)
             .Include(p => p.User)
@@ -71,7 +77,7 @@ public class StatementService : IStatementService
         // Generate statement number
         var statementNumber = GenerateStatementNumber(provider.Organization, provider, periodStart, periodEnd);
 
-        // Create statement entity
+        // 🏗️ AGGREGATE ROOT PATTERN: Create statement aggregate root
         var statement = new Statement
         {
             OrganizationId = provider.OrganizationId,
@@ -166,6 +172,12 @@ public class StatementService : IStatementService
 
     public async Task MarkAsViewedAsync(Guid statementId, Guid providerId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var statement = await _context.Statements
             .FirstOrDefaultAsync(s => s.Id == statementId && s.ProviderId == providerId);
 
@@ -194,6 +206,12 @@ public class StatementService : IStatementService
 
     public async Task<StatementDto> RegenerateStatementAsync(Guid statementId, Guid providerId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var existingStatement = await _context.Statements
             .FirstOrDefaultAsync(s => s.Id == statementId && s.ProviderId == providerId);
 

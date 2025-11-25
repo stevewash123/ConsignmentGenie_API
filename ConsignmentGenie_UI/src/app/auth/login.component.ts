@@ -122,35 +122,35 @@ interface LoginResponse {
           <div class="test-account-grid">
             <button
               class="test-account-btn admin"
-              (click)="useTestAccount('admin@demoshop.com')"
+              (click)="useTestAccount('admin@microsaasbuilders.com')"
               [disabled]="isLoading()"
             >
               <div class="account-role">System Admin</div>
-              <div class="account-email">admin@demoshop.com</div>
+              <div class="account-email">admin@microsaasbuilders.com</div>
             </button>
             <button
               class="test-account-btn owner"
-              (click)="useTestAccount('owner@demoshop.com')"
+              (click)="useTestAccount('owner1@microsaasbuilders.com')"
               [disabled]="isLoading()"
             >
               <div class="account-role">Shop Owner</div>
-              <div class="account-email">owner@demoshop.com</div>
+              <div class="account-email">owner1@microsaasbuilders.com</div>
             </button>
             <button
               class="test-account-btn provider"
-              (click)="useTestAccount('provider@demoshop.com')"
+              (click)="useTestAccount('provider1@microsaasbuilders.com')"
               [disabled]="isLoading()"
             >
               <div class="account-role">Provider</div>
-              <div class="account-email">provider@demoshop.com</div>
+              <div class="account-email">provider1@microsaasbuilders.com</div>
             </button>
             <button
               class="test-account-btn customer"
-              (click)="useTestAccount('customer@demoshop.com')"
+              (click)="useTestAccount('customer1@microsaasbuilders.com')"
               [disabled]="isLoading()"
             >
               <div class="account-role">Customer</div>
-              <div class="account-email">customer@demoshop.com</div>
+              <div class="account-email">customer1@microsaasbuilders.com</div>
             </button>
           </div>
         </div>
@@ -487,8 +487,6 @@ export class LoginComponent {
         // Update AuthService state
         this.authService.loadStoredAuth();
 
-        console.log('Stored auth data, calling redirect...');
-
         // Role-based redirection
         this.redirectBasedOnRole(loginData.role.toString(), loginData.email);
       }
@@ -511,21 +509,19 @@ export class LoginComponent {
     // Convert numeric role to string if needed
     const roleStr = this.normalizeRole(role);
 
-    console.log('Redirect role:', roleStr, 'for email:', email);
-
-    // Special case: System admin (you) gets admin dashboard
-    if (email === 'admin@demoshop.com') {
+    // Special case: System admin gets admin dashboard
+    if (email === 'admin@microsaasbuilders.com') {
       this.router.navigate(['/admin/dashboard']);
       return;
     }
 
     // Role-based routing for regular users
     switch (roleStr) {
+      case 'Admin':
+        this.router.navigate(['/admin/dashboard']);
+        break;
+
       case 'Owner':
-      case 'Manager':
-      case 'Staff':
-      case 'Cashier':
-      case 'Accountant':
         this.router.navigate(['/owner/dashboard']);
         break;
 
@@ -548,13 +544,10 @@ export class LoginComponent {
     // Handle numeric role values (enum numbers from API)
     if (typeof role === 'number' || !isNaN(Number(role))) {
       const roleMap: { [key: number]: string } = {
+        0: 'Admin',
         1: 'Owner',
-        2: 'Manager',
-        3: 'Staff',
-        4: 'Cashier',
-        5: 'Accountant',
-        6: 'Provider',
-        7: 'Customer'
+        2: 'Provider',
+        3: 'Customer'
       };
       return roleMap[Number(role)] || 'Owner';
     }

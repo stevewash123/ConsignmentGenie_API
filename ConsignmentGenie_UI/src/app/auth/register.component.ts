@@ -13,21 +13,21 @@ import { RouterModule } from '@angular/router';
           <h1>ConsignmentGenie</h1>
 
           <div class="selection-section">
-            <h2>Create Your Account</h2>
-            <p>I am a...</p>
+            <h2>Join Consignment Genie</h2>
+            <p>I want to...</p>
 
             <div class="role-selection">
               <a routerLink="/register/owner" class="role-card">
                 <div class="role-icon">🏪</div>
-                <h3>Shop Owner</h3>
-                <p>I'm starting or managing a consignment shop</p>
+                <h3>Open a Consignment Shop</h3>
+                <p>→ Shop setup wizard</p>
                 <button class="select-btn">Select</button>
               </a>
 
               <a routerLink="/register/provider" class="role-card">
                 <div class="role-icon">📦</div>
-                <h3>Provider</h3>
-                <p>I consign items with a shop</p>
+                <h3>Consign Items at a Shop</h3>
+                <p>→ Basic signup</p>
                 <button class="select-btn">Select</button>
               </a>
             </div>

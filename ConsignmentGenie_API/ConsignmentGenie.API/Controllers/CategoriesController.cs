@@ -210,7 +210,7 @@ public class CategoriesController : ControllerBase
     // DELETE: api/categories/{id}
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Owner,Manager")]
-    public async Task<ActionResult<ApiResponse<object>>> DeleteCategory(Guid id)
+    public async Task<ActionResult<ApiResponse<DeleteResponseDto>>> DeleteCategory(Guid id)
     {
         try
         {
@@ -221,7 +221,7 @@ public class CategoriesController : ControllerBase
 
             if (category == null)
             {
-                return NotFound(ApiResponse<object>.ErrorResult("Category not found"));
+                return NotFound(ApiResponse<DeleteResponseDto>.ErrorResult("Category not found"));
             }
 
             // Check if category is being used by any items
@@ -230,7 +230,7 @@ public class CategoriesController : ControllerBase
 
             if (hasItems)
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Cannot delete category that is assigned to items"));
+                return BadRequest(ApiResponse<DeleteResponseDto>.ErrorResult("Cannot delete category that is assigned to items"));
             }
 
             // Soft delete by setting IsActive = false
@@ -240,19 +240,20 @@ public class CategoriesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            return Ok(ApiResponse<object>.SuccessResult(null, "Category deleted successfully"));
+            var response = new DeleteResponseDto { Message = "Category deleted successfully" };
+            return Ok(ApiResponse<DeleteResponseDto>.SuccessResult(response, "Category deleted successfully"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting category {CategoryId}", id);
-            return StatusCode(500, ApiResponse<object>.ErrorResult("Failed to delete category"));
+            return StatusCode(500, ApiResponse<DeleteResponseDto>.ErrorResult("Failed to delete category"));
         }
     }
 
     // PUT: api/categories/reorder
     [HttpPut("reorder")]
     [Authorize(Roles = "Owner,Manager")]
-    public async Task<ActionResult<ApiResponse<object>>> ReorderCategories(ReorderCategoriesRequest request)
+    public async Task<ActionResult<ApiResponse<ReorderResponseDto>>> ReorderCategories(ReorderCategoriesRequest request)
     {
         try
         {
@@ -267,7 +268,7 @@ public class CategoriesController : ControllerBase
 
             if (categories.Count != request.CategoryOrders.Count)
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Some categories not found"));
+                return BadRequest(ApiResponse<ReorderResponseDto>.ErrorResult("Some categories not found"));
             }
 
             // Update display orders
@@ -284,12 +285,13 @@ public class CategoriesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            return Ok(ApiResponse<object>.SuccessResult(null, "Categories reordered successfully"));
+            var response = new ReorderResponseDto { Message = "Categories reordered successfully" };
+            return Ok(ApiResponse<ReorderResponseDto>.SuccessResult(response, "Categories reordered successfully"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error reordering categories");
-            return StatusCode(500, ApiResponse<object>.ErrorResult("Failed to reorder categories"));
+            return StatusCode(500, ApiResponse<ReorderResponseDto>.ErrorResult("Failed to reorder categories"));
         }
     }
 

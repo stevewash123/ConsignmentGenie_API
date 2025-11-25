@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using ConsignmentGenie.API.Controllers;
+using ConsignmentGenie.Application.DTOs;
 using ConsignmentGenie.Application.DTOs.Shopper;
 using ConsignmentGenie.Application.Services.Interfaces;
 
@@ -11,19 +12,16 @@ namespace ConsignmentGenie.Tests.Controllers
     public class ShopperAuthControllerTests
     {
         private readonly Mock<IShopperAuthService> _mockShopperAuthService;
-        private readonly Mock<ISlugService> _mockSlugService;
         private readonly Mock<ILogger<ShopperAuthController>> _mockLogger;
         private readonly ShopperAuthController _controller;
 
         public ShopperAuthControllerTests()
         {
             _mockShopperAuthService = new Mock<IShopperAuthService>();
-            _mockSlugService = new Mock<ISlugService>();
             _mockLogger = new Mock<ILogger<ShopperAuthController>>();
 
             _controller = new ShopperAuthController(
                 _mockShopperAuthService.Object,
-                _mockSlugService.Object,
                 _mockLogger.Object
             );
         }
@@ -35,52 +33,44 @@ namespace ConsignmentGenie.Tests.Controllers
         {
             // Arrange
             var storeSlug = "test-store";
-            var organizationId = Guid.NewGuid();
             var request = new ShopperRegisterRequest
             {
                 FullName = "John Doe",
                 Email = "john@example.com",
                 Password = "Password123!",
-                Phone = "555-123-4567",
-                Address = "123 Main St",
-                City = "Springfield",
-                State = "IL",
-                ZipCode = "62701"
+                Phone = "555-123-4567"
             };
 
-            var expectedResponse = new ShopperAuthResponse
+            var expectedAuthResult = new AuthResultDto
             {
                 Success = true,
                 Token = "jwt-token",
-                Shopper = new ShopperDto
+                Profile = new ShopperProfileDto
                 {
-                    Id = Guid.NewGuid(),
+                    ShopperId = Guid.NewGuid(),
                     FullName = "John Doe",
                     Email = "john@example.com"
                 }
             };
 
-            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
-                .ReturnsAsync(organizationId);
-
-            _mockShopperAuthService.Setup(s => s.RegisterShopperAsync(organizationId, request))
-                .ReturnsAsync(expectedResponse);
+            _mockShopperAuthService.Setup(s => s.RegisterAsync(request, storeSlug))
+                .ReturnsAsync(expectedAuthResult);
 
             // Act
             var result = await _controller.Register(storeSlug, request);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<ShopperAuthResponse>(okResult.Value);
-            Assert.True(response.Success);
-            Assert.Equal("jwt-token", response.Token);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var apiResponse = Assert.IsType<ApiResponse<AuthResultDto>>(okResult.Value);
+            Assert.True(apiResponse.Success);
+            Assert.Equal("jwt-token", apiResponse.Data.Token);
         }
 
         [Fact]
-        public async Task Register_InvalidStoreSlug_ReturnsBadRequest()
+        public async Task Register_ServiceReturnsFailed_ReturnsBadRequest()
         {
             // Arrange
-            var storeSlug = "invalid-store";
+            var storeSlug = "test-store";
             var request = new ShopperRegisterRequest
             {
                 FullName = "John Doe",
@@ -88,17 +78,23 @@ namespace ConsignmentGenie.Tests.Controllers
                 Password = "Password123!"
             };
 
-            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
-                .ReturnsAsync((Guid?)null);
+            var failedAuthResult = new AuthResultDto
+            {
+                Success = false,
+                ErrorMessage = "Email already exists"
+            };
+
+            _mockShopperAuthService.Setup(s => s.RegisterAsync(request, storeSlug))
+                .ReturnsAsync(failedAuthResult);
 
             // Act
             var result = await _controller.Register(storeSlug, request);
 
             // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            var response = Assert.IsType<ShopperAuthResponse>(badRequestResult.Value);
-            Assert.False(response.Success);
-            Assert.Equal("Store not found", response.ErrorMessage);
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            var apiResponse = Assert.IsType<ApiResponse<AuthResultDto>>(badRequestResult.Value);
+            Assert.False(apiResponse.Success);
+            Assert.Contains("Email already exists", apiResponse.Errors);
         }
 
         [Fact]
@@ -106,7 +102,6 @@ namespace ConsignmentGenie.Tests.Controllers
         {
             // Arrange
             var storeSlug = "test-store";
-            var organizationId = Guid.NewGuid();
             var request = new ShopperRegisterRequest
             {
                 FullName = "John Doe",
@@ -114,21 +109,18 @@ namespace ConsignmentGenie.Tests.Controllers
                 Password = "Password123!"
             };
 
-            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
-                .ReturnsAsync(organizationId);
-
-            _mockShopperAuthService.Setup(s => s.RegisterShopperAsync(organizationId, request))
+            _mockShopperAuthService.Setup(s => s.RegisterAsync(request, storeSlug))
                 .ThrowsAsync(new Exception("Database error"));
 
             // Act
             var result = await _controller.Register(storeSlug, request);
 
             // Assert
-            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, statusCodeResult.StatusCode);
-            var response = Assert.IsType<ShopperAuthResponse>(statusCodeResult.Value);
-            Assert.False(response.Success);
-            Assert.Equal("An error occurred during registration", response.ErrorMessage);
+            var apiResponse = Assert.IsType<ApiResponse<AuthResultDto>>(statusCodeResult.Value);
+            Assert.False(apiResponse.Success);
+            Assert.Contains("An error occurred during registration", apiResponse.Errors);
         }
 
         #endregion

@@ -35,6 +35,7 @@
           },
           "configurations": {
             "production": {
+              "outputPath": "dist/production",
               "budgets": [
                 {
                   "type": "initial",

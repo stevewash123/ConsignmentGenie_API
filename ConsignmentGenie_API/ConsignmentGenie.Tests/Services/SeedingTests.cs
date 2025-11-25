@@ -66,7 +66,7 @@ public class SeedingTests : IDisposable
         // Arrange
         var loginRequest = new LoginRequest
         {
-            Email = "admin@demoshop.com",
+            Email = "admin@microsaasbuilders.com",
             Password = "password123"
         };
 
@@ -75,7 +75,7 @@ public class SeedingTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("admin@demoshop.com", result.Email);
+        Assert.Equal("admin@microsaasbuilders.com", result.Email);
         Assert.Equal(UserRole.Owner, result.Role);
         Assert.Equal("Demo Consignment Shop", result.OrganizationName);
         Assert.NotEmpty(result.Token);
@@ -87,7 +87,7 @@ public class SeedingTests : IDisposable
         // Arrange
         var loginRequest = new LoginRequest
         {
-            Email = "owner@demoshop.com",
+            Email = "owner1@microsaasbuilders.com",
             Password = "password123"
         };
 
@@ -96,8 +96,8 @@ public class SeedingTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("owner@demoshop.com", result.Email);
-        Assert.Equal(UserRole.Manager, result.Role);
+        Assert.Equal("owner1@microsaasbuilders.com", result.Email);
+        Assert.Equal(UserRole.Owner, result.Role);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class SeedingTests : IDisposable
         // Arrange
         var loginRequest = new LoginRequest
         {
-            Email = "provider@demoshop.com",
+            Email = "provider1@microsaasbuilders.com",
             Password = "password123"
         };
 
@@ -115,7 +115,7 @@ public class SeedingTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("provider@demoshop.com", result.Email);
+        Assert.Equal("provider1@microsaasbuilders.com", result.Email);
         Assert.Equal(UserRole.Provider, result.Role);
     }
 
@@ -125,7 +125,7 @@ public class SeedingTests : IDisposable
         // Arrange
         var loginRequest = new LoginRequest
         {
-            Email = "customer@demoshop.com",
+            Email = "customer1@microsaasbuilders.com",
             Password = "password123"
         };
 
@@ -134,7 +134,7 @@ public class SeedingTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("customer@demoshop.com", result.Email);
+        Assert.Equal("customer1@microsaasbuilders.com", result.Email);
         Assert.Equal(UserRole.Customer, result.Role);
     }
 
@@ -150,7 +150,7 @@ public class SeedingTests : IDisposable
         Assert.NotNull(provider);
         Assert.Equal("Demo", provider.FirstName);
         Assert.Equal("Artist", provider.LastName);
-        Assert.Equal("provider@demoshop.com", provider.Email);
+        Assert.Equal("provider1@microsaasbuilders.com", provider.Email);
         Assert.Equal(0.6000m, provider.CommissionRate);
         Assert.Equal(ProviderStatus.Active, provider.Status);
         Assert.NotNull(provider.User);

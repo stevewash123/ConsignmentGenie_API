@@ -14,8 +14,16 @@ public class User : BaseEntity
     [MaxLength(100)]
     public string PasswordHash { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Primary role for backward compatibility.
+    /// New implementations should use RoleAssignments for multi-role support.
+    /// </summary>
     public UserRole Role { get; set; } = UserRole.Owner;
 
+    /// <summary>
+    /// Primary organization for backward compatibility.
+    /// New implementations should use RoleAssignments with OrganizationId.
+    /// </summary>
     public Guid OrganizationId { get; set; }
 
     // Registration approval fields (Phase 4)
@@ -36,4 +44,9 @@ public class User : BaseEntity
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public Provider? Provider { get; set; }  // For Provider role users
+
+    /// <summary>
+    /// Multi-role assignments for this user across different organizations/contexts
+    /// </summary>
+    public ICollection<UserRoleAssignment> RoleAssignments { get; set; } = new List<UserRoleAssignment>();
 }

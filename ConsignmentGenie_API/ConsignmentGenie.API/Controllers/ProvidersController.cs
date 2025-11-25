@@ -430,133 +430,7 @@ public class ProvidersController : ControllerBase
         }
     }
 
-    // APPROVE - Approve pending self-registration
-    [HttpPost("{id:guid}/approve")]
-    public async Task<ActionResult<ApiResponse<ProviderDetailDto>>> ApproveProvider(Guid id)
-    {
-        try
-        {
-            var organizationId = GetOrganizationId();
-            var userId = GetUserId();
-
-            var provider = await _context.Providers
-                .Where(p => p.Id == id && p.OrganizationId == organizationId && p.Status == ProviderStatus.Pending)
-                .FirstOrDefaultAsync();
-
-            if (provider == null)
-            {
-                return NotFound(ApiResponse<ProviderDetailDto>.ErrorResult("Pending provider not found"));
-            }
-
-            provider.Status = ProviderStatus.Active;
-            provider.ApprovalStatus = "Approved";
-            provider.ApprovedAt = DateTime.UtcNow;
-            provider.ApprovedBy = userId;
-            provider.StatusChangedAt = DateTime.UtcNow;
-            provider.StatusChangedReason = "Approved registration";
-            provider.UpdatedAt = DateTime.UtcNow;
-            provider.UpdatedBy = userId;
-
-            await _context.SaveChangesAsync();
-
-            var result = await GetProvider(provider.Id);
-            if (result.Result is OkObjectResult okResult &&
-                okResult.Value is ApiResponse<ProviderDetailDto> apiResponse)
-            {
-                apiResponse.Message = "Provider approved successfully";
-                return Ok(apiResponse);
-            }
-
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Provider approved but failed to retrieve details"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error approving provider {ProviderId}", id);
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Failed to approve provider"));
-        }
-    }
-
-    // REJECT - Reject pending self-registration
-    [HttpPost("{id:guid}/reject")]
-    public async Task<ActionResult<ApiResponse<ProviderDetailDto>>> RejectProvider(Guid id, [FromBody] RejectProviderRequest request)
-    {
-        try
-        {
-            var organizationId = GetOrganizationId();
-            var userId = GetUserId();
-
-            var provider = await _context.Providers
-                .Where(p => p.Id == id && p.OrganizationId == organizationId && p.Status == ProviderStatus.Pending)
-                .FirstOrDefaultAsync();
-
-            if (provider == null)
-            {
-                return NotFound(ApiResponse<ProviderDetailDto>.ErrorResult("Pending provider not found"));
-            }
-
-            provider.Status = ProviderStatus.Rejected;
-            provider.ApprovalStatus = "Rejected";
-            provider.RejectedReason = request.Reason.Trim();
-            provider.StatusChangedAt = DateTime.UtcNow;
-            provider.StatusChangedReason = $"Rejected: {request.Reason}";
-            provider.UpdatedAt = DateTime.UtcNow;
-            provider.UpdatedBy = userId;
-
-            await _context.SaveChangesAsync();
-
-            var result = await GetProvider(provider.Id);
-            if (result.Result is OkObjectResult okResult &&
-                okResult.Value is ApiResponse<ProviderDetailDto> apiResponse)
-            {
-                apiResponse.Message = "Provider rejected successfully";
-                return Ok(apiResponse);
-            }
-
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Provider rejected but failed to retrieve details"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error rejecting provider {ProviderId}", id);
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Failed to reject provider"));
-        }
-    }
-
-    // PENDING COUNT - For badge/notification
-    [HttpGet("pending/count")]
-    public async Task<ActionResult<ApiResponse<int>>> GetPendingApprovalCount()
-    {
-        try
-        {
-            var organizationId = GetOrganizationId();
-            var count = await _context.Providers
-                .Where(p => p.OrganizationId == organizationId && p.Status == ProviderStatus.Pending)
-                .CountAsync();
-
-            return Ok(ApiResponse<int>.SuccessResult(count));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting pending approval count");
-            return StatusCode(500, ApiResponse<int>.ErrorResult("Failed to retrieve pending count"));
-        }
-    }
-
-    // GENERATE NUMBER - Get next available provider number
-    [HttpGet("generate-number")]
-    public async Task<ActionResult<ApiResponse<string>>> GenerateProviderNumber()
-    {
-        try
-        {
-            var organizationId = GetOrganizationId();
-            var providerNumber = await GenerateProviderNumber(organizationId);
-            return Ok(ApiResponse<string>.SuccessResult(providerNumber));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating provider number");
-            return StatusCode(500, ApiResponse<string>.ErrorResult("Failed to generate provider number"));
-        }
-    }
+    #region Private Helper Methods
 
     private async Task<ProviderMetricsDto> CalculateProviderMetrics(Guid providerId, Guid organizationId)
     {
@@ -717,4 +591,6 @@ public class ProvidersController : ControllerBase
         var userIdClaim = User.FindFirst("userId")?.Value;
         return userIdClaim != null ? Guid.Parse(userIdClaim) : Guid.Empty;
     }
+
+    #endregion
 }

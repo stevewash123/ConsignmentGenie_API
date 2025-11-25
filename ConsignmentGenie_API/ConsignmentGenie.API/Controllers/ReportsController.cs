@@ -13,18 +13,35 @@ namespace ConsignmentGenie.API.Controllers;
 [Authorize]
 public class ReportsController : ControllerBase
 {
-    private readonly IReportsService _reportsService;
+    private readonly ISalesReportService _salesReportService;
+    private readonly IInventoryReportService _inventoryReportService;
+    private readonly IPayoutReportService _payoutReportService;
+    private readonly IProviderReportService _providerReportService;
+    private readonly IPdfReportGenerator _pdfReportGenerator;
+    private readonly ICsvExportService _csvExportService;
     private readonly ILogger<ReportsController> _logger;
 
-    public ReportsController(IReportsService reportsService, ILogger<ReportsController> logger)
+    public ReportsController(
+        ISalesReportService salesReportService,
+        IInventoryReportService inventoryReportService,
+        IPayoutReportService payoutReportService,
+        IProviderReportService providerReportService,
+        IPdfReportGenerator pdfReportGenerator,
+        ICsvExportService csvExportService,
+        ILogger<ReportsController> logger)
     {
-        _reportsService = reportsService;
+        _salesReportService = salesReportService;
+        _inventoryReportService = inventoryReportService;
+        _payoutReportService = payoutReportService;
+        _providerReportService = providerReportService;
+        _pdfReportGenerator = pdfReportGenerator;
+        _csvExportService = csvExportService;
         _logger = logger;
     }
 
     [HttpGet("sales")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> GetSalesReport(
+    public async Task<ActionResult<object>> GetSalesReport(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] List<Guid>? providerIds = null,
@@ -46,7 +63,7 @@ public class ReportsController : ControllerBase
                 PaymentMethods = paymentMethods
             };
 
-            var result = await _reportsService.GetSalesReportAsync(organizationId, filter);
+            var result = await _salesReportService.GetSalesReportAsync(organizationId, filter);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -62,7 +79,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("sales/export")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> ExportSalesReport(
+    public async Task<ActionResult<object>> ExportSalesReport(
         [FromQuery] string format = "csv",
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
@@ -88,7 +105,15 @@ public class ReportsController : ControllerBase
                 PaymentMethods = paymentMethods
             };
 
-            var result = await _reportsService.ExportSalesReportAsync(organizationId, filter, format);
+            // Get the sales report data
+            var reportResult = await _salesReportService.GetSalesReportAsync(organizationId, filter);
+            if (!reportResult.Success)
+                return BadRequest(new { success = false, message = reportResult.Message, errors = reportResult.Errors });
+
+            // Export based on format
+            var result = format.ToLower() == "csv"
+                ? await _csvExportService.ExportSalesReportAsync(reportResult.Data)
+                : await _pdfReportGenerator.GenerateSalesReportPdfAsync(reportResult.Data, $"Sales Report ({filter.StartDate:yyyy-MM-dd} to {filter.EndDate:yyyy-MM-dd})");
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -107,7 +132,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("provider-performance")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> GetProviderPerformanceReport(
+    public async Task<ActionResult<object>> GetProviderPerformanceReport(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] bool includeInactive = false,
@@ -127,7 +152,7 @@ public class ReportsController : ControllerBase
                 MinItemsThreshold = minItemsThreshold
             };
 
-            var result = await _reportsService.GetProviderPerformanceReportAsync(organizationId, filter);
+            var result = await _providerReportService.GetProviderPerformanceReportAsync(organizationId, filter);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -143,7 +168,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("provider-performance/export")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> ExportProviderPerformanceReport(
+    public async Task<ActionResult<object>> ExportProviderPerformanceReport(
         [FromQuery] string format = "csv",
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
@@ -167,7 +192,15 @@ public class ReportsController : ControllerBase
                 MinItemsThreshold = minItemsThreshold
             };
 
-            var result = await _reportsService.ExportProviderPerformanceReportAsync(organizationId, filter, format);
+            // Get the provider performance report data
+            var reportResult = await _providerReportService.GetProviderPerformanceReportAsync(organizationId, filter);
+            if (!reportResult.Success)
+                return BadRequest(new { success = false, message = reportResult.Message, errors = reportResult.Errors });
+
+            // Export based on format
+            var result = format.ToLower() == "csv"
+                ? await _csvExportService.ExportProviderPerformanceReportAsync(reportResult.Data)
+                : await _pdfReportGenerator.GenerateProviderPerformanceReportPdfAsync(reportResult.Data, $"Provider Performance Report ({filter.StartDate:yyyy-MM-dd} to {filter.EndDate:yyyy-MM-dd})");
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -186,7 +219,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("inventory-aging")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> GetInventoryAgingReport(
+    public async Task<ActionResult<object>> GetInventoryAgingReport(
         [FromQuery] int ageThreshold = 30,
         [FromQuery] List<string>? categories = null,
         [FromQuery] List<Guid>? providerIds = null,
@@ -208,7 +241,7 @@ public class ReportsController : ControllerBase
                 MaxPrice = maxPrice
             };
 
-            var result = await _reportsService.GetInventoryAgingReportAsync(organizationId, filter);
+            var result = await _inventoryReportService.GetInventoryAgingReportAsync(organizationId, filter);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -224,7 +257,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("inventory-aging/export")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> ExportInventoryAgingReport(
+    public async Task<ActionResult<object>> ExportInventoryAgingReport(
         [FromQuery] string format = "csv",
         [FromQuery] int ageThreshold = 30,
         [FromQuery] List<string>? categories = null,
@@ -250,7 +283,15 @@ public class ReportsController : ControllerBase
                 MaxPrice = maxPrice
             };
 
-            var result = await _reportsService.ExportInventoryAgingReportAsync(organizationId, filter, format);
+            // Get the inventory aging report data
+            var reportResult = await _inventoryReportService.GetInventoryAgingReportAsync(organizationId, filter);
+            if (!reportResult.Success)
+                return BadRequest(new { success = false, message = reportResult.Message, errors = reportResult.Errors });
+
+            // Export based on format
+            var result = format.ToLower() == "csv"
+                ? await _csvExportService.ExportInventoryAgingReportAsync(reportResult.Data)
+                : await _pdfReportGenerator.GenerateInventoryAgingReportPdfAsync(reportResult.Data, $"Inventory Aging Report ({ageThreshold} days threshold)");
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -269,7 +310,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("payout-summary")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> GetPayoutSummaryReport(
+    public async Task<ActionResult<object>> GetPayoutSummaryReport(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] List<Guid>? providerIds = null,
@@ -289,7 +330,7 @@ public class ReportsController : ControllerBase
                 Status = status
             };
 
-            var result = await _reportsService.GetPayoutSummaryReportAsync(organizationId, filter);
+            var result = await _payoutReportService.GetPayoutSummaryReportAsync(organizationId, filter);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -305,7 +346,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("payout-summary/export")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> ExportPayoutSummaryReport(
+    public async Task<ActionResult<object>> ExportPayoutSummaryReport(
         [FromQuery] string format = "csv",
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
@@ -329,7 +370,15 @@ public class ReportsController : ControllerBase
                 Status = status
             };
 
-            var result = await _reportsService.ExportPayoutSummaryReportAsync(organizationId, filter, format);
+            // Get the payout summary report data
+            var reportResult = await _payoutReportService.GetPayoutSummaryReportAsync(organizationId, filter);
+            if (!reportResult.Success)
+                return BadRequest(new { success = false, message = reportResult.Message, errors = reportResult.Errors });
+
+            // Export based on format
+            var result = format.ToLower() == "csv"
+                ? await _csvExportService.ExportPayoutSummaryReportAsync(reportResult.Data)
+                : await _pdfReportGenerator.GeneratePayoutSummaryReportPdfAsync(reportResult.Data, $"Payout Summary Report ({filter.StartDate:yyyy-MM-dd} to {filter.EndDate:yyyy-MM-dd})");
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -348,7 +397,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("daily-reconciliation")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> GetDailyReconciliation([FromQuery] DateOnly? date = null)
+    public async Task<ActionResult<object>> GetDailyReconciliation([FromQuery] DateOnly? date = null)
     {
         try
         {
@@ -357,7 +406,7 @@ public class ReportsController : ControllerBase
                 return BadRequest("Organization not found");
 
             var reportDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
-            var result = await _reportsService.GetDailyReconciliationReportAsync(organizationId, reportDate);
+            var result = await _salesReportService.GetDailyReconciliationReportAsync(organizationId, reportDate);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -373,7 +422,7 @@ public class ReportsController : ControllerBase
 
     [HttpPost("daily-reconciliation")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> SaveDailyReconciliation([FromBody] DailyReconciliationRequestDto request)
+    public async Task<ActionResult<object>> SaveDailyReconciliation([FromBody] DailyReconciliationRequestDto request)
     {
         try
         {
@@ -384,7 +433,7 @@ public class ReportsController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _reportsService.SaveDailyReconciliationAsync(organizationId, request);
+            var result = await _salesReportService.SaveDailyReconciliationAsync(organizationId, request);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -400,7 +449,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("daily-reconciliation/export")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> ExportDailyReconciliation(
+    public async Task<ActionResult<object>> ExportDailyReconciliation(
         [FromQuery] string format = "pdf",
         [FromQuery] DateOnly? date = null)
     {
@@ -414,7 +463,15 @@ public class ReportsController : ControllerBase
                 return BadRequest("Unsupported format. Use 'csv' or 'pdf'");
 
             var reportDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
-            var result = await _reportsService.ExportDailyReconciliationReportAsync(organizationId, reportDate, format);
+            // Get the daily reconciliation report data
+            var reportResult = await _salesReportService.GetDailyReconciliationReportAsync(organizationId, reportDate);
+            if (!reportResult.Success)
+                return BadRequest(new { success = false, message = reportResult.Message, errors = reportResult.Errors });
+
+            // Export based on format
+            var result = format.ToLower() == "csv"
+                ? await _csvExportService.ExportDailyReconciliationReportAsync(reportResult.Data)
+                : await _pdfReportGenerator.GenerateDailyReconciliationReportPdfAsync(reportResult.Data, $"Daily Reconciliation Report ({reportDate:yyyy-MM-dd})");
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -433,7 +490,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("trends")]
     [RequiresTier(SubscriptionTier.Enterprise)]
-    public async Task<IActionResult> GetTrendsReport(
+    public async Task<ActionResult<object>> GetTrendsReport(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null)
     {
@@ -449,7 +506,7 @@ public class ReportsController : ControllerBase
                 EndDate = endDate ?? DateTime.UtcNow
             };
 
-            var result = await _reportsService.GetTrendsReportAsync(organizationId, filter);
+            var result = await _salesReportService.GetTrendsReportAsync(organizationId, filter);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -465,7 +522,7 @@ public class ReportsController : ControllerBase
 
     [HttpGet("inventory-overview")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<IActionResult> GetInventoryOverview()
+    public async Task<ActionResult<object>> GetInventoryOverview()
     {
         try
         {
@@ -473,7 +530,7 @@ public class ReportsController : ControllerBase
             if (organizationId == Guid.Empty)
                 return BadRequest("Organization not found");
 
-            var result = await _reportsService.GetInventoryOverviewAsync(organizationId);
+            var result = await _inventoryReportService.GetInventoryOverviewAsync(organizationId);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });

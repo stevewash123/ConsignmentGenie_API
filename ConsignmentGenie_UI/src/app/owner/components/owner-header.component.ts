@@ -19,7 +19,7 @@ interface UserData {
       <div class="header-container">
         <div class="header-left">
           <div class="logo">
-            <h1>{{ currentUser()?.organizationName || 'ConsignmentGenie' }}</h1>
+            <h2>{{ currentUser()?.organizationName || 'ConsignmentGenie' }}</h2>
             <span class="owner-badge">Shop Management</span>
           </div>
 
@@ -91,7 +91,7 @@ interface UserData {
       gap: 1rem;
     }
 
-    .logo h1 {
+    .logo h2 {
       margin: 0;
       font-size: 1.5rem;
       font-weight: bold;

@@ -26,6 +26,12 @@ public class StripeService : IStripeService
 
     public async Task<string> CreateCustomerAsync(Guid organizationId, string email, string organizationName)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var customerService = new CustomerService();
 
         var options = new CustomerCreateOptions
@@ -40,7 +46,7 @@ public class StripeService : IStripeService
 
         var customer = await customerService.CreateAsync(options);
 
-        // Update organization with Stripe customer ID
+        // 🏗️ AGGREGATE ROOT PATTERN: Update organization aggregate with Stripe customer ID
         var organization = await _context.Organizations.FindAsync(organizationId);
         if (organization != null)
         {

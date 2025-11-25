@@ -105,7 +105,7 @@ public class ShopperAccountController : ControllerBase
     /// <param name="request">Password change request</param>
     /// <returns>Success indicator</returns>
     [HttpPost("change-password")]
-    public async Task<ActionResult<ApiResponse<object>>> ChangePassword(
+    public async Task<ActionResult<ApiResponse<PasswordChangeResponseDto>>> ChangePassword(
         string storeSlug,
         [FromBody] ChangePasswordRequest request)
     {
@@ -117,24 +117,25 @@ public class ShopperAccountController : ControllerBase
             // Verify the store slug in the URL matches the token
             if (!string.Equals(storeSlug, tokenSlug, StringComparison.OrdinalIgnoreCase))
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Invalid store access"));
+                return BadRequest(ApiResponse<PasswordChangeResponseDto>.ErrorResult("Invalid store access"));
             }
 
             var success = await _shopperAuthService.ChangePasswordAsync(userId, request);
 
             if (!success)
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Current password is incorrect"));
+                return BadRequest(ApiResponse<PasswordChangeResponseDto>.ErrorResult("Current password is incorrect"));
             }
 
             _logger.LogInformation("Password changed for shopper in store {Slug}, User {UserId}", storeSlug, userId);
 
-            return Ok(ApiResponse<object>.SuccessResult(new { message = "Password changed successfully" }));
+            var response = new PasswordChangeResponseDto { Message = "Password changed successfully" };
+            return Ok(ApiResponse<PasswordChangeResponseDto>.SuccessResult(response));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error changing password for shopper in store {Slug}", storeSlug);
-            return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred changing password"));
+            return StatusCode(500, ApiResponse<PasswordChangeResponseDto>.ErrorResult("An error occurred changing password"));
         }
     }
 
@@ -146,7 +147,7 @@ public class ShopperAccountController : ControllerBase
     /// <param name="pageSize">Page size</param>
     /// <returns>Paged order history</returns>
     [HttpGet("orders")]
-    public async Task<ActionResult<ApiResponse<object>>> GetOrders(
+    public async Task<ActionResult<ApiResponse<PagedResult<object>>>> GetOrders(
         string storeSlug,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
@@ -158,25 +159,24 @@ public class ShopperAccountController : ControllerBase
             // Verify the store slug in the URL matches the token
             if (!string.Equals(storeSlug, tokenSlug, StringComparison.OrdinalIgnoreCase))
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Invalid store access"));
+                return BadRequest(ApiResponse<PagedResult<object>>.ErrorResult("Invalid store access"));
             }
 
             // TODO: Implement order history retrieval in Phase 3
-            var emptyResult = new
+            var emptyResult = new PagedResult<object>
             {
-                items = new object[0],
-                totalCount = 0,
-                page,
-                pageSize,
-                totalPages = 0
+                Items = new List<object>(),
+                TotalCount = 0,
+                Page = page,
+                PageSize = pageSize
             };
 
-            return Ok(ApiResponse<object>.SuccessResult(emptyResult));
+            return Ok(ApiResponse<PagedResult<object>>.SuccessResult(emptyResult));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving order history for store {Slug}", storeSlug);
-            return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred retrieving order history"));
+            return StatusCode(500, ApiResponse<PagedResult<object>>.ErrorResult("An error occurred retrieving order history"));
         }
     }
 
@@ -187,7 +187,7 @@ public class ShopperAccountController : ControllerBase
     /// <param name="orderId">Order ID</param>
     /// <returns>Order detail</returns>
     [HttpGet("orders/{orderId}")]
-    public async Task<ActionResult<ApiResponse<object>>> GetOrder(string storeSlug, Guid orderId)
+    public async Task<ActionResult<ApiResponse<OrderDetailResponseDto>>> GetOrder(string storeSlug, Guid orderId)
     {
         try
         {
@@ -196,16 +196,16 @@ public class ShopperAccountController : ControllerBase
             // Verify the store slug in the URL matches the token
             if (!string.Equals(storeSlug, tokenSlug, StringComparison.OrdinalIgnoreCase))
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Invalid store access"));
+                return BadRequest(ApiResponse<OrderDetailResponseDto>.ErrorResult("Invalid store access"));
             }
 
             // TODO: Implement order detail retrieval in Phase 3
-            return NotFound(ApiResponse<object>.ErrorResult("Order not found"));
+            return NotFound(ApiResponse<OrderDetailResponseDto>.ErrorResult("Order not found"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving order {OrderId} for store {Slug}", orderId, storeSlug);
-            return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred retrieving order"));
+            return StatusCode(500, ApiResponse<OrderDetailResponseDto>.ErrorResult("An error occurred retrieving order"));
         }
     }
 

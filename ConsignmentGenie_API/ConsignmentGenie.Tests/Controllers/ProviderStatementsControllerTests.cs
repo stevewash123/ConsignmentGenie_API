@@ -1,4 +1,5 @@
 using ConsignmentGenie.API.Controllers;
+using ConsignmentGenie.Application.DTOs;
 using ConsignmentGenie.Core.DTOs.Statements;
 using ConsignmentGenie.Core.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -68,12 +69,14 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatements();
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<List<StatementListDto>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<List<StatementListDto>>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var returnedStatements = Assert.IsType<List<StatementListDto>>(okResult.Value);
-        Assert.Single(returnedStatements);
-        Assert.Equal("November 2023", returnedStatements.First().PeriodLabel);
-        Assert.Equal(300.00m, returnedStatements.First().TotalEarnings);
+        var response = Assert.IsType<ApiResponse<List<StatementListDto>>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+        Assert.Single(response.Data);
+        Assert.Equal("November 2023", response.Data.First().PeriodLabel);
+        Assert.Equal(300.00m, response.Data.First().TotalEarnings);
     }
 
     [Fact]
@@ -94,9 +97,11 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatements();
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<List<StatementListDto>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<List<StatementListDto>>>>(result);
         var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
-        Assert.Equal("Provider context required", unauthorizedResult.Value);
+        var response = Assert.IsType<ApiResponse<List<StatementListDto>>>(unauthorizedResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("Provider context required", response.Errors);
     }
 
     [Fact]
@@ -137,12 +142,14 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatement(statementId);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<StatementDto>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<StatementDto>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var returnedStatement = Assert.IsType<StatementDto>(okResult.Value);
-        Assert.Equal(statementId, returnedStatement.Id);
-        Assert.Equal("Test Provider", returnedStatement.ProviderName);
-        Assert.Equal(300.00m, returnedStatement.TotalEarnings);
+        var response = Assert.IsType<ApiResponse<StatementDto>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+        Assert.Equal(statementId, response.Data.Id);
+        Assert.Equal("Test Provider", response.Data.ProviderName);
+        Assert.Equal(300.00m, response.Data.TotalEarnings);
 
         // Verify that MarkAsViewed was called
         _mockStatementService.Verify(x => x.MarkAsViewedAsync(statementId, _testProviderId), Times.Once);
@@ -162,8 +169,11 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatement(statementId);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<StatementDto>>(result);
-        Assert.IsType<NotFoundResult>(actionResult.Result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<StatementDto>>>(result);
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
+        var response = Assert.IsType<ApiResponse<StatementDto>>(notFoundResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("Statement not found", response.Errors);
     }
 
     [Fact]
@@ -196,10 +206,12 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatementByPeriod(year, month);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<StatementDto>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<StatementDto>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var returnedStatement = Assert.IsType<StatementDto>(okResult.Value);
-        Assert.Equal("November 2023", returnedStatement.PeriodLabel);
+        var response = Assert.IsType<ApiResponse<StatementDto>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+        Assert.Equal("November 2023", response.Data.PeriodLabel);
     }
 
     [Fact]
@@ -213,9 +225,11 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatementByPeriod(year, invalidMonth);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<StatementDto>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<StatementDto>>>(result);
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        Assert.Equal("Invalid month", badRequestResult.Value);
+        var response = Assert.IsType<ApiResponse<StatementDto>>(badRequestResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("Invalid month", response.Errors);
     }
 
     [Fact]
@@ -236,8 +250,11 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatementByPeriod(year, month);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<StatementDto>>(result);
-        Assert.IsType<NotFoundResult>(actionResult.Result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<StatementDto>>>(result);
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
+        var response = Assert.IsType<ApiResponse<StatementDto>>(notFoundResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("Statement not found", response.Errors);
     }
 
     [Fact]
@@ -342,11 +359,13 @@ public class ProviderStatementsControllerTests
         var result = await _controller.RegenerateStatement(statementId);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<StatementDto>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<StatementDto>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var returnedStatement = Assert.IsType<StatementDto>(okResult.Value);
-        Assert.Equal(400.00m, returnedStatement.TotalEarnings);
-        Assert.Equal(6, returnedStatement.ItemsSold);
+        var response = Assert.IsType<ApiResponse<StatementDto>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+        Assert.Equal(400.00m, response.Data.TotalEarnings);
+        Assert.Equal(6, response.Data.ItemsSold);
     }
 
     [Fact]
@@ -361,9 +380,12 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatements();
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<List<StatementListDto>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<List<StatementListDto>>>>(result);
         var objectResult = Assert.IsType<ObjectResult>(actionResult.Result);
         Assert.Equal(500, objectResult.StatusCode);
+        var response = Assert.IsType<ApiResponse<List<StatementListDto>>>(objectResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("An error occurred while retrieving statements", response.Errors);
     }
 
     [Fact]
@@ -379,9 +401,12 @@ public class ProviderStatementsControllerTests
         var result = await _controller.GetStatement(statementId);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<StatementDto>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<StatementDto>>>(result);
         var objectResult = Assert.IsType<ObjectResult>(actionResult.Result);
         Assert.Equal(500, objectResult.StatusCode);
+        var response = Assert.IsType<ApiResponse<StatementDto>>(objectResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("An error occurred while retrieving statement", response.Errors);
     }
 
     [Fact]

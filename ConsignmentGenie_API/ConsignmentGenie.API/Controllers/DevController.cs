@@ -7,6 +7,7 @@ namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
 public class DevController : ControllerBase
 {
     private readonly SeedDataService _seedDataService;

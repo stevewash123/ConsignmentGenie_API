@@ -366,68 +366,70 @@ export class RegisterProviderComponent implements OnInit {
 
   ngOnInit(): void {}
 
-  async validateStoreCode(): Promise<void> {
+  validateStoreCode(): void {
     if (this.storeCodeForm.invalid) return;
 
     this.isValidatingStoreCode = true;
     this.storeCodeError = '';
 
-    try {
-      const storeCode = this.storeCodeForm.get('storeCode')?.value;
-      const validation = await this.authService.validateStoreCode(storeCode);
-
-      if (validation.isValid && validation.shopName) {
-        this.storeCodeValidated = true;
-        this.shopName = validation.shopName;
-      } else {
-        this.storeCodeError = validation.errorMessage || 'Invalid store code';
+    const storeCode = this.storeCodeForm.get('storeCode')?.value;
+    this.authService.validateStoreCode(storeCode).subscribe({
+      next: (validation) => {
+        if (validation.isValid && validation.shopName) {
+          this.storeCodeValidated = true;
+          this.shopName = validation.shopName;
+        } else {
+          this.storeCodeError = validation.errorMessage || 'Invalid store code';
+        }
+        this.isValidatingStoreCode = false;
+      },
+      error: () => {
+        this.storeCodeError = 'Unable to validate store code. Please try again.';
+        this.isValidatingStoreCode = false;
       }
-    } catch (error) {
-      this.storeCodeError = 'Unable to validate store code. Please try again.';
-    } finally {
-      this.isValidatingStoreCode = false;
-    }
+    });
   }
 
-  async onSubmit(): Promise<void> {
+  onSubmit(): void {
     if (this.registrationForm.invalid) return;
 
     this.isSubmitting = true;
     this.registrationError = '';
     this.registrationErrors = [];
 
-    try {
-      const formData = this.registrationForm.value;
-      const request = {
-        storeCode: this.storeCodeForm.get('storeCode')?.value,
-        fullName: formData.fullName,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone || undefined,
-        preferredPaymentMethod: formData.preferredPaymentMethod || undefined,
-        paymentDetails: formData.paymentDetails || undefined
-      };
+    const formData = this.registrationForm.value;
+    const request = {
+      storeCode: this.storeCodeForm.get('storeCode')?.value,
+      fullName: formData.fullName,
+      email: formData.email,
+      password: formData.password,
+      phone: formData.phone || undefined,
+      preferredPaymentMethod: formData.preferredPaymentMethod || undefined,
+      paymentDetails: formData.paymentDetails || undefined
+    };
 
-      const result = await this.authService.registerProvider(request);
-
-      if (result.success) {
-        this.router.navigate(['/register/success'], {
-          queryParams: {
-            type: 'provider',
-            shopName: this.shopName,
-            email: formData.email,
-            fullName: formData.fullName
-          }
-        });
-      } else {
-        this.registrationError = result.message || 'Registration failed';
-        this.registrationErrors = result.errors || [];
+    this.authService.registerProvider(request).subscribe({
+      next: (result) => {
+        if (result.success) {
+          this.router.navigate(['/register/success'], {
+            queryParams: {
+              type: 'provider',
+              shopName: this.shopName,
+              email: formData.email,
+              fullName: formData.fullName
+            }
+          });
+        } else {
+          this.registrationError = result.message || 'Registration failed';
+          this.registrationErrors = result.errors || [];
+        }
+        this.isSubmitting = false;
+      },
+      error: (error: any) => {
+        this.registrationError = error.message || 'An unexpected error occurred';
+        this.isSubmitting = false;
       }
-    } catch (error: any) {
-      this.registrationError = error.message || 'An unexpected error occurred';
-    } finally {
-      this.isSubmitting = false;
-    }
+    });
   }
 
   resetStoreCode(): void {

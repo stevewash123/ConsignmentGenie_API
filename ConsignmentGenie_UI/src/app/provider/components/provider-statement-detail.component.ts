@@ -4,6 +4,8 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, switchMap } from 'rxjs';
 import { ProviderPortalService } from '../services/provider-portal.service';
 import { StatementDto } from '../models/provider.models';
+import { LoadingService } from '../../shared/services/loading.service';
+import { LOADING_KEYS } from '../constants/loading-keys';
 
 @Component({
   selector: 'app-provider-statement-detail',
@@ -12,7 +14,7 @@ import { StatementDto } from '../models/provider.models';
   template: `
     <div class="statement-detail-container">
       <!-- Loading State -->
-      <div *ngIf="loading" class="loading-container">
+      <div *ngIf="loadingService.isLoading(KEYS.STATEMENT)" class="loading-container">
         <div class="loading-spinner"></div>
         <p>Loading statement...</p>
       </div>
@@ -29,7 +31,7 @@ import { StatementDto } from '../models/provider.models';
       </div>
 
       <!-- Statement Content -->
-      <div *ngIf="!loading && !error && statement" class="statement-content">
+      <div *ngIf="!loadingService.isLoading(KEYS.STATEMENT) && !error && statement" class="statement-content">
         <!-- Header -->
         <div class="statement-header">
           <div class="header-nav">
@@ -45,18 +47,18 @@ import { StatementDto } from '../models/provider.models';
             <button
               class="btn btn-primary"
               (click)="downloadPdf()"
-              [disabled]="!statement.hasPdf || downloadingPdf">
-              <span *ngIf="downloadingPdf">Downloading...</span>
-              <span *ngIf="!downloadingPdf">
+              [disabled]="!statement.hasPdf || loadingService.isLoading(KEYS.STATEMENT_PDF)">
+              <span *ngIf="loadingService.isLoading(KEYS.STATEMENT_PDF)">Downloading...</span>
+              <span *ngIf="!loadingService.isLoading(KEYS.STATEMENT_PDF)">
                 {{ statement.hasPdf ? '📄 Download PDF' : 'PDF Not Available' }}
               </span>
             </button>
             <button
               class="btn btn-secondary"
               (click)="regenerateStatement()"
-              [disabled]="regenerating">
-              <span *ngIf="regenerating">Regenerating...</span>
-              <span *ngIf="!regenerating">🔄 Regenerate</span>
+              [disabled]="loadingService.isLoading(KEYS.STATEMENT_REGENERATE)">
+              <span *ngIf="loadingService.isLoading(KEYS.STATEMENT_REGENERATE)">Regenerating...</span>
+              <span *ngIf="!loadingService.isLoading(KEYS.STATEMENT_REGENERATE)">🔄 Regenerate</span>
             </button>
           </div>
         </div>
@@ -101,10 +103,15 @@ import { StatementDto } from '../models/provider.models';
               <div class="summary-label">Opening Balance</div>
               <div class="summary-value">{{ statement.openingBalance | currency }}</div>
             </div>
+            <div class="summary-card sales">
+              <div class="summary-label">Total Sales</div>
+              <div class="summary-value">{{ statement.totalSales | currency }}</div>
+              <div class="summary-detail">{{ statement.itemsSold }} items sold</div>
+            </div>
             <div class="summary-card earnings">
               <div class="summary-label">Total Earnings</div>
               <div class="summary-value">{{ statement.totalEarnings | currency }}</div>
-              <div class="summary-detail">{{ statement.itemsSold }} items sold</div>
+              <div class="summary-detail">Your commission</div>
             </div>
             <div class="summary-card payouts">
               <div class="summary-label">Total Payouts</div>
@@ -351,6 +358,10 @@ import { StatementDto } from '../models/provider.models';
       border-left: 4px solid #6b7280;
     }
 
+    .summary-card.sales {
+      border-left: 4px solid #3b82f6;
+    }
+
     .summary-card.earnings {
       border-left: 4px solid #16a34a;
     }
@@ -580,14 +591,15 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   statement: StatementDto | null = null;
-  loading = false;
   error: string | null = null;
-  downloadingPdf = false;
-  regenerating = false;
+
+  // Expose for template
+  readonly KEYS = LOADING_KEYS;
 
   constructor(
     private route: ActivatedRoute,
-    private providerService: ProviderPortalService
+    private providerService: ProviderPortalService,
+    public loadingService: LoadingService
   ) {}
 
   ngOnInit() {
@@ -599,7 +611,7 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
           if (!statementId) {
             throw new Error('Statement ID is required');
           }
-          this.loading = true;
+          this.loadingService.start(LOADING_KEYS.STATEMENT);
           this.error = null;
           return this.providerService.getStatement(statementId);
         })
@@ -607,7 +619,6 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (statement) => {
           this.statement = statement;
-          this.loading = false;
         },
         error: (error) => {
           console.error('Error loading statement:', error);
@@ -616,7 +627,9 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
           } else {
             this.error = 'Failed to load statement. Please try again later.';
           }
-          this.loading = false;
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.STATEMENT);
         }
       });
   }
@@ -627,7 +640,7 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
   }
 
   private loadStatementById(statementId: string) {
-    this.loading = true;
+    this.loadingService.start(LOADING_KEYS.STATEMENT);
     this.error = null;
 
     return this.providerService.getStatement(statementId)
@@ -635,7 +648,6 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (statement) => {
           this.statement = statement;
-          this.loading = false;
         },
         error: (error) => {
           console.error('Error loading statement:', error);
@@ -644,7 +656,9 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
           } else {
             this.error = 'Failed to load statement. Please try again later.';
           }
-          this.loading = false;
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.STATEMENT);
         }
       });
   }
@@ -657,29 +671,30 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
   }
 
   downloadPdf() {
-    if (!this.statement?.hasPdf || this.downloadingPdf) {
+    if (!this.statement?.hasPdf || this.loadingService.isLoading(LOADING_KEYS.STATEMENT_PDF)) {
       return;
     }
 
-    this.downloadingPdf = true;
+    this.loadingService.start(LOADING_KEYS.STATEMENT_PDF);
 
     this.providerService.downloadStatementPdf(this.statement.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob) => {
           this.downloadFile(blob, `${this.statement?.statementNumber}.pdf`);
-          this.downloadingPdf = false;
         },
         error: (error) => {
           console.error('Error downloading PDF:', error);
           alert('Failed to download PDF. Please try again.');
-          this.downloadingPdf = false;
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.STATEMENT_PDF);
         }
       });
   }
 
   regenerateStatement() {
-    if (!this.statement || this.regenerating) {
+    if (!this.statement || this.loadingService.isLoading(LOADING_KEYS.STATEMENT_REGENERATE)) {
       return;
     }
 
@@ -688,20 +703,21 @@ export class ProviderStatementDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.regenerating = true;
+    this.loadingService.start(LOADING_KEYS.STATEMENT_REGENERATE);
 
     this.providerService.regenerateStatement(this.statement.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (updatedStatement) => {
           this.statement = updatedStatement;
-          this.regenerating = false;
           alert('Statement has been regenerated successfully.');
         },
         error: (error) => {
           console.error('Error regenerating statement:', error);
           alert('Failed to regenerate statement. Please try again.');
-          this.regenerating = false;
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.STATEMENT_REGENERATE);
         }
       });
   }

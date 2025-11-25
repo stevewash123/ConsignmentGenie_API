@@ -84,7 +84,7 @@ interface Transaction {
         </div>
 
         <ng-template #loadingMetrics>
-          <div class="loading">Loading dashboard data...</div>
+          <div class="loading" data-cy="loading-indicator">Loading dashboard data...</div>
         </ng-template>
 
         <!-- Quick Actions -->
@@ -429,7 +429,18 @@ export class OwnerDashboardComponent implements OnInit {
 
     Promise.all([providersPromise, salesPromise, pendingPayoutsPromise])
       .then(([providers, salesMetrics, pendingPayouts]) => {
-        const activeProviderCount = providers?.filter(p => p.isActive).length || 0;
+        console.log('Dashboard data loaded:', { providers, salesMetrics, pendingPayouts });
+
+        // Handle providers response - might be wrapped in API response object
+        let providersArray = providers;
+        if (providers && typeof providers === 'object' && !Array.isArray(providers)) {
+          // Check if it's wrapped in a response object with proper type casting
+          const response = providers as any;
+          providersArray = response.data || response.providers || providers;
+        }
+
+        const activeProviderCount = Array.isArray(providersArray) ?
+          providersArray.filter((p: any) => p?.isActive).length : 0;
         this.activeProviderCount.set(activeProviderCount);
 
         // Calculate real pending payout totals from new API

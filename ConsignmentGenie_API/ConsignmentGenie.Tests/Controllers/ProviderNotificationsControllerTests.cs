@@ -237,8 +237,7 @@ public class ProviderNotificationsControllerTests
         var result = await _controller.UpdatePreferences(request);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<NotificationPreferencesDto>>(result);
-        var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+        var okResult = Assert.IsType<OkObjectResult>(result);
         var returnedPreferences = Assert.IsType<NotificationPreferencesDto>(okResult.Value);
         Assert.Equal(expectedResult.EmailEnabled, returnedPreferences.EmailEnabled);
         Assert.Equal(expectedResult.DigestMode, returnedPreferences.DigestMode);
@@ -256,8 +255,7 @@ public class ProviderNotificationsControllerTests
         var result = await _controller.UpdatePreferences(request);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<NotificationPreferencesDto>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         Assert.IsType<SerializableError>(badRequestResult.Value);
     }
 

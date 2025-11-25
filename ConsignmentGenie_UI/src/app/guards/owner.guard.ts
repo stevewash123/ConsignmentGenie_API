@@ -20,21 +20,21 @@ export class OwnerGuard implements CanActivate {
     try {
       const userData = JSON.parse(userDataStr);
 
-      // Allow Owner, Manager, Staff, Cashier, and Accountant roles access to owner area
+      // Allow Owner and Admin roles access to owner area
       const allowedRoles = [
         UserRole.Owner,
-        UserRole.Manager,
-        UserRole.Staff,
-        UserRole.Cashier,
-        UserRole.Accountant
+        UserRole.Admin
       ];
 
-      if (allowedRoles.includes(userData.role)) {
+      // Ensure role comparison works by converting to number
+      const userRoleNum = Number(userData.role);
+
+      if (allowedRoles.includes(userRoleNum)) {
         return true;
       }
 
       // Redirect non-owner users to their appropriate dashboard
-      this.redirectToUserDashboard(userData.role);
+      this.redirectToUserDashboard(userRoleNum);
       return false;
     } catch (error) {
       console.error('Invalid user data in localStorage');

@@ -221,16 +221,19 @@ export class RegisterSuccessComponent implements OnInit {
   }
 
   getFirstName(): string {
-    const fullName = this.fullName();
+    // ✅ Trim and check if fullName is meaningful
+    const fullName = this.fullName().trim();
     if (fullName) {
       return fullName.split(' ')[0];
     }
 
+    // ✅ Fall back to email
     const email = this.userEmail();
     if (email) {
       return email.split('@')[0];
     }
 
+    // ✅ Default greeting
     return 'there';
   }
 }

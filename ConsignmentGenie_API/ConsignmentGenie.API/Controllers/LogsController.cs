@@ -6,6 +6,7 @@ namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
 public class LogsController : ControllerBase
 {
     private readonly IConfiguration _configuration;
@@ -16,7 +17,6 @@ public class LogsController : ControllerBase
     }
 
     [HttpGet]
-    [AllowAnonymous] // Temporarily allow anonymous access for debugging
     public async Task<IActionResult> GetLogs([FromQuery] int limit = 20)
     {
         try
@@ -58,7 +58,6 @@ public class LogsController : ControllerBase
     }
 
     [HttpGet("schema")]
-    [AllowAnonymous]
     public async Task<IActionResult> GetTableSchema()
     {
         try
@@ -96,7 +95,6 @@ public class LogsController : ControllerBase
     }
 
     [HttpGet("search")]
-    [AllowAnonymous] // Temporarily allow anonymous access for debugging
     public async Task<IActionResult> SearchLogs([FromQuery] string search, [FromQuery] int limit = 20)
     {
         try

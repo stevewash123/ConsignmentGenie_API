@@ -164,8 +164,8 @@ public class ProviderPortalController : ControllerBase
                     Category = item.Category,
                     Status = item.Status.ToString(),
                     ReceivedDate = item.CreatedAt,
-                    SoldDate = item.Status == ItemStatus.Sold ? (DateTime?)item.Transactions.FirstOrDefault()?.SaleDate : null,
-                    SalePrice = item.Status == ItemStatus.Sold ? (decimal?)item.Transactions.FirstOrDefault()?.SalePrice : null
+                    SoldDate = item.Status == ItemStatus.Sold ? (DateTime?)item.Transaction.SaleDate : null,
+                    SalePrice = item.Status == ItemStatus.Sold ? (decimal?)item.Transaction.SalePrice : null
                 })
                 .ToList();
 
@@ -215,8 +215,8 @@ public class ProviderPortalController : ControllerBase
                 Category = item.Category,
                 Status = item.Status.ToString(),
                 ReceivedDate = item.CreatedAt,
-                SoldDate = item.Status == ItemStatus.Sold ? item.Transactions.FirstOrDefault()?.SaleDate : null,
-                SalePrice = item.Status == ItemStatus.Sold ? item.Transactions.FirstOrDefault()?.SalePrice : null,
+                SoldDate = item.Status == ItemStatus.Sold ? item.Transaction.SaleDate : null,
+                SalePrice = item.Status == ItemStatus.Sold ? item.Transaction.SalePrice : null,
                 Notes = item.Notes ?? ""
             };
 

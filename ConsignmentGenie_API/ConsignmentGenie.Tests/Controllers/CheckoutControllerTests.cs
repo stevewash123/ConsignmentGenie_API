@@ -169,9 +169,9 @@ public class CheckoutControllerTests
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<PaymentIntentDto>>>(result);
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(badRequestResult.Value);
+        var response = Assert.IsType<ApiResponse<PaymentIntentDto>>(badRequestResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Cart is empty", response.Message);
+        Assert.Contains("Cart is empty", response.Errors);
     }
 
     [Fact]
@@ -252,9 +252,9 @@ public class CheckoutControllerTests
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<OrderDto>>>(result);
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(badRequestResult.Value);
+        var response = Assert.IsType<ApiResponse<OrderDto>>(badRequestResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Shipping address is required", response.Message);
+        Assert.Contains("Shipping address is required for shipping orders", response.Errors);
     }
 
     [Fact]
@@ -317,9 +317,9 @@ public class CheckoutControllerTests
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<OrderDto>>>(result);
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(notFoundResult.Value);
+        var response = Assert.IsType<ApiResponse<OrderDto>>(notFoundResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Order not found", response.Message);
+        Assert.Contains("Order not found", response.Errors);
     }
 
     [Fact]
@@ -340,9 +340,9 @@ public class CheckoutControllerTests
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<List<OrderSummaryDto>>>>(result);
         var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(unauthorizedResult.Value);
+        var response = Assert.IsType<ApiResponse<List<OrderSummaryDto>>>(unauthorizedResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Authentication required", response.Message);
+        Assert.Contains("Authentication required", response.Errors);
     }
 
     [Fact]
@@ -390,9 +390,9 @@ public class CheckoutControllerTests
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<bool>>>(result);
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<object>>(badRequestResult.Value);
+        var response = Assert.IsType<ApiResponse<bool>>(badRequestResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Payment confirmation failed", response.Message);
+        Assert.Contains("Payment confirmation failed", response.Errors);
     }
 
     [Theory]
@@ -429,7 +429,8 @@ public class CheckoutControllerTests
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
         var response = Assert.IsType<ApiResponse<PaymentIntentDto>>(badRequestResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Invalid request data", response.Message);
+        Assert.NotNull(response.Errors);
+        Assert.Contains("Invalid request data", response.Errors);
     }
 
     [Theory]
@@ -466,7 +467,8 @@ public class CheckoutControllerTests
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
         var response = Assert.IsType<ApiResponse<OrderDto>>(badRequestResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Invalid request data", response.Message);
+        Assert.NotNull(response.Errors);
+        Assert.Contains("Invalid request data", response.Errors);
     }
 
     [Fact]
@@ -545,9 +547,9 @@ public class CheckoutControllerTests
         var actionResult = Assert.IsType<ActionResult<ApiResponse<CheckoutValidationDto>>>(result);
         var statusResult = Assert.IsType<ObjectResult>(actionResult.Result);
         Assert.Equal(500, statusResult.StatusCode);
-        var response = Assert.IsType<ApiResponse<object>>(statusResult.Value);
+        var response = Assert.IsType<ApiResponse<CheckoutValidationDto>>(statusResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("error occurred", response.Message);
+        Assert.Contains("An error occurred validating checkout", response.Errors);
     }
 
     [Fact]
@@ -579,8 +581,8 @@ public class CheckoutControllerTests
         var actionResult = Assert.IsType<ActionResult<ApiResponse<PaymentIntentDto>>>(result);
         var statusResult = Assert.IsType<ObjectResult>(actionResult.Result);
         Assert.Equal(500, statusResult.StatusCode);
-        var response = Assert.IsType<ApiResponse<object>>(statusResult.Value);
+        var response = Assert.IsType<ApiResponse<PaymentIntentDto>>(statusResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("error occurred", response.Message);
+        Assert.Contains("An error occurred creating payment intent", response.Errors);
     }
 }

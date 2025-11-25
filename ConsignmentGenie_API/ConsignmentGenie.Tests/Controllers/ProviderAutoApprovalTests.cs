@@ -1,61 +1,26 @@
-using System;
 using System.Threading.Tasks;
 using ConsignmentGenie.API.Controllers;
 using ConsignmentGenie.Core.DTOs.Registration;
-using ConsignmentGenie.Core.Entities;
-using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Core.Interfaces;
-using ConsignmentGenie.Infrastructure.Data;
-using ConsignmentGenie.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
 
 namespace ConsignmentGenie.Tests.Controllers
 {
-    public class ProviderAutoApprovalTests : IDisposable
+    public class ProviderAutoApprovalTests
     {
-        private readonly ConsignmentGenieContext _context;
         private readonly RegistrationController _controller;
-        private readonly Mock<ILogger<RegistrationController>> _loggerMock;
-
-        private readonly Guid _organizationId = new("11111111-1111-1111-1111-111111111111");
+        private readonly Mock<IRegistrationService> _mockRegistrationService;
 
         public ProviderAutoApprovalTests()
         {
-            _context = TestDbContextFactory.CreateInMemoryContext();
-            _loggerMock = new Mock<ILogger<RegistrationController>>();
-            var mockRegistrationService = new Mock<IRegistrationService>();
-            _controller = new RegistrationController(mockRegistrationService.Object);
-
-            SeedTestData().Wait();
-        }
-
-        private async Task SeedTestData()
-        {
-            // Create organization with auto-approve enabled
-            var organization = new Organization
-            {
-                Id = _organizationId,
-                Name = "Test Shop",
-                StoreCode = "TEST",
-                StoreCodeEnabled = true,
-                AutoApproveProviders = true, // Auto-approve enabled
-                VerticalType = VerticalType.Consignment,
-                SubscriptionStatus = SubscriptionStatus.Active,
-                SubscriptionTier = SubscriptionTier.Pro,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            _context.Organizations.Add(organization);
-            await _context.SaveChangesAsync();
+            _mockRegistrationService = new Mock<IRegistrationService>();
+            _controller = new RegistrationController(_mockRegistrationService.Object);
         }
 
         [Fact]
-        public async Task RegisterProvider_WithAutoApproveEnabled_SetsStatusToActive()
+        public async Task RegisterProvider_WithAutoApproveEnabled_CallsServiceAndReturnsSuccess()
         {
             // Arrange
             var request = new RegisterProviderRequest
@@ -68,33 +33,39 @@ namespace ConsignmentGenie.Tests.Controllers
                 PaymentDetails = "Check"
             };
 
+            var expectedResult = new RegistrationResultDto
+            {
+                Success = true,
+                Message = "Welcome to Test Shop! Your account is active."
+            };
+
+            _mockRegistrationService
+                .Setup(x => x.RegisterProviderAsync(It.IsAny<RegisterProviderRequest>()))
+                .ReturnsAsync(expectedResult);
+
             // Act
             var result = await _controller.RegisterProvider(request);
 
-            // Assert
+            // Assert - Controller behavior only
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var response = Assert.IsType<RegistrationResultDto>(okResult.Value);
 
             Assert.True(response.Success);
             Assert.Contains("Welcome to Test Shop", response.Message);
 
-            // Verify provider is created with Active status
-            var provider = await _context.Providers
-                .Where(p => p.Email == request.Email)
-                .FirstOrDefaultAsync();
-
-            Assert.NotNull(provider);
-            Assert.Equal(ProviderStatus.Active, provider.Status);
+            // ✅ Verify service was called with correct data
+            _mockRegistrationService.Verify(x => x.RegisterProviderAsync(
+                It.Is<RegisterProviderRequest>(r =>
+                    r.Email == "john.doe@test.com" &&
+                    r.StoreCode == "TEST"
+                )
+            ), Times.Once);
         }
 
         [Fact]
-        public async Task RegisterProvider_WithAutoApproveDisabled_SetsStatusToPending()
+        public async Task RegisterProvider_WithAutoApproveDisabled_CallsServiceAndReturnsPending()
         {
-            // Arrange - disable auto-approve
-            var organization = await _context.Organizations.FindAsync(_organizationId);
-            organization!.AutoApproveProviders = false;
-            await _context.SaveChangesAsync();
-
+            // Arrange
             var request = new RegisterProviderRequest
             {
                 StoreCode = "TEST",
@@ -105,28 +76,33 @@ namespace ConsignmentGenie.Tests.Controllers
                 PaymentDetails = "PayPal"
             };
 
+            var expectedResult = new RegistrationResultDto
+            {
+                Success = true,
+                Message = "Thank you for registering! Your account is pending approval."
+            };
+
+            _mockRegistrationService
+                .Setup(x => x.RegisterProviderAsync(It.IsAny<RegisterProviderRequest>()))
+                .ReturnsAsync(expectedResult);
+
             // Act
             var result = await _controller.RegisterProvider(request);
 
-            // Assert
+            // Assert - Controller behavior only
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var response = Assert.IsType<RegistrationResultDto>(okResult.Value);
 
             Assert.True(response.Success);
             Assert.Contains("pending approval", response.Message);
 
-            // Verify provider is created with Pending status
-            var provider = await _context.Providers
-                .Where(p => p.Email == request.Email)
-                .FirstOrDefaultAsync();
-
-            Assert.NotNull(provider);
-            Assert.Equal(ProviderStatus.Pending, provider.Status);
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
+            // ✅ Verify service was called with correct data
+            _mockRegistrationService.Verify(x => x.RegisterProviderAsync(
+                It.Is<RegisterProviderRequest>(r =>
+                    r.Email == "jane.smith@test.com" &&
+                    r.StoreCode == "TEST"
+                )
+            ), Times.Once);
         }
     }
 }

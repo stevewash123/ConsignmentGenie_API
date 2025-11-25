@@ -95,6 +95,12 @@ public class OrderService : IOrderService
 
     public async Task<OrderDto> CreateOrderAsync(Guid organizationId, CheckoutRequestDto request, string? sessionId, Guid? customerId)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var validation = await ValidateCartForCheckoutAsync(organizationId, sessionId, customerId);
         if (!validation.Valid)
         {
@@ -126,7 +132,7 @@ public class OrderService : IOrderService
         var shippingAmount = request.FulfillmentType == "shipping" ? 10.00m : 0m; // TODO: Calculate actual shipping
         var total = subtotal + tax + shippingAmount;
 
-        // Create order
+        // 🏗️ AGGREGATE ROOT PATTERN: Create order aggregate root
         var order = new Order
         {
             OrganizationId = organizationId,
@@ -164,7 +170,7 @@ public class OrderService : IOrderService
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
 
-        // Create order items
+        // 🏗️ AGGREGATE ROOT PATTERN: Create order items and update item status within aggregate
         foreach (var cartItem in cart.CartItems)
         {
             var orderItem = new OrderItem
@@ -223,6 +229,12 @@ public class OrderService : IOrderService
 
     public async Task<bool> UpdateOrderStatusAsync(Guid organizationId, Guid orderId, string status)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         var order = await _context.Orders
             .FirstOrDefaultAsync(o => o.OrganizationId == organizationId && o.Id == orderId);
 

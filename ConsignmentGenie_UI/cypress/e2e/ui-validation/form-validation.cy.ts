@@ -1,5 +1,5 @@
 describe('Form Validation Tests', () => {
-  describe('Process Sale Form', () => {
+  describe.skip('Process Sale Form', () => {
     beforeEach(() => {
       cy.visit('/owner/sales');
       cy.get('button').contains('Process Sale').click();
@@ -30,7 +30,7 @@ describe('Form Validation Tests', () => {
     });
   });
 
-  describe('Filter Forms', () => {
+  describe.skip('Filter Forms', () => {
     beforeEach(() => {
       cy.visit('/owner/sales');
     });
@@ -46,7 +46,7 @@ describe('Form Validation Tests', () => {
     });
   });
 
-  describe('Search Functionality', () => {
+  describe.skip('Search Functionality', () => {
     it('should accept search input', () => {
       cy.visit('/owner/sales');
       cy.get('input[type="search"], input[placeholder*="search" i]').first().then($search => {

@@ -447,11 +447,16 @@ export class OwnerApprovalComponent implements OnInit {
     this.errorMessage.set('');
 
     try {
-      const response = await this.http.get<PendingOwner[]>(
+      const response = await this.http.get<ApiResponse<PendingOwner[]>>(
         `${environment.apiUrl}/api/admin/pending-owners`
       ).toPromise();
 
-      this.pendingOwners.set(response || []);
+      console.log('API response:', response);
+      console.log('Is array?', Array.isArray(response));
+      console.log('Response data:', response?.data);
+      console.log('Is data array?', Array.isArray(response?.data));
+
+      this.pendingOwners.set(response?.data || []);
     } catch (error: any) {
       console.error('Failed to load pending owners:', error);
       this.errorMessage.set('Failed to load pending approvals. Please try again.');

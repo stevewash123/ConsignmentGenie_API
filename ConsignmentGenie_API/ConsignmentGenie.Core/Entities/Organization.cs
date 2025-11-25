@@ -49,9 +49,11 @@ public class Organization : BaseEntity
 
     [MaxLength(500)]
     public string? QuickBooksAccessToken { get; set; }  // Store encrypted
+    // TODO: Implement encryption before production (see TokenEncryptionService)
 
     [MaxLength(500)]
     public string? QuickBooksRefreshToken { get; set; }  // Store encrypted
+    // TODO: Implement encryption before production (see TokenEncryptionService)
 
     public DateTime? QuickBooksTokenExpiry { get; set; }
 

@@ -64,7 +64,7 @@ public class AuthController : ControllerBase
 
     // Provider Registration endpoints
     [HttpGet("validate-store-code/{code}")]
-    public async Task<ActionResult<ApiResponse<object>>> ValidateStoreCode(string code)
+    public async Task<ActionResult<ApiResponse<StoreCodeValidationResponseDto>>> ValidateStoreCode(string code)
     {
         try
         {
@@ -73,24 +73,25 @@ public class AuthController : ControllerBase
 
             if (organization == null)
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Invalid store code"));
+                return BadRequest(ApiResponse<StoreCodeValidationResponseDto>.ErrorResult("Invalid store code"));
             }
 
-            return Ok(ApiResponse<object>.SuccessResult(new
+            var response = new StoreCodeValidationResponseDto
             {
-                organizationId = organization.Id,
-                organizationName = organization.Name
-            }, "Store code is valid"));
+                OrganizationId = organization.Id,
+                OrganizationName = organization.Name
+            };
+            return Ok(ApiResponse<StoreCodeValidationResponseDto>.SuccessResult(response, "Store code is valid"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating store code");
-            return StatusCode(500, ApiResponse<object>.ErrorResult("Internal server error"));
+            return StatusCode(500, ApiResponse<StoreCodeValidationResponseDto>.ErrorResult("Internal server error"));
         }
     }
 
     [HttpPost("register/provider")]
-    public async Task<ActionResult<ApiResponse<object>>> RegisterProvider([FromBody] RegisterProviderRequest request)
+    public async Task<ActionResult<ApiResponse<ProviderRegistrationResponseDto>>> RegisterProvider([FromBody] RegisterProviderRequest request)
     {
         try
         {
@@ -100,7 +101,7 @@ public class AuthController : ControllerBase
 
             if (organization == null)
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Invalid store code"));
+                return BadRequest(ApiResponse<ProviderRegistrationResponseDto>.ErrorResult("Invalid store code"));
             }
 
             // Check if provider already exists
@@ -109,7 +110,7 @@ public class AuthController : ControllerBase
 
             if (existingProvider != null)
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Provider with this email already exists"));
+                return BadRequest(ApiResponse<ProviderRegistrationResponseDto>.ErrorResult("Provider with this email already exists"));
             }
 
             // Create provider registration request (pending approval)
@@ -130,16 +131,17 @@ public class AuthController : ControllerBase
             // TODO: Send email notification to shop owner about pending approval
             // TODO: Send confirmation email to provider
 
-            return Ok(ApiResponse<object>.SuccessResult(new
+            var response = new ProviderRegistrationResponseDto
             {
-                providerId = provider.Id,
-                message = "Registration submitted successfully. You will receive an email when approved."
-            }, "Provider registration submitted"));
+                ProviderId = provider.Id,
+                Message = "Registration submitted successfully. You will receive an email when approved."
+            };
+            return Ok(ApiResponse<ProviderRegistrationResponseDto>.SuccessResult(response, "Provider registration submitted"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error registering provider");
-            return StatusCode(500, ApiResponse<object>.ErrorResult("Registration failed"));
+            return StatusCode(500, ApiResponse<ProviderRegistrationResponseDto>.ErrorResult("Registration failed"));
         }
     }
 

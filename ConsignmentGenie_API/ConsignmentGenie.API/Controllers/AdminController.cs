@@ -38,7 +38,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("reseed")]
-    public async Task<ActionResult<ApiResponse<object>>> ReseedDatabase()
+    public async Task<ActionResult<ApiResponse<ReseedResponseDto>>> ReseedDatabase()
     {
         try
         {
@@ -47,7 +47,7 @@ public class AdminController : ControllerBase
             // Verify database connection
             if (!await _context.Database.CanConnectAsync())
             {
-                return StatusCode(500, ApiResponse<object>.ErrorResult("Cannot connect to database"));
+                return StatusCode(500, ApiResponse<ReseedResponseDto>.ErrorResult("Cannot connect to database"));
             }
 
             // Clear existing data in dependency order
@@ -92,18 +92,18 @@ public class AdminController : ControllerBase
 
             _logger.LogInformation("Database reseed completed successfully");
 
-            return Ok(ApiResponse<object>.SuccessResult(new
+            var response = new ReseedResponseDto
             {
-                message = "Database reseeded successfully with demo data and Cypress test data",
-                timestamp = DateTime.UtcNow,
-                testAccounts = new[]
+                Message = "Database reseeded successfully with demo data and Cypress test data",
+                Timestamp = DateTime.UtcNow,
+                TestAccounts = new[]
                 {
-                    new { email = "admin@demoshop.com", role = "Owner", password = "password123", store = "demo-shop" },
-                    new { email = "owner@demoshop.com", role = "Owner", password = "password123", store = "demo-shop" },
-                    new { email = "provider@demoshop.com", role = "Provider", password = "password123", store = "demo-shop" },
-                    new { email = "customer@demoshop.com", role = "Customer", password = "password123", store = "demo-shop" }
+                    new TestAccountDto { Email = "admin@demoshop.com", Role = "Owner", Password = "password123", Store = "demo-shop" },
+                    new TestAccountDto { Email = "owner@demoshop.com", Role = "Owner", Password = "password123", Store = "demo-shop" },
+                    new TestAccountDto { Email = "provider@demoshop.com", Role = "Provider", Password = "password123", Store = "demo-shop" },
+                    new TestAccountDto { Email = "customer@demoshop.com", Role = "Customer", Password = "password123", Store = "demo-shop" }
                 },
-                cypressTestData = new
+                CypressTestData = new
                 {
                     store = new { name = "Cypress Test Store", slug = "test-store", taxRate = 0.085m },
                     testAccounts = new[]
@@ -117,12 +117,13 @@ public class AdminController : ControllerBase
                         new { id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", title = "Cypress Test Clothing Item", price = 45.50m, category = "Clothing" }
                     }
                 }
-            }, "Reseed completed with Cypress test data"));
+            };
+            return Ok(ApiResponse<ReseedResponseDto>.SuccessResult(response, "Reseed completed with Cypress test data"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to reseed database: {Message}", ex.Message);
-            return StatusCode(500, ApiResponse<object>.ErrorResult($"Failed to reseed database: {ex.Message}"));
+            return StatusCode(500, ApiResponse<ReseedResponseDto>.ErrorResult($"Failed to reseed database: {ex.Message}"));
         }
     }
 
@@ -337,7 +338,7 @@ public class AdminController : ControllerBase
 
     // Owner Approval Endpoints
     [HttpGet("pending-owners")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Owner")]
     public async Task<ActionResult<ApiResponse<List<PendingOwnerDto>>>> GetPendingOwners()
     {
         try
@@ -352,50 +353,52 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("{userId}/approve")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<object>>> ApproveOwner(Guid userId)
+    [Authorize(Roles = "Owner")]
+    public async Task<ActionResult<ApiResponse<ApprovalResponseDto>>> ApproveOwner(Guid userId)
     {
         try
         {
             var approvedByUserId = GetCurrentUserId();
             await _registrationService.ApproveOwnerAsync(userId, approvedByUserId);
-            return Ok(ApiResponse<object>.SuccessResult(null, "Owner approved successfully"));
+            var response = new ApprovalResponseDto { Message = "Owner approved successfully" };
+            return Ok(ApiResponse<ApprovalResponseDto>.SuccessResult(response, "Owner approved successfully"));
         }
         catch (ArgumentException ex)
         {
-            return NotFound(ApiResponse<object>.ErrorResult(ex.Message));
+            return NotFound(ApiResponse<ApprovalResponseDto>.ErrorResult(ex.Message));
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ApiResponse<object>.ErrorResult(ex.Message));
+            return BadRequest(ApiResponse<ApprovalResponseDto>.ErrorResult(ex.Message));
         }
         catch (Exception ex)
         {
-            return StatusCode(500, ApiResponse<object>.ErrorResult($"An error occurred while approving owner: {ex.Message}"));
+            return StatusCode(500, ApiResponse<ApprovalResponseDto>.ErrorResult($"An error occurred while approving owner: {ex.Message}"));
         }
     }
 
     [HttpPost("{userId}/reject")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ApiResponse<object>>> RejectOwner(Guid userId, [FromBody] RejectUserRequest request)
+    [Authorize(Roles = "Owner")]
+    public async Task<ActionResult<ApiResponse<ApprovalResponseDto>>> RejectOwner(Guid userId, [FromBody] RejectUserRequest request)
     {
         try
         {
             var rejectedByUserId = GetCurrentUserId();
             await _registrationService.RejectOwnerAsync(userId, rejectedByUserId, request.Reason);
-            return Ok(ApiResponse<object>.SuccessResult(null, "Owner rejected successfully"));
+            var response = new ApprovalResponseDto { Message = "Owner rejected successfully" };
+            return Ok(ApiResponse<ApprovalResponseDto>.SuccessResult(response, "Owner rejected successfully"));
         }
         catch (ArgumentException ex)
         {
-            return NotFound(ApiResponse<object>.ErrorResult(ex.Message));
+            return NotFound(ApiResponse<ApprovalResponseDto>.ErrorResult(ex.Message));
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ApiResponse<object>.ErrorResult(ex.Message));
+            return BadRequest(ApiResponse<ApprovalResponseDto>.ErrorResult(ex.Message));
         }
         catch (Exception ex)
         {
-            return StatusCode(500, ApiResponse<object>.ErrorResult($"An error occurred while rejecting owner: {ex.Message}"));
+            return StatusCode(500, ApiResponse<ApprovalResponseDto>.ErrorResult($"An error occurred while rejecting owner: {ex.Message}"));
         }
     }
 

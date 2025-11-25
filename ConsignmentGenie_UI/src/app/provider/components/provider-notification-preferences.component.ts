@@ -8,6 +8,8 @@ import {
   NotificationPreferencesDto,
   UpdateNotificationPreferencesRequest
 } from '../models/provider.models';
+import { LoadingService } from '../../shared/services/loading.service';
+import { LOADING_KEYS } from '../constants/loading-keys';
 
 @Component({
   selector: 'app-provider-notification-preferences',
@@ -27,7 +29,7 @@ import {
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="loading-container">
+      <div *ngIf="loadingService.isLoading(KEYS.NOTIFICATION_PREFS)" class="loading-container">
         <div class="loading-spinner"></div>
         <p>Loading preferences...</p>
       </div>
@@ -41,7 +43,7 @@ import {
       </div>
 
       <!-- Preferences Form -->
-      <form *ngIf="!loading && !error && preferencesForm" [formGroup]="preferencesForm" (ngSubmit)="savePreferences()">
+      <form *ngIf="!loadingService.isLoading(KEYS.NOTIFICATION_PREFS) && !error && preferencesForm" [formGroup]="preferencesForm" (ngSubmit)="savePreferences()">
 
         <!-- Email Notifications Section -->
         <div class="preferences-section">
@@ -254,15 +256,15 @@ import {
             type="button"
             class="btn btn-secondary"
             (click)="resetForm()"
-            [disabled]="!preferencesForm.dirty || saving">
+            [disabled]="!preferencesForm.dirty || loadingService.isLoading(KEYS.NOTIFICATION_PREFS_SAVE)">
             Reset Changes
           </button>
           <button
             type="submit"
             class="btn btn-primary"
-            [disabled]="!preferencesForm.dirty || preferencesForm.invalid || saving">
-            <span *ngIf="saving">Saving...</span>
-            <span *ngIf="!saving">Save Preferences</span>
+            [disabled]="!preferencesForm.dirty || preferencesForm.invalid || loadingService.isLoading(KEYS.NOTIFICATION_PREFS_SAVE)">
+            <span *ngIf="loadingService.isLoading(KEYS.NOTIFICATION_PREFS_SAVE)">Saving...</span>
+            <span *ngIf="!loadingService.isLoading(KEYS.NOTIFICATION_PREFS_SAVE)">Save Preferences</span>
           </button>
         </div>
 
@@ -630,15 +632,17 @@ export class ProviderNotificationPreferencesComponent implements OnInit, OnDestr
 
   preferencesForm!: FormGroup;
   originalPreferences: NotificationPreferencesDto | null = null;
-  loading = false;
-  saving = false;
   error: string | null = null;
   saveMessage: string | null = null;
   saveSuccess = false;
 
+  // Expose for template
+  readonly KEYS = LOADING_KEYS;
+
   constructor(
     private fb: FormBuilder,
-    private providerService: ProviderPortalService
+    private providerService: ProviderPortalService,
+    public loadingService: LoadingService
   ) {}
 
   ngOnInit() {
@@ -668,7 +672,7 @@ export class ProviderNotificationPreferencesComponent implements OnInit, OnDestr
   }
 
   loadPreferences() {
-    this.loading = true;
+    this.loadingService.start(LOADING_KEYS.NOTIFICATION_PREFS);
     this.error = null;
 
     this.providerService.getNotificationPreferences()
@@ -678,12 +682,13 @@ export class ProviderNotificationPreferencesComponent implements OnInit, OnDestr
           this.originalPreferences = preferences;
           this.preferencesForm.patchValue(preferences);
           this.preferencesForm.markAsPristine();
-          this.loading = false;
         },
         error: (error) => {
           console.error('Error loading preferences:', error);
           this.error = 'Failed to load notification preferences. Please try again later.';
-          this.loading = false;
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.NOTIFICATION_PREFS);
         }
       });
   }
@@ -705,11 +710,11 @@ export class ProviderNotificationPreferencesComponent implements OnInit, OnDestr
   }
 
   savePreferences() {
-    if (this.preferencesForm.invalid || this.saving) {
+    if (this.preferencesForm.invalid || this.loadingService.isLoading(LOADING_KEYS.NOTIFICATION_PREFS_SAVE)) {
       return;
     }
 
-    this.saving = true;
+    this.loadingService.start(LOADING_KEYS.NOTIFICATION_PREFS_SAVE);
     this.saveMessage = null;
 
     const formValue = this.preferencesForm.value;
@@ -735,7 +740,6 @@ export class ProviderNotificationPreferencesComponent implements OnInit, OnDestr
           this.preferencesForm.markAsPristine();
           this.saveMessage = 'Your notification preferences have been saved successfully.';
           this.saveSuccess = true;
-          this.saving = false;
 
           // Clear the success message after 3 seconds
           setTimeout(() => {
@@ -746,12 +750,14 @@ export class ProviderNotificationPreferencesComponent implements OnInit, OnDestr
           console.error('Error saving preferences:', error);
           this.saveMessage = 'Failed to save your preferences. Please try again.';
           this.saveSuccess = false;
-          this.saving = false;
 
           // Clear the error message after 5 seconds
           setTimeout(() => {
             this.saveMessage = null;
           }, 5000);
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.NOTIFICATION_PREFS_SAVE);
         }
       });
   }

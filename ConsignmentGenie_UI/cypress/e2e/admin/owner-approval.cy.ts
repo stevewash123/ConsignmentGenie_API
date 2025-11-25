@@ -13,11 +13,17 @@ describe('Admin Owner Approval Workflow', () => {
   };
 
   beforeEach(() => {
+    // Intercept the login API call
+    cy.intercept('POST', '**/api/auth/login').as('loginRequest');
+
     // Login as admin
     cy.visit('/login');
     cy.get('input[name="email"]').type(adminUser.email);
     cy.get('input[name="password"]').type(adminUser.password);
     cy.get('button[type="submit"]').click();
+
+    // Wait for login API to complete
+    cy.wait('@loginRequest', { timeout: 10000 });
 
     // Wait for dashboard to load
     cy.url().should('include', '/admin/dashboard');

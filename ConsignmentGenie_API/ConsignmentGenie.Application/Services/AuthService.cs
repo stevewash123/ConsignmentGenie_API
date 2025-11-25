@@ -52,13 +52,19 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse?> RegisterAsync(RegisterRequest request)
     {
+        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
+        foreach (var entry in _context.ChangeTracker.Entries().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
         // Check if user already exists
         if (await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
         {
             return null;
         }
 
-        // Create organization
+        // 🏗️ AGGREGATE ROOT PATTERN: Create organization aggregate root
         var organization = new Organization
         {
             Name = request.OrganizationName,
@@ -70,7 +76,7 @@ public class AuthService : IAuthService
         _context.Organizations.Add(organization);
         await _context.SaveChangesAsync();
 
-        // Create user
+        // 🏗️ AGGREGATE ROOT PATTERN: Create user entity associated with organization
         var user = new User
         {
             Email = request.Email,

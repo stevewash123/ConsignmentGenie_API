@@ -4,6 +4,8 @@ import { RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ProviderPortalService } from '../services/provider-portal.service';
 import { StatementListDto } from '../models/provider.models';
+import { LoadingService } from '../../shared/services/loading.service';
+import { LOADING_KEYS } from '../constants/loading-keys';
 
 @Component({
   selector: 'app-provider-statements',
@@ -20,7 +22,7 @@ import { StatementListDto } from '../models/provider.models';
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="loading-container">
+      <div *ngIf="loadingService.isLoading(KEYS.STATEMENTS_LIST)" class="loading-container">
         <div class="loading-spinner"></div>
         <p>Loading statements...</p>
       </div>
@@ -34,14 +36,14 @@ import { StatementListDto } from '../models/provider.models';
       </div>
 
       <!-- Empty State -->
-      <div *ngIf="!loading && !error && (!statements || statements.length === 0)" class="empty-state">
+      <div *ngIf="!loadingService.isLoading(KEYS.STATEMENTS_LIST) && !error && (!statements || statements.length === 0)" class="empty-state">
         <div class="empty-icon">📄</div>
         <h3>No statements available</h3>
         <p>Your monthly statements will appear here once you have sales activity.</p>
       </div>
 
       <!-- Statements List -->
-      <div *ngIf="!loading && !error && statements && statements.length > 0" class="statements-list">
+      <div *ngIf="!loadingService.isLoading(KEYS.STATEMENTS_LIST) && !error && statements && statements.length > 0" class="statements-list">
         <div class="statements-grid">
           <div
             *ngFor="let statement of statements; trackBy: trackByStatementId"
@@ -99,9 +101,9 @@ import { StatementListDto } from '../models/provider.models';
               <button
                 class="btn btn-secondary"
                 (click)="downloadPdf(statement)"
-                [disabled]="!statement.hasPdf || downloadingPdf === statement.statementId">
-                <span *ngIf="downloadingPdf === statement.statementId">Downloading...</span>
-                <span *ngIf="downloadingPdf !== statement.statementId">
+                [disabled]="!statement.hasPdf || loadingService.isLoading(KEYS.STATEMENT_PDF)">
+                <span *ngIf="loadingService.isLoading(KEYS.STATEMENT_PDF)">Downloading...</span>
+                <span *ngIf="!loadingService.isLoading(KEYS.STATEMENT_PDF)">
                   {{ statement.hasPdf ? 'Download PDF' : 'PDF Not Available' }}
                 </span>
               </button>
@@ -116,7 +118,7 @@ import { StatementListDto } from '../models/provider.models';
       </div>
 
       <!-- Quick Stats -->
-      <div *ngIf="statements && statements.length > 0" class="quick-stats">
+      <div *ngIf="!loadingService.isLoading(KEYS.STATEMENTS_LIST) && !error && statements && statements.length > 0" class="quick-stats">
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-value">{{ statements.length }}</div>
@@ -455,11 +457,15 @@ export class ProviderStatementsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   statements: StatementListDto[] = [];
-  loading = false;
   error: string | null = null;
-  downloadingPdf: string | null = null;
 
-  constructor(private providerService: ProviderPortalService) {}
+  // Expose for template
+  readonly KEYS = LOADING_KEYS;
+
+  constructor(
+    private providerService: ProviderPortalService,
+    public loadingService: LoadingService
+  ) {}
 
   ngOnInit() {
     this.loadStatements();
@@ -471,7 +477,7 @@ export class ProviderStatementsComponent implements OnInit, OnDestroy {
   }
 
   loadStatements() {
-    this.loading = true;
+    this.loadingService.start(LOADING_KEYS.STATEMENTS_LIST);
     this.error = null;
 
     this.providerService.getStatements()
@@ -481,34 +487,36 @@ export class ProviderStatementsComponent implements OnInit, OnDestroy {
           this.statements = statements.sort((a, b) =>
             new Date(b.periodStart).getTime() - new Date(a.periodStart).getTime()
           );
-          this.loading = false;
         },
         error: (error) => {
           console.error('Error loading statements:', error);
           this.error = 'Failed to load statements. Please try again later.';
-          this.loading = false;
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.STATEMENTS_LIST);
         }
       });
   }
 
   downloadPdf(statement: StatementListDto) {
-    if (!statement.hasPdf || this.downloadingPdf) {
+    if (!statement.hasPdf || this.loadingService.isLoading(LOADING_KEYS.STATEMENT_PDF)) {
       return;
     }
 
-    this.downloadingPdf = statement.statementId;
+    this.loadingService.start(LOADING_KEYS.STATEMENT_PDF);
 
     this.providerService.downloadStatementPdf(statement.statementId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob) => {
           this.downloadFile(blob, `${statement.statementNumber}.pdf`);
-          this.downloadingPdf = null;
         },
         error: (error) => {
           console.error('Error downloading PDF:', error);
           alert('Failed to download PDF. Please try again.');
-          this.downloadingPdf = null;
+        },
+        complete: () => {
+          this.loadingService.stop(LOADING_KEYS.STATEMENT_PDF);
         }
       });
   }

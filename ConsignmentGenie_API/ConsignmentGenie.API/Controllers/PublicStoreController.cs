@@ -57,7 +57,7 @@ public class PublicStoreController : ControllerBase
     /// <param name="pageSize">Items per page</param>
     /// <returns>Paged catalog items</returns>
     [HttpGet("items")]
-    public async Task<ActionResult<ApiResponse<object>>> GetItems(
+    public async Task<ActionResult<ApiResponse<PagedResult<PublicItemDto>>>> GetItems(
         string storeSlug,
         [FromQuery] string? search = null,
         [FromQuery] string? category = null,
@@ -88,29 +88,26 @@ public class PublicStoreController : ControllerBase
                 var storeInfo = await _storeService.GetStoreInfoAsync(storeSlug);
                 if (storeInfo == null)
                 {
-                    return NotFound(ApiResponse<object>.ErrorResult("Store not found"));
+                    return NotFound(ApiResponse<PagedResult<PublicItemDto>>.ErrorResult("Store not found"));
                 }
             }
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-            var result = new
+            var result = new PagedResult<PublicItemDto>
             {
-                items,
-                totalCount,
-                page,
-                pageSize,
-                totalPages,
-                hasNextPage = page < totalPages,
-                hasPreviousPage = page > 1
+                Items = items.ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
             };
 
-            return Ok(ApiResponse<object>.SuccessResult(result));
+            return Ok(ApiResponse<PagedResult<PublicItemDto>>.SuccessResult(result));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving items for store {Slug}", storeSlug);
-            return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred retrieving items"));
+            return StatusCode(500, ApiResponse<PagedResult<PublicItemDto>>.ErrorResult("An error occurred retrieving items"));
         }
     }
 

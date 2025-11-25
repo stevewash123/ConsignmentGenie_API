@@ -30,6 +30,7 @@ See [Full-Stack Setup Guide](../docs/NEW-PROJECT-SETUP-GUIDE.md)
 ## Configuration Details
 - **Database**: PostgreSQL connection provided in config files
 - **JWT**: Custom secret key with 24-hour expiration
+- **Email Service**: Resend.com API Key: `re_yMtGsic1_MY5eDicfxseeziqq9a64FZEW`
 - **Roles**: ShopOwner (Phase 1), Provider (Phase 3), Shopper (Phase 5)
 - **Multi-tenant**: All entities scoped by OrganizationId
 - **Cross-Platform**: Angular environment files handle Windows vs WSL API URL differences
@@ -41,20 +42,20 @@ See [Full-Stack Setup Guide](../docs/NEW-PROJECT-SETUP-GUIDE.md)
 
 ```bash
 # Database connection details from appsettings.Development.json
-PGPASSWORD=npg_stproVzJj95F psql -h ep-quiet-hat-a4w8ghnz-pooler.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb
+PGPASSWORD=npg_ZPId7K5GAlSf psql -h ep-little-king-ahhzzyuy-pooler.c-3.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb
 
 # Quick log queries for debugging:
 # Get recent log entries
-PGPASSWORD=npg_stproVzJj95F psql -h ep-quiet-hat-a4w8ghnz-pooler.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb -c "SELECT timestamp, level, message FROM logs ORDER BY timestamp DESC LIMIT 10;"
+PGPASSWORD=npg_ZPId7K5GAlSf psql -h ep-little-king-ahhzzyuy-pooler.c-3.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb -c "SELECT timestamp, level, message FROM logs ORDER BY timestamp DESC LIMIT 10;"
 
 # Check for errors (level 0=Critical, 1=Error)
-PGPASSWORD=npg_stproVzJj95F psql -h ep-quiet-hat-a4w8ghnz-pooler.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb -c "SELECT timestamp, level, message FROM logs WHERE level <= 1 ORDER BY timestamp DESC;"
+PGPASSWORD=npg_ZPId7K5GAlSf psql -h ep-little-king-ahhzzyuy-pooler.c-3.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb -c "SELECT timestamp, level, message FROM logs WHERE level <= 1 ORDER BY timestamp DESC;"
 
 # Log level summary
-PGPASSWORD=npg_stproVzJj95F psql -h ep-quiet-hat-a4w8ghnz-pooler.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb -c "SELECT level, COUNT(*) as count, CASE level WHEN 0 THEN 'Critical' WHEN 1 THEN 'Error' WHEN 2 THEN 'Information' WHEN 3 THEN 'Warning' WHEN 4 THEN 'Debug' ELSE 'Unknown' END as level_name FROM logs GROUP BY level ORDER BY level;"
+PGPASSWORD=npg_ZPId7K5GAlSf psql -h ep-little-king-ahhzzyuy-pooler.c-3.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb -c "SELECT level, COUNT(*) as count, CASE level WHEN 0 THEN 'Critical' WHEN 1 THEN 'Error' WHEN 2 THEN 'Information' WHEN 3 THEN 'Warning' WHEN 4 THEN 'Debug' ELSE 'Unknown' END as level_name FROM logs GROUP BY level ORDER BY level;"
 
 # Search specific log messages
-PGPASSWORD=npg_stproVzJj95F psql -h ep-quiet-hat-a4w8ghnz-pooler.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb -c "SELECT timestamp, message FROM logs WHERE message LIKE '%search_term%' ORDER BY timestamp DESC;"
+PGPASSWORD=npg_ZPId7K5GAlSf psql -h ep-little-king-ahhzzyuy-pooler.c-3.us-east-1.aws.neon.tech -p 5432 -U neondb_owner -d neondb -c "SELECT timestamp, message FROM logs WHERE message LIKE '%search_term%' ORDER BY timestamp DESC;"
 ```
 
 **Log Levels:**

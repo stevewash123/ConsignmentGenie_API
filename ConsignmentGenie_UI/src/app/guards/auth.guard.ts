@@ -2,13 +2,10 @@ import { Injectable } from '@angular/core';
 import { CanActivate, Router, ActivatedRouteSnapshot } from '@angular/router';
 
 export enum UserRole {
+  Admin = 0,
   Owner = 1,
-  Manager = 2,
-  Staff = 3,
-  Cashier = 4,
-  Accountant = 5,
-  Provider = 6,
-  Customer = 7
+  Provider = 2,
+  Customer = 3
 }
 
 export interface UserData {
@@ -65,11 +62,10 @@ export class AuthGuard implements CanActivate {
   private redirectToUnauthorized(userRole: number) {
     // Redirect to appropriate dashboard based on user's actual role
     switch (userRole) {
+      case UserRole.Admin:
+        this.router.navigate(['/admin/dashboard']);
+        break;
       case UserRole.Owner:
-      case UserRole.Manager:
-      case UserRole.Staff:
-      case UserRole.Cashier:
-      case UserRole.Accountant:
         this.router.navigate(['/owner/dashboard']);
         break;
       case UserRole.Provider:

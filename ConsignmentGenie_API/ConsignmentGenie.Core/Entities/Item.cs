@@ -101,5 +101,4 @@ public class Item : BaseEntity
     public User? CreatedByUser { get; set; }
     public User? UpdatedByUser { get; set; }
     public ICollection<ItemImage> Images { get; set; } = new List<ItemImage>();
-    public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 }

@@ -1,3 +1,5 @@
+using ConsignmentGenie.Application.DTOs;
+using ConsignmentGenie.Core.DTOs.Statements;
 using ConsignmentGenie.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,21 +27,21 @@ public class ProviderStatementsController : ControllerBase
     /// Get all statements for the authenticated provider
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetStatements()
+    public async Task<ActionResult<ApiResponse<List<StatementListDto>>>> GetStatements()
     {
         try
         {
             var providerId = GetCurrentProviderId();
             if (providerId == null)
-                return Unauthorized("Provider context required");
+                return Unauthorized(ApiResponse<List<StatementListDto>>.ErrorResult("Provider context required"));
 
             var statements = await _statementService.GetStatementsAsync(providerId.Value);
-            return Ok(statements);
+            return Ok(ApiResponse<List<StatementListDto>>.SuccessResult(statements));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting statements");
-            return StatusCode(500, "An error occurred while retrieving statements");
+            return StatusCode(500, ApiResponse<List<StatementListDto>>.ErrorResult("An error occurred while retrieving statements"));
         }
     }
 
@@ -47,27 +49,27 @@ public class ProviderStatementsController : ControllerBase
     /// Get a specific statement by ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetStatement(Guid id)
+    public async Task<ActionResult<ApiResponse<StatementDto>>> GetStatement(Guid id)
     {
         try
         {
             var providerId = GetCurrentProviderId();
             if (providerId == null)
-                return Unauthorized("Provider context required");
+                return Unauthorized(ApiResponse<StatementDto>.ErrorResult("Provider context required"));
 
             var statement = await _statementService.GetStatementAsync(id, providerId.Value);
             if (statement == null)
-                return NotFound();
+                return NotFound(ApiResponse<StatementDto>.ErrorResult("Statement not found"));
 
             // Mark as viewed
             await _statementService.MarkAsViewedAsync(id, providerId.Value);
 
-            return Ok(statement);
+            return Ok(ApiResponse<StatementDto>.SuccessResult(statement));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting statement {StatementId}", id);
-            return StatusCode(500, "An error occurred while retrieving statement");
+            return StatusCode(500, ApiResponse<StatementDto>.ErrorResult("An error occurred while retrieving statement"));
         }
     }
 
@@ -75,33 +77,33 @@ public class ProviderStatementsController : ControllerBase
     /// Get statement for a specific period
     /// </summary>
     [HttpGet("{year}/{month}")]
-    public async Task<IActionResult> GetStatementByPeriod(int year, int month)
+    public async Task<ActionResult<ApiResponse<StatementDto>>> GetStatementByPeriod(int year, int month)
     {
         try
         {
             var providerId = GetCurrentProviderId();
             if (providerId == null)
-                return Unauthorized("Provider context required");
+                return Unauthorized(ApiResponse<StatementDto>.ErrorResult("Provider context required"));
 
             if (month < 1 || month > 12)
-                return BadRequest("Invalid month");
+                return BadRequest(ApiResponse<StatementDto>.ErrorResult("Invalid month"));
 
             var periodStart = new DateOnly(year, month, 1);
             var periodEnd = periodStart.AddMonths(1).AddDays(-1);
 
             var statement = await _statementService.GetStatementByPeriodAsync(providerId.Value, periodStart, periodEnd);
             if (statement == null)
-                return NotFound();
+                return NotFound(ApiResponse<StatementDto>.ErrorResult("Statement not found"));
 
             // Mark as viewed
             await _statementService.MarkAsViewedAsync(statement.Id, providerId.Value);
 
-            return Ok(statement);
+            return Ok(ApiResponse<StatementDto>.SuccessResult(statement));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting statement for {Year}-{Month}", year, month);
-            return StatusCode(500, "An error occurred while retrieving statement");
+            return StatusCode(500, ApiResponse<StatementDto>.ErrorResult("An error occurred while retrieving statement"));
         }
     }
 
@@ -171,21 +173,21 @@ public class ProviderStatementsController : ControllerBase
     /// Regenerate a statement (for admin/debugging purposes)
     /// </summary>
     [HttpPost("{id}/regenerate")]
-    public async Task<IActionResult> RegenerateStatement(Guid id)
+    public async Task<ActionResult<ApiResponse<StatementDto>>> RegenerateStatement(Guid id)
     {
         try
         {
             var providerId = GetCurrentProviderId();
             if (providerId == null)
-                return Unauthorized("Provider context required");
+                return Unauthorized(ApiResponse<StatementDto>.ErrorResult("Provider context required"));
 
             var statement = await _statementService.RegenerateStatementAsync(id, providerId.Value);
-            return Ok(statement);
+            return Ok(ApiResponse<StatementDto>.SuccessResult(statement));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error regenerating statement {StatementId}", id);
-            return StatusCode(500, "An error occurred while regenerating statement");
+            return StatusCode(500, ApiResponse<StatementDto>.ErrorResult("An error occurred while regenerating statement"));
         }
     }
 

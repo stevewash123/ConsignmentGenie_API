@@ -124,7 +124,7 @@ public class ShopperAuthController : ControllerBase
     /// <param name="request">Forgot password request</param>
     /// <returns>Success indicator</returns>
     [HttpPost("forgot-password")]
-    public async Task<ActionResult<ApiResponse<object>>> ForgotPassword(
+    public async Task<ActionResult<ApiResponse<PasswordResetResponseDto>>> ForgotPassword(
         string storeSlug,
         [FromBody] ForgotPasswordRequest request)
     {
@@ -141,13 +141,14 @@ public class ShopperAuthController : ControllerBase
                 storeSlug, request.Email);
 
             // For now, return success without actual implementation
-            return Ok(ApiResponse<object>.SuccessResult(new { message = "Password reset email sent if account exists" }));
+            var response = new PasswordResetResponseDto { Message = "Password reset email sent if account exists" };
+            return Ok(ApiResponse<PasswordResetResponseDto>.SuccessResult(response));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing forgot password for store {Slug}: {Email}",
                 storeSlug, request.Email);
-            return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred processing password reset"));
+            return StatusCode(500, ApiResponse<PasswordResetResponseDto>.ErrorResult("An error occurred processing password reset"));
         }
     }
 
@@ -158,7 +159,7 @@ public class ShopperAuthController : ControllerBase
     /// <param name="request">Reset password request</param>
     /// <returns>Success indicator</returns>
     [HttpPost("reset-password")]
-    public async Task<ActionResult<ApiResponse<object>>> ResetPassword(
+    public async Task<ActionResult<ApiResponse<PasswordResetResponseDto>>> ResetPassword(
         string storeSlug,
         [FromBody] ResetPasswordRequest request)
     {
@@ -175,13 +176,14 @@ public class ShopperAuthController : ControllerBase
                 storeSlug, request.Email);
 
             // For now, return success without actual implementation
-            return Ok(ApiResponse<object>.SuccessResult(new { message = "Password reset successfully" }));
+            var response = new PasswordResetResponseDto { Message = "Password reset successfully" };
+            return Ok(ApiResponse<PasswordResetResponseDto>.SuccessResult(response));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error resetting password for store {Slug}: {Email}",
                 storeSlug, request.Email);
-            return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred resetting password"));
+            return StatusCode(500, ApiResponse<PasswordResetResponseDto>.ErrorResult("An error occurred resetting password"));
         }
     }
 }

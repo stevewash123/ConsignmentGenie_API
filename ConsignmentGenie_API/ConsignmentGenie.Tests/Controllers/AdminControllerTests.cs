@@ -172,9 +172,11 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.GetPendingOwners();
 
             // Assert
-            var actionResult = Assert.IsType<ActionResult<List<PendingOwnerDto>>>(result);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<List<PendingOwnerDto>>>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-            var pendingOwners = Assert.IsType<List<PendingOwnerDto>>(okResult.Value);
+            var response = Assert.IsType<ApiResponse<List<PendingOwnerDto>>>(okResult.Value);
+            Assert.True(response.Success);
+            var pendingOwners = response.Data;
 
             Assert.Equal(2, pendingOwners.Count);
             Assert.Contains(pendingOwners, p => p.FullName == "John Pending");
@@ -212,9 +214,11 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.GetPendingOwners();
 
             // Assert
-            var actionResult = Assert.IsType<ActionResult<List<PendingOwnerDto>>>(result);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<List<PendingOwnerDto>>>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-            var pendingOwners = Assert.IsType<List<PendingOwnerDto>>(okResult.Value);
+            var response = Assert.IsType<ApiResponse<List<PendingOwnerDto>>>(okResult.Value);
+            Assert.True(response.Success);
+            var pendingOwners = response.Data;
 
             // Should be ordered by RequestedAt ascending (oldest first)
             Assert.Equal("John Pending", pendingOwners[0].FullName); // Created 2 days ago
@@ -231,7 +235,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.ApproveOwner(pendingUser.Id);
 
             // Assert
-            var actionResult = Assert.IsType<ActionResult<ApiResponse<object>>>(result);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
 
             // Clear change tracker to force fresh query
@@ -257,12 +261,15 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.ApproveOwner(pendingUser.Id);
 
             // Assert
-            Assert.IsType<OkResult>(result);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ApprovalResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
 
             // Verify store code was generated
             var updatedOrganization = await _context.Organizations.FindAsync(pendingUser.OrganizationId);
             Assert.NotNull(updatedOrganization.StoreCode);
-            Assert.Matches(@"^\d{4}$", updatedOrganization.StoreCode); // Should be 4-digit number
+            Assert.Matches(@"^[A-Z0-9]{6}$", updatedOrganization.StoreCode); // Should be 6-character alphanumeric
         }
 
         [Fact]
@@ -275,8 +282,11 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.ApproveOwner(nonExistentUserId);
 
             // Assert
-            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-            Assert.Equal("User not found", notFoundResult.Value);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ApprovalResponseDto>>(notFoundResult.Value);
+            Assert.False(response.Success);
+            Assert.Contains("User not found", response.Errors);
         }
 
         [Fact]
@@ -301,8 +311,11 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.ApproveOwner(providerUser.Id);
 
             // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("User is not an owner", badRequestResult.Value);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ApprovalResponseDto>>(badRequestResult.Value);
+            Assert.False(response.Success);
+            Assert.Contains("User is not an owner", response.Errors);
         }
 
         [Fact]
@@ -317,8 +330,11 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.ApproveOwner(pendingUser.Id);
 
             // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("User is not pending approval", badRequestResult.Value);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ApprovalResponseDto>>(badRequestResult.Value);
+            Assert.False(response.Success);
+            Assert.Contains("User is not pending approval", response.Errors);
         }
 
         [Fact]
@@ -332,7 +348,10 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.RejectOwner(pendingUser.Id, rejectRequest);
 
             // Assert
-            var okResult = Assert.IsType<OkResult>(result);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ApprovalResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
 
             // Verify user was rejected
             var rejectedUser = await _context.Users.FindAsync(pendingUser.Id);
@@ -351,7 +370,10 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.RejectOwner(pendingUser.Id, rejectRequest);
 
             // Assert
-            var okResult = Assert.IsType<OkResult>(result);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ApprovalResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
 
             // Verify user was rejected
             var rejectedUser = await _context.Users.FindAsync(pendingUser.Id);
@@ -370,8 +392,11 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.RejectOwner(nonExistentUserId, rejectRequest);
 
             // Assert
-            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-            Assert.Equal("User not found", notFoundResult.Value);
+            var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ApprovalResponseDto>>(notFoundResult.Value);
+            Assert.False(response.Success);
+            Assert.Contains("User not found", response.Errors);
         }
 
         [Fact]

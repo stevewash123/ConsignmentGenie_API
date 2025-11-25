@@ -124,7 +124,7 @@ describe('Login Tests', () => {
               token: 'mock-provider-token',
               userId: 'provider-user-id',
               email: 'provider@demoshop.com',
-              role: 6,
+              role: 2,
               organizationId: 'demo-shop-org',
               organizationName: 'Demo Shop',
               expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
@@ -138,7 +138,7 @@ describe('Login Tests', () => {
               token: 'mock-customer-token',
               userId: 'customer-user-id',
               email: 'customer@demoshop.com',
-              role: 7,
+              role: 3,
               organizationId: 'demo-shop-org',
               organizationName: 'Demo Shop',
               expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
