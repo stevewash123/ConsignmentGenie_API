@@ -11,6 +11,7 @@ using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Tests.Helpers;
+using ConsignmentGenie.Application.Services.Interfaces;
 
 using ConsignmentGenie.Application.DTOs;
 
@@ -21,6 +22,7 @@ namespace ConsignmentGenie.Tests.Controllers
     {
         private readonly ConsignmentGenieContext _context;
         private readonly Mock<ILogger<ProvidersController>> _mockLogger;
+        private readonly Mock<IProviderInvitationService> _mockInvitationService;
         private readonly ProvidersController _controller;
         private readonly Guid _organizationId = Guid.NewGuid();
         private readonly Guid _userId = Guid.NewGuid();
@@ -30,7 +32,8 @@ namespace ConsignmentGenie.Tests.Controllers
         {
             _context = TestDbContextFactory.CreateInMemoryContext();
             _mockLogger = new Mock<ILogger<ProvidersController>>();
-            _controller = new ProvidersController(_context, _mockLogger.Object);
+            _mockInvitationService = new Mock<IProviderInvitationService>();
+            _controller = new ProvidersController(_context, _mockLogger.Object, _mockInvitationService.Object);
 
             // Setup user claims
             var claims = new List<Claim>
@@ -148,7 +151,7 @@ namespace ConsignmentGenie.Tests.Controllers
         public void Constructor_WithValidDependencies_CreatesSuccessfully()
         {
             // Arrange & Act
-            var controller = new ProvidersController(_context, _mockLogger.Object);
+            var controller = new ProvidersController(_context, _mockLogger.Object, _mockInvitationService.Object);
 
             // Assert
             Assert.NotNull(controller);

@@ -4,18 +4,44 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProviderService } from '../services/provider.service';
 import { Provider } from '../models/provider.model';
+import { ProviderInvitationModalComponent } from './provider-invitation-modal.component';
 
 @Component({
   selector: 'app-provider-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ProviderInvitationModalComponent],
   template: `
     <div class="provider-list-container">
       <div class="header">
         <h2>Providers</h2>
-        <button class="btn-primary" routerLink="/providers/new">
-          Add New Provider
-        </button>
+        <div class="header-actions">
+          <button class="btn-secondary" (click)="showInviteModal()">
+            Invite Provider
+          </button>
+          <button class="btn-primary" routerLink="/providers/new">
+            Add New Provider
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Dashboard -->
+      <div class="stats-dashboard" *ngIf="!isLoading()">
+        <div class="stat-card">
+          <div class="stat-number">{{ getStats().total }}</div>
+          <div class="stat-label">Total Providers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{ getStats().active }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{ getStats().inactive }}</div>
+          <div class="stat-label">Inactive</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{ getStats().avgCommission }}%</div>
+          <div class="stat-label">Avg Commission</div>
+        </div>
       </div>
 
       <div class="filters">
@@ -28,6 +54,27 @@ import { Provider } from '../models/provider.model';
             >
             Show Active Only
           </label>
+        </div>
+        <div class="sort-group">
+          <label for="sortBy">Sort by:</label>
+          <select
+            id="sortBy"
+            [(ngModel)]="sortBy"
+            (change)="onSortChange()"
+            class="sort-select"
+          >
+            <option value="name">Name</option>
+            <option value="email">Email</option>
+            <option value="commissionRate">Commission Rate</option>
+            <option value="createdAt">Date Added</option>
+          </select>
+          <button
+            class="sort-direction-btn"
+            (click)="toggleSortDirection()"
+            [title]="sortDirection === 'asc' ? 'Sort Descending' : 'Sort Ascending'"
+          >
+            {{ sortDirection === 'asc' ? '↑' : '↓' }}
+          </button>
         </div>
         <div class="search-group">
           <input
@@ -94,6 +141,13 @@ import { Provider } from '../models/provider.model';
         <p>No providers found. <a routerLink="/providers/new">Add your first provider</a></p>
       </div>
     </div>
+
+    <!-- Provider Invitation Modal -->
+    <app-provider-invitation-modal
+      [isVisible]="isInviteModalVisible"
+      (close)="hideInviteModal()"
+      (invitationSent)="onInvitationSent()">
+    </app-provider-invitation-modal>
   `,
   styles: [`
     .provider-list-container {
@@ -107,11 +161,76 @@ import { Provider } from '../models/provider.model';
       margin-bottom: 2rem;
     }
 
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .stats-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #007bff;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: #6c757d;
+      font-size: 0.875rem;
+    }
+
     .filters {
       display: flex;
       gap: 1rem;
       margin-bottom: 1.5rem;
       align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .sort-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sort-select {
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+
+    .sort-direction-btn {
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: background-color 0.15s ease-in-out;
+    }
+
+    .sort-direction-btn:hover {
+      background: #e9ecef;
     }
 
     .search-input {
@@ -211,6 +330,9 @@ export class ProviderListComponent implements OnInit {
   isLoading = signal(true);
   showActiveOnly = signal(true);
   searchTerm = '';
+  sortBy = 'name';
+  sortDirection: 'asc' | 'desc' = 'asc';
+  isInviteModalVisible = signal(false);
 
   constructor(private providerService: ProviderService) {}
 
@@ -228,11 +350,32 @@ export class ProviderListComponent implements OnInit {
         let providersArray = providers;
         if (providers && typeof providers === 'object' && !Array.isArray(providers)) {
           const response = providers as any;
-          providersArray = response.data || response.providers || [];
+          providersArray = response.items || response.data || response.providers || [];
+          console.log('Extracted providers array:', providersArray);
         }
 
-        // Ensure we have an array
-        const finalProviders = Array.isArray(providersArray) ? providersArray : [];
+        // Ensure we have an array and transform to match frontend model
+        let finalProviders = Array.isArray(providersArray) ? providersArray : [];
+
+        // Transform API response to match frontend Provider model
+        finalProviders = finalProviders.map((apiProvider: any) => ({
+          id: apiProvider.providerId || apiProvider.id,
+          name: apiProvider.fullName || apiProvider.name || 'Unknown Provider',
+          email: apiProvider.email,
+          phone: apiProvider.phone,
+          address: apiProvider.address || apiProvider.addressLine1,
+          commissionRate: (apiProvider.commissionRate * 100) || 0, // Convert decimal to percentage
+          preferredPaymentMethod: apiProvider.preferredPaymentMethod,
+          paymentDetails: apiProvider.paymentDetails,
+          notes: apiProvider.notes,
+          isActive: apiProvider.status === 'Active' || apiProvider.isActive === true,
+          organizationId: apiProvider.organizationId,
+          providerNumber: apiProvider.providerNumber,
+          createdAt: new Date(apiProvider.createdAt),
+          updatedAt: new Date(apiProvider.updatedAt || apiProvider.createdAt)
+        }));
+
+        console.log('Transformed providers:', finalProviders);
         this.providers.set(finalProviders);
         this.applyFilters();
       },
@@ -275,7 +418,63 @@ export class ProviderListComponent implements OnInit {
       );
     }
 
+    // Apply sorting
+    filtered = this.sortProviders(filtered);
+
     this.filteredProviders.set(filtered);
+  }
+
+  sortProviders(providers: Provider[]): Provider[] {
+    return [...providers].sort((a, b) => {
+      let aValue: any = a[this.sortBy as keyof Provider];
+      let bValue: any = b[this.sortBy as keyof Provider];
+
+      // Handle undefined values
+      if (aValue === undefined) aValue = '';
+      if (bValue === undefined) bValue = '';
+
+      // Convert to strings for comparison
+      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+      let result: number;
+      if (aValue < bValue) {
+        result = -1;
+      } else if (aValue > bValue) {
+        result = 1;
+      } else {
+        result = 0;
+      }
+
+      return this.sortDirection === 'asc' ? result : -result;
+    });
+  }
+
+  onSortChange(): void {
+    this.applyFilters();
+  }
+
+  toggleSortDirection(): void {
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    this.applyFilters();
+  }
+
+  getStats() {
+    const providers = this.providers();
+    const total = providers.length;
+    const active = providers.filter(p => p.isActive).length;
+    const inactive = total - active;
+
+    const avgCommission = total > 0
+      ? Math.round(providers.reduce((sum, p) => sum + p.commissionRate, 0) / total * 10) / 10
+      : 0;
+
+    return {
+      total,
+      active,
+      inactive,
+      avgCommission
+    };
   }
 
   deactivateProvider(provider: Provider): void {
@@ -314,5 +513,19 @@ export class ProviderListComponent implements OnInit {
 
   trackByProvider(index: number, provider: Provider): number {
     return provider.id;
+  }
+
+  showInviteModal(): void {
+    this.isInviteModalVisible.set(true);
+  }
+
+  hideInviteModal(): void {
+    this.isInviteModalVisible.set(false);
+  }
+
+  onInvitationSent(): void {
+    // Optionally reload providers to refresh the list
+    // For now, we'll just hide the modal and show a success message
+    console.log('Provider invitation sent successfully');
   }
 }

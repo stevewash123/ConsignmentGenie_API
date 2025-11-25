@@ -458,6 +458,91 @@ ConsignmentGenie Suggestion System
         }
     }
 
+    public async Task<bool> SendProviderInvitationAsync(string email, string providerName, string shopName, string inviteLink, string expirationDate)
+    {
+        try
+        {
+            var subject = $"Join {shopName} as a Provider - Invitation to ConsignmentGenie";
+            var htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""utf-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
+    <title>Provider Invitation</title>
+</head>
+<body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
+    <div style=""background: linear-gradient(135deg, #047857 0%, #065f46 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
+        <h1 style=""margin: 0; font-size: 28px;"">You're Invited!</h1>
+        <p style=""margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;"">Join {shopName} as a Consignment Provider</p>
+    </div>
+
+    <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
+        <h2 style=""color: #047857; margin-top: 0;"">Hello {providerName}!</h2>
+
+        <p>You've been invited to join <strong>{shopName}</strong> as a consignment provider on our ConsignmentGenie platform.</p>
+
+        <p>As a provider, you'll be able to:</p>
+
+        <div style=""background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #047857;"">
+            <ul style=""margin: 0; padding-left: 20px;"">
+                <li>Submit your items for consignment</li>
+                <li>Track sales and earnings in real-time</li>
+                <li>Receive automated payout calculations</li>
+                <li>Access detailed sales reports</li>
+                <li>Communicate with the shop owner</li>
+            </ul>
+        </div>
+
+        <div style=""text-align: center; margin: 30px 0;"">
+            <a href=""{inviteLink}""
+               style=""background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+                      color: white;
+                      padding: 15px 30px;
+                      text-decoration: none;
+                      border-radius: 25px;
+                      font-weight: bold;
+                      font-size: 16px;
+                      display: inline-block;
+                      box-shadow: 0 4px 15px rgba(4, 120, 87, 0.3);
+                      transition: all 0.3s ease;"">
+                Accept Invitation & Register
+            </a>
+        </div>
+
+        <div style=""background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px; margin: 20px 0; color: #856404;"">
+            <strong>⏰ Important:</strong> This invitation expires on {expirationDate}. Please register before then to secure your access.
+        </div>
+
+        <hr style=""border: none; border-top: 1px solid #ddd; margin: 30px 0;"">
+
+        <p style=""font-size: 14px; color: #666; margin-bottom: 5px;"">
+            <strong>What happens next?</strong>
+        </p>
+        <ol style=""font-size: 14px; color: #666; margin: 0; padding-left: 20px;"">
+            <li>Click the invitation link above</li>
+            <li>Complete your provider registration</li>
+            <li>Start submitting items for consignment</li>
+            <li>Watch your earnings grow!</li>
+        </ol>
+
+        <div style=""margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #999; text-align: center;"">
+            <p>If you have any questions, please contact {shopName} directly.</p>
+            <p>This email was sent by ConsignmentGenie on behalf of {shopName}.</p>
+        </div>
+    </div>
+</body>
+</html>";
+
+            return await SendSimpleEmailAsync(email, subject, htmlContent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send provider invitation email to {Email}", email);
+            return false;
+        }
+    }
+
     public void Dispose()
     {
         Dispose(true);

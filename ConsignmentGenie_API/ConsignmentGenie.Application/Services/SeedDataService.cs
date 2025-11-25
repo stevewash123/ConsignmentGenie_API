@@ -4,6 +4,7 @@ using ConsignmentGenie.Core.Extensions;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using BCrypt.Net;
 
 namespace ConsignmentGenie.Application.Services;
 
@@ -39,8 +40,8 @@ public class SeedDataService
         // Clear existing seed data if any
         await ClearExistingDemoData(orgId);
 
-        // Create Providers
-        var providers = await CreateProviders(orgId);
+        // Create Users and Providers
+        var providers = await CreateProvidersWithUsers(orgId);
 
         // Create Items
         var items = await CreateItems(orgId, providers);
@@ -65,141 +66,99 @@ public class SeedDataService
         _context.Items.RemoveRange(existingItems);
 
         var existingProviders = await _context.Providers.Where(p => p.OrganizationId == orgId).ToListAsync();
+        var providerUserIds = existingProviders.Where(p => p.UserId.HasValue).Select(p => p.UserId.Value).ToList();
         _context.Providers.RemoveRange(existingProviders);
+
+        // Remove provider users (but not owners)
+        var providerUsers = await _context.Users
+            .Where(u => providerUserIds.Contains(u.Id) && u.Role == UserRole.Provider)
+            .ToListAsync();
+        _context.Users.RemoveRange(providerUsers);
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Cleared existing demo data");
     }
 
-    private async Task<List<Provider>> CreateProviders(Guid orgId)
+    private async Task<List<Provider>> CreateProvidersWithUsers(Guid orgId)
     {
-        var providers = new List<Provider>
+        var providers = new List<Provider>();
+        var users = new List<User>();
+
+        var providerData = new[]
         {
-            new Provider
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = orgId,
-                DisplayName = "Jane Doe",
-                Email = "jane.doe@email.com",
-                Phone = "(555) 123-4567",
-                DefaultSplitPercentage = 50.00m,
-                CommissionRate = 50.00m,
-                PreferredPaymentMethod = "Venmo",
-                PaymentDetails = "{\"venmo\": \"@jane-doe\"}",
-                Status = ProviderStatus.Active,
-                BusinessName = "Jane's Vintage Collection",
-                Address = "123 Main St",
-                City = "Springfield",
-                ZipCode = "12345",
-                Notes = "Specializes in vintage clothing and accessories"
-            },
-            new Provider
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = orgId,
-                DisplayName = "Bob Smith",
-                Email = "bob.smith@email.com",
-                Phone = "(555) 234-5678",
-                DefaultSplitPercentage = 40.00m,
-                CommissionRate = 60.00m,
-                PreferredPaymentMethod = "Check",
-                PaymentDetails = "{\"address\": \"456 Oak Ave, Springfield 12345\"}",
-                Status = ProviderStatus.Active,
-                Notes = "Brings furniture and home decor items"
-            },
-            new Provider
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = orgId,
-                DisplayName = "Maria Garcia",
-                Email = "maria.garcia@email.com",
-                Phone = "(555) 345-6789",
-                DefaultSplitPercentage = 55.00m,
-                CommissionRate = 45.00m,
-                PreferredPaymentMethod = "Zelle",
-                PaymentDetails = "{\"zelle\": \"maria.garcia@email.com\"}",
-                Status = ProviderStatus.Active,
-                BusinessName = "Maria's Designer Finds",
-                Notes = "High-end designer handbags and jewelry"
-            },
-            new Provider
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = orgId,
-                DisplayName = "Tom Johnson",
-                Email = "tom.johnson@email.com",
-                Phone = "(555) 456-7890",
-                DefaultSplitPercentage = 50.00m,
-                CommissionRate = 50.00m,
-                PreferredPaymentMethod = "Venmo",
-                PaymentDetails = "{\"venmo\": \"@tom-johnson\"}",
-                Status = ProviderStatus.Active,
-                Notes = "Mid-century modern furniture specialist"
-            },
-            new Provider
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = orgId,
-                DisplayName = "Sarah Williams",
-                Email = "sarah.williams@email.com",
-                Phone = "(555) 567-8901",
-                DefaultSplitPercentage = 45.00m,
-                CommissionRate = 55.00m,
-                PreferredPaymentMethod = "PayPal",
-                PaymentDetails = "{\"paypal\": \"sarah.williams@email.com\"}",
-                Status = ProviderStatus.Active,
-                BusinessName = "Sarah's Jewelry Box",
-                Notes = "Handmade and vintage jewelry"
-            },
-            new Provider
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = orgId,
-                DisplayName = "Mike Brown",
-                Email = "mike.brown@email.com",
-                Phone = "(555) 678-9012",
-                DefaultSplitPercentage = 60.00m,
-                CommissionRate = 40.00m,
-                PreferredPaymentMethod = "Check",
-                PaymentDetails = "{\"address\": \"789 Pine St, Springfield 12345\"}",
-                Status = ProviderStatus.Active,
-                Notes = "Books, electronics, and collectibles"
-            },
-            new Provider
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = orgId,
-                DisplayName = "Lisa Davis",
-                Email = "lisa.davis@email.com",
-                Phone = "(555) 789-0123",
-                DefaultSplitPercentage = 50.00m,
-                CommissionRate = 50.00m,
-                PreferredPaymentMethod = "Venmo",
-                PaymentDetails = "{\"venmo\": \"@lisa-davis\"}",
-                Status = ProviderStatus.Inactive,
-                Notes = "Currently inactive - seasonal provider"
-            },
-            new Provider
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = orgId,
-                DisplayName = "John Wilson",
-                Email = "john.wilson@email.com",
-                Phone = "(555) 890-1234",
-                DefaultSplitPercentage = 35.00m,
-                CommissionRate = 65.00m,
-                PreferredPaymentMethod = "Venmo",
-                PaymentDetails = "{\"venmo\": \"@john-wilson\"}",
-                Status = ProviderStatus.Active,
-                BusinessName = "Wilson's Art Gallery",
-                Notes = "Original artwork and prints"
-            }
+            ("Jane", "Doe", "jane.doe@email.com", "(555) 123-4567", 50.00m, "Venmo", "@jane-doe", "Jane's Vintage Collection", "123 Main St", "Springfield", "12345", "Specializes in vintage clothing and accessories", true),
+            ("Bob", "Smith", "bob.smith@email.com", "(555) 234-5678", 60.00m, "Check", "456 Oak Ave, Springfield 12345", "", "", "", "", "Brings furniture and home decor items", true),
+            ("Maria", "Garcia", "maria.garcia@email.com", "(555) 345-6789", 45.00m, "Zelle", "maria.garcia@email.com", "Maria's Designer Finds", "", "", "", "High-end designer handbags and jewelry", true),
+            ("Tom", "Johnson", "tom.johnson@email.com", "(555) 456-7890", 50.00m, "Venmo", "@tom-johnson", "", "", "", "", "Mid-century modern furniture specialist", true),
+            ("Sarah", "Williams", "sarah.williams@email.com", "(555) 567-8901", 55.00m, "PayPal", "sarah.williams@email.com", "Sarah's Jewelry Box", "", "", "", "Handmade and vintage jewelry", true),
+            ("Mike", "Brown", "mike.brown@email.com", "(555) 678-9012", 40.00m, "Check", "789 Pine St, Springfield 12345", "", "", "", "", "Books, electronics, and collectibles", true),
+            ("Lisa", "Davis", "lisa.davis@email.com", "(555) 789-0123", 50.00m, "Venmo", "@lisa-davis", "", "", "", "", "Currently inactive - seasonal provider", false),
+            ("John", "Wilson", "john.wilson@email.com", "(555) 890-1234", 65.00m, "Venmo", "@john-wilson", "Wilson's Art Gallery", "", "", "", "Original artwork and prints", true)
         };
+
+        for (int i = 0; i < providerData.Length; i++)
+        {
+            var (firstName, lastName, email, phone, commissionRate, paymentMethod, paymentDetails, businessName, address, city, zipCode, notes, isActive) = providerData[i];
+
+            // Create User account for each provider
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("provider123"), // Demo password
+                FullName = $"{firstName} {lastName}",
+                Phone = phone,
+                Role = UserRole.Provider,
+                OrganizationId = orgId,
+                ApprovalStatus = ApprovalStatus.Approved,
+                ApprovedAt = DateTime.UtcNow.AddDays(-30 + i), // Approved at different times
+                CreatedAt = DateTime.UtcNow.AddDays(-30 + i)
+            };
+
+            users.Add(user);
+
+            // Create Provider record
+            var provider = new Provider
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = orgId,
+                UserId = user.Id,
+                ProviderNumber = $"PRV-{(i + 1):D5}",
+                FirstName = firstName,
+                LastName = lastName,
+                DisplayName = $"{firstName} {lastName}", // Compatibility field
+                Email = email,
+                Phone = phone,
+                AddressLine1 = !string.IsNullOrEmpty(address) ? address : null,
+                Address = !string.IsNullOrEmpty(address) ? address : null, // Compatibility field
+                City = !string.IsNullOrEmpty(city) ? city : null,
+                PostalCode = !string.IsNullOrEmpty(zipCode) ? zipCode : null,
+                ZipCode = !string.IsNullOrEmpty(zipCode) ? zipCode : null, // Compatibility field
+                CommissionRate = commissionRate / 100, // Convert percentage to decimal
+                DefaultSplitPercentage = commissionRate / 100, // Compatibility field
+                PreferredPaymentMethod = paymentMethod,
+                PaymentMethod = paymentMethod, // Compatibility field
+                PaymentDetails = paymentDetails,
+                BusinessName = !string.IsNullOrEmpty(businessName) ? businessName : null,
+                Status = isActive ? ProviderStatus.Active : ProviderStatus.Inactive,
+                ApprovalStatus = "Approved",
+                ApprovedAt = DateTime.UtcNow.AddDays(-30 + i),
+                Notes = notes,
+                PortalAccess = true, // All demo providers have portal access
+                CreatedAt = DateTime.UtcNow.AddDays(-30 + i)
+            };
+
+            providers.Add(provider);
+        }
+
+        // Save users first, then providers
+        _context.Users.AddRange(users);
+        await _context.SaveChangesAsync();
 
         _context.Providers.AddRange(providers);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation($"Created {providers.Count} providers");
+        _logger.LogInformation($"Created {providers.Count} providers with user accounts");
         return providers;
     }
 

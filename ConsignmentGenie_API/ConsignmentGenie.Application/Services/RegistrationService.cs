@@ -524,4 +524,184 @@ public class RegistrationService : IRegistrationService
             .CountAsync(p => p.OrganizationId == organizationId);
         return $"PRV-{(count + 1):D5}";
     }
+
+    public async Task<InvitationValidationDto> ValidateInvitationTokenAsync(string token)
+    {
+        var invitation = await _context.ProviderInvitations
+            .Include(i => i.Organization)
+            .FirstOrDefaultAsync(i => i.Token == token);
+
+        if (invitation == null)
+        {
+            return new InvitationValidationDto
+            {
+                IsValid = false,
+                Message = "Invalid invitation link"
+            };
+        }
+
+        if (invitation.ExpirationDate <= DateTime.UtcNow)
+        {
+            return new InvitationValidationDto
+            {
+                IsValid = false,
+                Message = "This invitation has expired"
+            };
+        }
+
+        // Check if already used (user exists with this email)
+        var existingUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == invitation.Email);
+
+        if (existingUser != null)
+        {
+            return new InvitationValidationDto
+            {
+                IsValid = false,
+                Message = "An account with this email already exists"
+            };
+        }
+
+        return new InvitationValidationDto
+        {
+            IsValid = true,
+            ShopName = invitation.Organization.ShopName ?? invitation.Organization.Name,
+            InvitedName = invitation.Name,
+            InvitedEmail = invitation.Email,
+            ExpirationDate = invitation.ExpirationDate
+        };
+    }
+
+    public async Task<RegistrationResultDto> RegisterProviderFromInvitationAsync(RegisterProviderFromInvitationRequest request)
+    {
+        try
+        {
+            // Validate the invitation first
+            var validation = await ValidateInvitationTokenAsync(request.InvitationToken);
+            if (!validation.IsValid)
+            {
+                return new RegistrationResultDto
+                {
+                    Success = false,
+                    Message = validation.Message ?? "Invalid invitation"
+                };
+            }
+
+            var invitation = await _context.ProviderInvitations
+                .Include(i => i.Organization)
+                .FirstOrDefaultAsync(i => i.Token == request.InvitationToken);
+
+            if (invitation == null)
+            {
+                return new RegistrationResultDto
+                {
+                    Success = false,
+                    Message = "Invitation not found"
+                };
+            }
+
+            // Create the user
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+            var user = new User
+            {
+                Email = request.Email,
+                PasswordHash = hashedPassword,
+                FullName = request.FullName,
+                Phone = request.Phone,
+                Role = UserRole.Provider,
+                OrganizationId = invitation.OrganizationId,
+                ApprovalStatus = ApprovalStatus.Approved, // Auto-approve invited providers
+                ApprovedBy = invitation.InvitedById,
+                ApprovedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Create the provider record
+            var provider = new Provider
+            {
+                OrganizationId = invitation.OrganizationId,
+                UserId = user.Id,
+                FirstName = GetFirstName(request.FullName),
+                LastName = GetLastName(request.FullName),
+                Email = request.Email,
+                Phone = request.Phone,
+                Address = request.Address,
+                PreferredPaymentMethod = "Check", // Default
+                Status = ProviderStatus.Active,
+                ApprovalStatus = "Approved",
+                ApprovedBy = invitation.InvitedById,
+                ProviderNumber = await GenerateProviderNumberAsync(invitation.OrganizationId)
+            };
+
+            _context.Providers.Add(provider);
+
+            // Mark invitation as used
+            invitation.IsUsed = true;
+            invitation.UsedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            // Send welcome email to provider
+            var providerEmailBody = $@"
+                <h2>Welcome to {validation.ShopName}! 🎉</h2>
+                <p>Hi {request.FullName},</p>
+                <p>Your provider account has been successfully created for {validation.ShopName}.</p>
+                <p>You can now log in to your Provider Portal to:</p>
+                <ul>
+                    <li>View your consigned items</li>
+                    <li>Track sales and earnings</li>
+                    <li>Manage your account settings</li>
+                </ul>
+                <p>Welcome aboard!</p>
+                <p>- The ConsignmentGenie Team</p>";
+
+            await _emailService.SendSimpleEmailAsync(
+                request.Email,
+                "Welcome to ConsignmentGenie! 🎉",
+                providerEmailBody);
+
+            // Notify the shop owner
+            var ownerUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == invitation.InvitedById);
+
+            if (ownerUser != null)
+            {
+                var ownerEmailBody = $@"
+                    <h2>Provider Joined Your Shop</h2>
+                    <p>Hi {validation.ShopName},</p>
+                    <p>{request.FullName} has successfully completed their registration and joined your shop.</p>
+                    <p><strong>Provider Details:</strong></p>
+                    <ul>
+                        <li>Name: {request.FullName}</li>
+                        <li>Email: {request.Email}</li>
+                        <li>Phone: {request.Phone ?? "Not provided"}</li>
+                    </ul>
+                    <p>They can now start adding items to consign with your shop.</p>
+                    <p>- ConsignmentGenie</p>";
+
+                await _emailService.SendSimpleEmailAsync(
+                    ownerUser.Email,
+                    $"New Provider Joined - {request.FullName}",
+                    ownerEmailBody);
+            }
+
+            return new RegistrationResultDto
+            {
+                Success = true,
+                Message = "Registration completed successfully! You can now log in."
+            };
+        }
+        catch (Exception ex)
+        {
+            return new RegistrationResultDto
+            {
+                Success = false,
+                Message = "An error occurred during registration.",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
 }

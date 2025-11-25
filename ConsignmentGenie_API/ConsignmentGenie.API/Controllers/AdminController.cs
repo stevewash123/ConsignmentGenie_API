@@ -1,4 +1,5 @@
 using ConsignmentGenie.Application.DTOs;
+using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Core.DTOs.Registration;
 using ConsignmentGenie.Core.Enums;
@@ -17,15 +18,18 @@ public class AdminController : ControllerBase
     private readonly ConsignmentGenieContext _context;
     private readonly ILogger<AdminController> _logger;
     private readonly IRegistrationService _registrationService;
+    private readonly IOwnerInvitationService _ownerInvitationService;
 
     public AdminController(
         ConsignmentGenieContext context,
         ILogger<AdminController> logger,
-        IRegistrationService registrationService)
+        IRegistrationService registrationService,
+        IOwnerInvitationService ownerInvitationService)
     {
         _context = context;
         _logger = logger;
         _registrationService = registrationService;
+        _ownerInvitationService = ownerInvitationService;
     }
 
     [HttpGet("health")]
@@ -414,6 +418,165 @@ public class AdminController : ControllerBase
         // Fallback to admin user ID if not found
         return new Guid("22222222-2222-2222-2222-222222222222");
     }
+
+    #region Owner Invitations
+
+    /// <summary>
+    /// Invite a new shop owner
+    /// </summary>
+    [HttpPost("invitations/owner")]
+    public async Task<ActionResult<ApiResponse<OwnerInvitationDetailDto>>> InviteOwner(
+        [FromBody] CreateOwnerInvitationRequest request)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var result = await _ownerInvitationService.CreateInvitationAsync(request, currentUserId);
+
+            if (!result.Success)
+            {
+                return BadRequest(ApiResponse<OwnerInvitationDetailDto>.ErrorResult(result.Message));
+            }
+
+            return Ok(ApiResponse<OwnerInvitationDetailDto>.SuccessResult(
+                result.Data,
+                "Owner invitation sent successfully"
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating owner invitation for {Email}", request.Email);
+            return StatusCode(500, ApiResponse<OwnerInvitationDetailDto>.ErrorResult("An error occurred while creating the invitation"));
+        }
+    }
+
+    /// <summary>
+    /// Get all owner invitations with pagination and filtering
+    /// </summary>
+    [HttpGet("invitations/owner")]
+    public async Task<ActionResult<ApiResponse<ConsignmentGenie.Core.DTOs.PagedResult<OwnerInvitationListDto>>>> GetOwnerInvitations(
+        [FromQuery] OwnerInvitationQueryParams queryParams)
+    {
+        try
+        {
+            var result = await _ownerInvitationService.GetInvitationsAsync(queryParams);
+
+            return Ok(ApiResponse<ConsignmentGenie.Core.DTOs.PagedResult<OwnerInvitationListDto>>.SuccessResult(
+                result,
+                $"Retrieved {result.Data.Count} owner invitations"
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving owner invitations");
+            return StatusCode(500, ApiResponse<ConsignmentGenie.Core.DTOs.PagedResult<OwnerInvitationListDto>>.ErrorResult("An error occurred while retrieving invitations"));
+        }
+    }
+
+    /// <summary>
+    /// Get owner invitation metrics and statistics
+    /// </summary>
+    [HttpGet("invitations/owner/metrics")]
+    public async Task<ActionResult<ApiResponse<OwnerInvitationMetricsDto>>> GetOwnerInvitationMetrics()
+    {
+        try
+        {
+            var metrics = await _ownerInvitationService.GetMetricsAsync();
+
+            return Ok(ApiResponse<OwnerInvitationMetricsDto>.SuccessResult(
+                metrics,
+                "Owner invitation metrics retrieved successfully"
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving owner invitation metrics");
+            return StatusCode(500, ApiResponse<OwnerInvitationMetricsDto>.ErrorResult("An error occurred while retrieving metrics"));
+        }
+    }
+
+    /// <summary>
+    /// Get owner invitation details by ID
+    /// </summary>
+    [HttpGet("invitations/owner/{invitationId}")]
+    public async Task<ActionResult<ApiResponse<OwnerInvitationDetailDto>>> GetOwnerInvitation(Guid invitationId)
+    {
+        try
+        {
+            var invitation = await _ownerInvitationService.GetInvitationByIdAsync(invitationId);
+
+            if (invitation == null)
+            {
+                return NotFound(ApiResponse<OwnerInvitationDetailDto>.ErrorResult("Invitation not found"));
+            }
+
+            return Ok(ApiResponse<OwnerInvitationDetailDto>.SuccessResult(
+                invitation,
+                "Owner invitation retrieved successfully"
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving owner invitation {InvitationId}", invitationId);
+            return StatusCode(500, ApiResponse<OwnerInvitationDetailDto>.ErrorResult("An error occurred while retrieving the invitation"));
+        }
+    }
+
+    /// <summary>
+    /// Cancel an owner invitation
+    /// </summary>
+    [HttpPost("invitations/owner/{invitationId}/cancel")]
+    public async Task<ActionResult<ApiResponse<bool>>> CancelOwnerInvitation(Guid invitationId)
+    {
+        try
+        {
+            var result = await _ownerInvitationService.CancelInvitationAsync(invitationId);
+
+            if (!result.Success)
+            {
+                return BadRequest(ApiResponse<bool>.ErrorResult(result.Message));
+            }
+
+            return Ok(ApiResponse<bool>.SuccessResult(
+                true,
+                "Owner invitation cancelled successfully"
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelling owner invitation {InvitationId}", invitationId);
+            return StatusCode(500, ApiResponse<bool>.ErrorResult("An error occurred while cancelling the invitation"));
+        }
+    }
+
+    /// <summary>
+    /// Resend an owner invitation
+    /// </summary>
+    [HttpPost("invitations/owner/{invitationId}/resend")]
+    public async Task<ActionResult<ApiResponse<bool>>> ResendOwnerInvitation(Guid invitationId)
+    {
+        try
+        {
+            var result = await _ownerInvitationService.ResendInvitationAsync(invitationId);
+
+            if (!result.Success)
+            {
+                return BadRequest(ApiResponse<bool>.ErrorResult(result.Message));
+            }
+
+            return Ok(ApiResponse<bool>.SuccessResult(
+                true,
+                "Owner invitation resent successfully"
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resending owner invitation {InvitationId}", invitationId);
+            return StatusCode(500, ApiResponse<bool>.ErrorResult("An error occurred while resending the invitation"));
+        }
+    }
+
+    #endregion
 
     private async Task<string> GenerateUniqueStoreCode()
     {

@@ -42,43 +42,19 @@ interface Transaction {
 
         <!-- Key Metrics -->
         <div class="metrics-grid" *ngIf="summary(); else loadingMetrics">
-          <div class="metric-card providers">
-            <div class="metric-icon">👥</div>
-            <div class="metric-content">
-              <h3>Active Providers</h3>
-              <div class="metric-value">{{ summary()!.activeProviders }}</div>
-              <div class="metric-change">{{ activeProviderCount() > 0 ? 'Real data from database' : '2 new this week' }}</div>
-            </div>
-          </div>
-
-          <div class="metric-card inventory-value">
-            <div class="metric-icon">💎</div>
+          <div class="metric-card">
             <div class="metric-content">
               <h3>Inventory Value</h3>
               <div class="metric-value">\${{ summary()!.inventoryValue | number:'1.2-2' }}</div>
-              <div class="metric-change">{{ summary()!.totalItems }} items on floor</div>
-            </div>
-          </div>
-
-          <div class="metric-card recent-sales">
-            <div class="metric-icon">📊</div>
-            <div class="metric-content">
-              <h3>Last 30 Days</h3>
-              <div class="metric-value">\${{ summary()!.recentSales | number:'1.2-2' }}</div>
-              <div class="metric-change">{{ summary()!.recentSalesCount }} transactions</div>
             </div>
           </div>
 
           <a routerLink="/owner/payouts" class="metric-card pending-payouts"
              [ngClass]="{ 'has-pending': summary()!.pendingPayoutCount > 0 }">
-            <div class="metric-icon">⏳</div>
             <div class="metric-content">
               <h3>Pending Payouts</h3>
               <div class="metric-value">\${{ summary()!.pendingPayouts | number:'1.2-2' }}</div>
-              <div class="metric-change">
-                {{ summary()!.pendingPayoutCount }} providers waiting
-                <span *ngIf="summary()!.pendingPayoutCount > 0" class="action-hint">→ Click to process</span>
-              </div>
+              <span *ngIf="summary()!.pendingPayoutCount > 0" class="action-hint">→ Click to process</span>
             </div>
           </a>
         </div>
@@ -92,39 +68,18 @@ interface Transaction {
           <h2>Quick Actions</h2>
           <div class="action-grid">
             <a routerLink="/owner/sales" class="action-card">
-              <div class="action-icon">🛒</div>
               <h3>Process Sale</h3>
               <p>Record a new transaction and automatically calculate splits</p>
             </a>
 
             <a routerLink="/owner/providers" class="action-card">
-              <div class="action-icon">👥</div>
               <h3>Manage Providers</h3>
               <p>View providers, update commission rates, and track performance</p>
             </a>
 
-            <a routerLink="/owner/sales" class="action-card">
-              <div class="action-icon">📋</div>
-              <h3>Inventory Check</h3>
-              <p>Review current stock levels and add new items</p>
-            </a>
-
             <a routerLink="/owner/payouts" class="action-card">
-              <div class="action-icon">💳</div>
               <h3>Generate Payouts</h3>
               <p>Create payout reports and process provider payments</p>
-            </a>
-
-            <a routerLink="/owner/payouts" class="action-card">
-              <div class="action-icon">📊</div>
-              <h3>View Reports</h3>
-              <p>Analyze sales trends, provider performance, and profits</p>
-            </a>
-
-            <a routerLink="/owner/settings" class="action-card">
-              <div class="action-icon">⚙️</div>
-              <h3>Shop Settings</h3>
-              <p>Configure integrations, manage settings, and preferences</p>
             </a>
           </div>
         </div>
@@ -186,13 +141,12 @@ interface Transaction {
 
     .metric-card {
       background: white;
-      border-radius: 16px;
-      padding: 2rem;
+      border-radius: 12px;
+      padding: 1.5rem;
       display: flex;
       align-items: center;
-      gap: 1.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      border-left: 4px solid;
+      gap: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       transition: transform 0.2s;
     }
 

@@ -119,4 +119,21 @@ public class ConsoleEmailService : IEmailService
         await Task.Delay(100);
         return true;
     }
+
+    public async Task<bool> SendProviderInvitationAsync(string email, string providerName, string shopName, string inviteLink, string expirationDate)
+    {
+        _logger.LogInformation(
+            "[CONSOLE EMAIL] Provider Invitation Email\n" +
+            "  To: {Email}\n" +
+            "  Subject: Join {ShopName} as a Provider - Invitation to ConsignmentGenie\n" +
+            "  Provider: {ProviderName}\n" +
+            "  Shop: {ShopName}\n" +
+            "  Invite Link: {InviteLink}\n" +
+            "  Expires: {ExpirationDate}",
+            email, shopName, providerName, shopName, inviteLink, expirationDate
+        );
+
+        await Task.Delay(100);
+        return true;
+    }
 }

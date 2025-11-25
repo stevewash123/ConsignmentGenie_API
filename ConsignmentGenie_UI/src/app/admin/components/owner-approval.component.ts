@@ -5,6 +5,8 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AdminLayoutComponent } from './admin-layout.component';
 import { ConfirmationDialogService } from '../../shared/services/confirmation-dialog.service';
+import { InviteOwnerModalComponent } from './invite-owner-modal.component';
+import { OwnerInvitationsListComponent } from './owner-invitations-list.component';
 
 interface PendingOwner {
   userId: string;
@@ -25,94 +27,145 @@ interface ApiResponse<T> {
 @Component({
   selector: 'app-owner-approval',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminLayoutComponent],
+  imports: [CommonModule, FormsModule, AdminLayoutComponent, InviteOwnerModalComponent, OwnerInvitationsListComponent],
   template: `
     <app-admin-layout>
       <div class="owner-approval">
         <header class="page-header">
-          <h1>Owner Approval Management</h1>
-          <p class="subtitle">Review and approve new consignment shop owner registrations</p>
+          <h1>Owner Management</h1>
+          <p class="subtitle">Manage shop owner registrations and invitations</p>
+
+          <div class="header-actions">
+            <button class="invite-owner-btn" (click)="openInviteModal()">
+              <span class="btn-icon">📧</span>
+              Invite New Owner
+            </button>
+          </div>
         </header>
 
-        @if (isLoading()) {
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Loading pending approvals...</p>
-          </div>
-        } @else if (errorMessage()) {
-          <div class="error-message">
-            <span class="error-icon">⚠️</span>
-            {{ errorMessage() }}
-            <button class="retry-btn" (click)="loadPendingOwners()">Try Again</button>
-          </div>
-        } @else if (pendingOwners().length === 0) {
-          <div class="empty-state">
-            <div class="empty-icon">✅</div>
-            <h3>No Pending Approvals</h3>
-            <p>All owner registrations have been reviewed. Check back later for new submissions.</p>
-            <button class="refresh-btn" (click)="loadPendingOwners()">Refresh</button>
-          </div>
-        } @else {
-          <div class="approvals-container">
-            <div class="approvals-header">
-              <h2>Pending Approvals ({{ pendingOwners().length }})</h2>
-              <button class="refresh-btn" (click)="loadPendingOwners()">
-                <span class="refresh-icon">🔄</span>
-                Refresh
-              </button>
-            </div>
+        <!-- Tab Navigation -->
+        <div class="tabs">
+          <button
+            class="tab-button"
+            [class.active]="activeTab() === 'approvals'"
+            (click)="setActiveTab('approvals')"
+          >
+            <span class="tab-icon">⏳</span>
+            Pending Approvals
+            @if (pendingOwners().length > 0) {
+              <span class="tab-badge">{{ pendingOwners().length }}</span>
+            }
+          </button>
+          <button
+            class="tab-button"
+            [class.active]="activeTab() === 'invitations'"
+            (click)="setActiveTab('invitations')"
+          >
+            <span class="tab-icon">📧</span>
+            Owner Invitations
+          </button>
+        </div>
 
-            <div class="approvals-grid">
-              @for (owner of pendingOwners(); track owner.userId) {
-                <div class="approval-card" [class.processing]="processingUsers().has(owner.userId)">
-                  <div class="card-header">
-                    <div class="owner-info">
-                      <h3>{{ owner.fullName }}</h3>
-                      <p class="email">{{ owner.email }}</p>
-                      @if (owner.phone) {
-                        <p class="phone">📞 {{ owner.phone }}</p>
-                      }
-                    </div>
-                    <div class="shop-info">
-                      <h4>{{ owner.shopName }}</h4>
-                      <p class="requested-date">
-                        Requested: {{ formatDate(owner.requestedAt) }}
-                      </p>
-                    </div>
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Pending Approvals Tab -->
+          @if (activeTab() === 'approvals') {
+            <div class="tab-panel">
+              @if (isLoading()) {
+                <div class="loading-state">
+                  <div class="spinner"></div>
+                  <p>Loading pending approvals...</p>
+                </div>
+              } @else if (errorMessage()) {
+                <div class="error-message">
+                  <span class="error-icon">⚠️</span>
+                  {{ errorMessage() }}
+                  <button class="retry-btn" (click)="loadPendingOwners()">Try Again</button>
+                </div>
+              } @else if (pendingOwners().length === 0) {
+                <div class="empty-state">
+                  <div class="empty-icon">✅</div>
+                  <h3>No Pending Approvals</h3>
+                  <p>All owner registrations have been reviewed. Check back later for new submissions.</p>
+                  <button class="refresh-btn" (click)="loadPendingOwners()">Refresh</button>
+                </div>
+              } @else {
+                <div class="approvals-container">
+                  <div class="approvals-header">
+                    <h2>Pending Approvals ({{ pendingOwners().length }})</h2>
+                    <button class="refresh-btn" (click)="loadPendingOwners()">
+                      <span class="refresh-icon">🔄</span>
+                      Refresh
+                    </button>
                   </div>
 
-                  <div class="card-actions">
-                    <button
-                      class="approve-btn"
-                      (click)="approveOwner(owner.userId, owner.fullName)"
-                      [disabled]="processingUsers().has(owner.userId)"
-                    >
-                      @if (processingUsers().has(owner.userId) && processingActions().get(owner.userId) === 'approve') {
-                        <span class="spinner-sm"></span>
-                        Approving...
-                      } @else {
-                        ✅ Approve
-                      }
-                    </button>
-                    <button
-                      class="reject-btn"
-                      (click)="rejectOwner(owner.userId, owner.fullName)"
-                      [disabled]="processingUsers().has(owner.userId)"
-                    >
-                      @if (processingUsers().has(owner.userId) && processingActions().get(owner.userId) === 'reject') {
-                        <span class="spinner-sm"></span>
-                        Rejecting...
-                      } @else {
-                        ❌ Reject
-                      }
-                    </button>
+                  <div class="approvals-grid">
+                    @for (owner of pendingOwners(); track owner.userId) {
+                      <div class="approval-card" [class.processing]="processingUsers().has(owner.userId)">
+                        <div class="card-header">
+                          <div class="owner-info">
+                            <h3>{{ owner.fullName }}</h3>
+                            <p class="email">{{ owner.email }}</p>
+                            @if (owner.phone) {
+                              <p class="phone">📞 {{ owner.phone }}</p>
+                            }
+                          </div>
+                          <div class="shop-info">
+                            <h4>{{ owner.shopName }}</h4>
+                            <p class="requested-date">
+                              Requested: {{ formatDate(owner.requestedAt) }}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div class="card-actions">
+                          <button
+                            class="approve-btn"
+                            (click)="approveOwner(owner.userId, owner.fullName)"
+                            [disabled]="processingUsers().has(owner.userId)"
+                          >
+                            @if (processingUsers().has(owner.userId) && processingActions().get(owner.userId) === 'approve') {
+                              <span class="spinner-sm"></span>
+                              Approving...
+                            } @else {
+                              ✅ Approve
+                            }
+                          </button>
+                          <button
+                            class="reject-btn"
+                            (click)="rejectOwner(owner.userId, owner.fullName)"
+                            [disabled]="processingUsers().has(owner.userId)"
+                          >
+                            @if (processingUsers().has(owner.userId) && processingActions().get(owner.userId) === 'reject') {
+                              <span class="spinner-sm"></span>
+                              Rejecting...
+                            } @else {
+                              ❌ Reject
+                            }
+                          </button>
+                        </div>
+                      </div>
+                    }
                   </div>
                 </div>
               }
             </div>
-          </div>
-        }
+          }
 
+          <!-- Owner Invitations Tab -->
+          @if (activeTab() === 'invitations') {
+            <div class="tab-panel">
+              <app-owner-invitations-list></app-owner-invitations-list>
+            </div>
+          }
+        </div>
+
+        <!-- Invite Owner Modal -->
+        <app-invite-owner-modal
+          [isOpen]="isInviteModalOpen"
+          (modalClosed)="onModalClosed()"
+          (invitationSent)="onInvitationSent()"
+        ></app-invite-owner-modal>
 
         <!-- Success Message -->
         @if (successMessage()) {
@@ -133,8 +186,9 @@ interface ApiResponse<T> {
     }
 
     .page-header {
-      margin-bottom: 3rem;
+      margin-bottom: 2rem;
       text-align: center;
+      position: relative;
     }
 
     .page-header h1 {
@@ -146,6 +200,105 @@ interface ApiResponse<T> {
     .subtitle {
       color: #6b7280;
       font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .invite-owner-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.875rem 1.75rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.3);
+    }
+
+    .invite-owner-btn:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px -4px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-icon {
+      font-size: 1.1rem;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 0.25rem;
+      margin-bottom: 2rem;
+      border: 1px solid #e5e7eb;
+    }
+
+    .tab-button {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 0.875rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      color: #6b7280;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+    }
+
+    .tab-button:hover {
+      color: #374151;
+      background: #f3f4f6;
+    }
+
+    .tab-button.active {
+      background: white;
+      color: #1f2937;
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e5e7eb;
+    }
+
+    .tab-icon {
+      font-size: 1rem;
+    }
+
+    .tab-badge {
+      background: #ef4444;
+      color: white;
+      font-size: 0.75rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+
+    .tab-content {
+      min-height: 400px;
+    }
+
+    .tab-panel {
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .loading-state, .empty-state {
@@ -395,6 +548,24 @@ interface ApiResponse<T> {
         padding: 1rem;
       }
 
+      .page-header h1 {
+        font-size: 2rem;
+      }
+
+      .header-actions {
+        margin-top: 1.5rem;
+      }
+
+      .tabs {
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .tab-button {
+        border-radius: 6px;
+        padding: 1rem;
+      }
+
       .card-header {
         grid-template-columns: 1fr;
         gap: 1rem;
@@ -428,6 +599,11 @@ export class OwnerApprovalComponent implements OnInit {
   errorMessage = signal('');
   successMessage = signal('');
 
+  // Tab management
+  activeTab = signal<'approvals' | 'invitations'>('approvals');
+
+  // Modal state
+  isInviteModalOpen = signal(false);
 
   // Processing state
   processingUsers = signal(new Set<string>());
@@ -550,5 +726,25 @@ export class OwnerApprovalComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  // Tab management
+  setActiveTab(tab: 'approvals' | 'invitations') {
+    this.activeTab.set(tab);
+  }
+
+  // Modal management
+  openInviteModal() {
+    this.isInviteModalOpen.set(true);
+  }
+
+  onModalClosed() {
+    this.isInviteModalOpen.set(false);
+  }
+
+  onInvitationSent() {
+    this.isInviteModalOpen.set(false);
+    // If we're on the invitations tab, we might want to refresh the list
+    // The OwnerInvitationsListComponent will handle its own refresh
   }
 }

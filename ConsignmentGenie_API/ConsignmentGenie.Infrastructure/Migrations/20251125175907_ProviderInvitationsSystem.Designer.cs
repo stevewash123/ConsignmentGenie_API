@@ -3,6 +3,7 @@ using System;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ConsignmentGenie.Infrastructure.Migrations
 {
     [DbContext(typeof(ConsignmentGenieContext))]
-    partial class ConsignmentGenieContextModelSnapshot : ModelSnapshot
+    [Migration("20251125175907_ProviderInvitationsSystem")]
+    partial class ProviderInvitationsSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1229,7 +1232,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             AutoApproveProviders = true,
                             CloudinaryConnected = false,
-                            CreatedAt = new DateTime(2025, 11, 25, 19, 56, 48, 723, DateTimeKind.Utc).AddTicks(3693),
+                            CreatedAt = new DateTime(2025, 11, 25, 17, 59, 5, 795, DateTimeKind.Utc).AddTicks(7203),
                             Currency = "USD",
                             DefaultSplitPercentage = 60.00m,
                             IsFounderPricing = false,
@@ -1253,61 +1256,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             SubscriptionTier = 2,
                             TaxRate = 0.0000m,
                             TrialExtensionsUsed = 0,
-                            UpdatedAt = new DateTime(2025, 11, 25, 19, 56, 48, 723, DateTimeKind.Utc).AddTicks(3695),
+                            UpdatedAt = new DateTime(2025, 11, 25, 17, 59, 5, 795, DateTimeKind.Utc).AddTicks(7204),
                             VerticalType = 1
                         });
-                });
-
-            modelBuilder.Entity("ConsignmentGenie.Core.Entities.OwnerInvitation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(254)
-                        .HasColumnType("character varying(254)");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("InvitedById")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email");
-
-                    b.HasIndex("ExpiresAt");
-
-                    b.HasIndex("InvitedById");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("Token")
-                        .IsUnique();
-
-                    b.ToTable("OwnerInvitations");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.PaymentGatewayConnection", b =>
@@ -1596,7 +1547,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         {
                             Id = new Guid("66666666-6666-6666-6666-666666666666"),
                             CommissionRate = 0.6000m,
-                            CreatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(5038),
+                            CreatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6904),
                             Email = "provider1@microsaasbuilders.com",
                             FirstName = "Demo",
                             LastName = "Artist",
@@ -1605,7 +1556,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             PortalAccess = false,
                             ProviderNumber = "PRV-00001",
                             Status = 1,
-                            UpdatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(5039),
+                            UpdatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6905),
                             UserId = new Guid("44444444-4444-4444-4444-444444444444")
                         });
                 });
@@ -1630,9 +1581,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<Guid>("InvitedById")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1650,9 +1598,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasColumnType("character varying(128)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("UsedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -2257,17 +2202,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("FirstName")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<string>("FullName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<string>("LastName")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
@@ -2304,45 +2241,45 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(4449),
+                            CreatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6622),
                             Email = "admin@microsaasbuilders.com",
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$ziLGJ44gFXAO3yDwZ9FlsOtBrmoWyR27Fn6MBV48jaTBqXYv6oB5G",
+                            PasswordHash = "$2a$11$FeMe6QAnAKVjvVksiRB.AukW3Ui2FZxGvT2BhtcBvP5iSeNfm3ULy",
                             Role = 1,
-                            UpdatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(4494)
+                            UpdatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6654)
                         },
                         new
                         {
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(4531),
+                            CreatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6684),
                             Email = "owner1@microsaasbuilders.com",
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$ziLGJ44gFXAO3yDwZ9FlsOtBrmoWyR27Fn6MBV48jaTBqXYv6oB5G",
+                            PasswordHash = "$2a$11$FeMe6QAnAKVjvVksiRB.AukW3Ui2FZxGvT2BhtcBvP5iSeNfm3ULy",
                             Role = 1,
-                            UpdatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(4532)
+                            UpdatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6684)
                         },
                         new
                         {
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(4707),
+                            CreatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6702),
                             Email = "provider1@microsaasbuilders.com",
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$ziLGJ44gFXAO3yDwZ9FlsOtBrmoWyR27Fn6MBV48jaTBqXYv6oB5G",
+                            PasswordHash = "$2a$11$FeMe6QAnAKVjvVksiRB.AukW3Ui2FZxGvT2BhtcBvP5iSeNfm3ULy",
                             Role = 2,
-                            UpdatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(4712)
+                            UpdatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6703)
                         },
                         new
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(4757),
+                            CreatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6719),
                             Email = "customer1@microsaasbuilders.com",
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$ziLGJ44gFXAO3yDwZ9FlsOtBrmoWyR27Fn6MBV48jaTBqXYv6oB5G",
+                            PasswordHash = "$2a$11$FeMe6QAnAKVjvVksiRB.AukW3Ui2FZxGvT2BhtcBvP5iSeNfm3ULy",
                             Role = 3,
-                            UpdatedAt = new DateTime(2025, 11, 25, 19, 56, 49, 323, DateTimeKind.Utc).AddTicks(4758)
+                            UpdatedAt = new DateTime(2025, 11, 25, 17, 59, 6, 369, DateTimeKind.Utc).AddTicks(6720)
                         });
                 });
 
@@ -2752,17 +2689,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Provider");
-                });
-
-            modelBuilder.Entity("ConsignmentGenie.Core.Entities.OwnerInvitation", b =>
-                {
-                    b.HasOne("ConsignmentGenie.Core.Entities.User", "InvitedBy")
-                        .WithMany()
-                        .HasForeignKey("InvitedById")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
-
-                    b.Navigation("InvitedBy");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.PaymentGatewayConnection", b =>
