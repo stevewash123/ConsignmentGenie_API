@@ -70,5 +70,14 @@ PGPASSWORD=npg_ZPId7K5GAlSf psql -h ep-little-king-ahhzzyuy-pooler.c-3.us-east-1
 ## Related Projects
 [Parent Directory](../CLAUDE.md)
 
+## ⚠️ CRITICAL SECURITY RULES
+
+**NEVER COMMIT SECRETS TO GIT:**
+- API keys, tokens, passwords, connection strings
+- Any sensitive configuration values
+- Check .gitignore before ANY commit
+- Use environment variables or config files (excluded from git)
+- **This has happened TWICE - absolutely unacceptable**
+
 ## Universal Configuration
 📋 **See [Universal Settings](../docs/UNIVERSAL-SETTINGS.md)** for authentication, development environment, and standards that apply to all projects.
