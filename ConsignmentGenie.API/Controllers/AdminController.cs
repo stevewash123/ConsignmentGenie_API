@@ -342,7 +342,7 @@ public class AdminController : ControllerBase
 
     // Owner Approval Endpoints
     [HttpGet("pending-owners")]
-    [Authorize(Roles = "Owner")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<List<PendingOwnerDto>>>> GetPendingOwners()
     {
         try
@@ -357,7 +357,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("{userId}/approve")]
-    [Authorize(Roles = "Owner")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<ApprovalResponseDto>>> ApproveOwner(Guid userId)
     {
         try
@@ -382,7 +382,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("{userId}/reject")]
-    [Authorize(Roles = "Owner")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<ApprovalResponseDto>>> RejectOwner(Guid userId, [FromBody] RejectUserRequest request)
     {
         try
