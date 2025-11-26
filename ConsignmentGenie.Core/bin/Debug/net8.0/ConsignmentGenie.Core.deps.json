@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "ConsignmentGenie.Core/1.0.0": {
+        "runtime": {
+          "ConsignmentGenie.Core.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "ConsignmentGenie.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

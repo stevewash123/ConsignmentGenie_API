@@ -14,20 +14,44 @@ dist/
 .angular/
 npm-debug.log*
 
-# OS
-.DS_Store
-Thumbs.db
+# Environment & Config files with secrets
+.env
+.env.*
+.env.local
+*.key
+*.pem
+config/database.yml
+config/secrets.yml
+config/master.key
+
+# Development config with secrets
+appsettings.Development.json
+
+# Database
+*.sqlite3
+*.db
+
+# Dependencies
+vendor/
+bundle/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Environment
-.env
-.env.local
+# OS
+.DS_Store
+Thumbs.db
 
-# Development config with secrets
-appsettings.Development.json
+# Logs
+*.log
+log/
+tmp/
+
+# Build outputs
+build/
 
 # Documents and non-code files
 Documents/

@@ -1,0 +1,12 @@
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/bin/Release/net8.0/ConsignmentGenie.Core.deps.json
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/bin/Release/net8.0/ConsignmentGenie.Core.dll
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/bin/Release/net8.0/ConsignmentGenie.Core.pdb
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/ConsignmentGenie.Core.GeneratedMSBuildEditorConfig.editorconfig
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/ConsignmentGenie.Core.AssemblyInfoInputs.cache
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/ConsignmentGenie.Core.AssemblyInfo.cs
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/ConsignmentGenie.Core.csproj.CoreCompileInputs.cache
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/ConsignmentGenie.Core.sourcelink.json
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/ConsignmentGenie.Core.dll
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/refint/ConsignmentGenie.Core.dll
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/ConsignmentGenie.Core.pdb
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/Release/net8.0/ref/ConsignmentGenie.Core.dll

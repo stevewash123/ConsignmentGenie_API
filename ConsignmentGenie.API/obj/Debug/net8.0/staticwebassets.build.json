@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "hiKkZFw2cIP085xZzqO5YlXClLURlpFqfx4TlmhjKR4=",
+  "Source": "ConsignmentGenie.API",
+  "BasePath": "_content/ConsignmentGenie.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
