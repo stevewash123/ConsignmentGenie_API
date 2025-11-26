@@ -1,0 +1,54 @@
+# .NET build artifacts
+**/bin/
+**/obj/
+**/out/
+**/TestResults/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Git
+.git/
+.gitignore
+
+# Documentation and local files
+*.md
+Documents/
+Scripts/
+
+# Frontend application (separate deployment)
+ConsignmentGenie_UI/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp

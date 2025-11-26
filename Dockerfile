@@ -29,5 +29,8 @@ COPY --from=build /app/publish .
 # Expose port 8080 (Render's default)
 EXPOSE 8080
 
+# Set environment variable for Render
+ENV ASPNETCORE_URLS=http://+:8080
+
 # Set the entry point
 ENTRYPOINT ["dotnet", "ConsignmentGenie.API.dll"]

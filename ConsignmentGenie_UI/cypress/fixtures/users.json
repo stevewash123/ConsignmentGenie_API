@@ -1,0 +1,48 @@
+{
+  "testAccounts": {
+    "admin": {
+      "email": "admin@demoshop.com",
+      "password": "password123",
+      "expectedRole": "Admin",
+      "expectedDashboard": "/admin/dashboard"
+    },
+    "shopOwner": {
+      "email": "owner@demoshop.com",
+      "password": "password123",
+      "expectedRole": "Owner",
+      "expectedDashboard": "/owner/dashboard"
+    },
+    "provider": {
+      "email": "provider@demoshop.com",
+      "password": "password123",
+      "expectedRole": "Provider",
+      "expectedDashboard": "/customer/dashboard"
+    },
+    "customer": {
+      "email": "customer@demoshop.com",
+      "password": "password123",
+      "expectedRole": "Customer",
+      "expectedDashboard": "/customer/dashboard"
+    }
+  },
+  "invalidCredentials": {
+    "invalidEmail": {
+      "email": "invalid@example.com",
+      "password": "password123",
+      "expectedError": "Invalid email or password"
+    },
+    "invalidPassword": {
+      "email": "owner@demoshop.com",
+      "password": "wrongpassword",
+      "expectedError": "Invalid email or password"
+    },
+    "emptyEmail": {
+      "email": "",
+      "password": "password123"
+    },
+    "emptyPassword": {
+      "email": "owner@demoshop.com",
+      "password": ""
+    }
+  }
+}

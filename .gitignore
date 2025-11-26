@@ -1,18 +1,37 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+.vs/
+**/bin/**
+**/obj/**
+
+# Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
 # Environment & Config files with secrets
 .env
 .env.*
+.env.local
 *.key
 *.pem
 config/database.yml
 config/secrets.yml
 config/master.key
 
+# Development config with secrets
+appsettings.Development.json
+
 # Database
 *.sqlite3
 *.db
 
 # Dependencies
-node_modules/
 vendor/
 bundle/
 
@@ -32,5 +51,11 @@ log/
 tmp/
 
 # Build outputs
-dist/
 build/
+
+# Documents and non-code files
+Documents/
+*.txt
+*.md
+!README.md
+!CLAUDE.md

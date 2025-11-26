@@ -1,0 +1,278 @@
+{
+  "categories": [
+    {
+      "id": "cat-001",
+      "name": "Clothing",
+      "displayOrder": 1,
+      "isActive": true,
+      "createdAt": "2024-11-15T10:00:00Z"
+    },
+    {
+      "id": "cat-002",
+      "name": "Jewelry",
+      "displayOrder": 2,
+      "isActive": true,
+      "createdAt": "2024-11-15T10:01:00Z"
+    },
+    {
+      "id": "cat-003",
+      "name": "Electronics",
+      "displayOrder": 3,
+      "isActive": true,
+      "createdAt": "2024-11-15T10:02:00Z"
+    },
+    {
+      "id": "cat-004",
+      "name": "Home & Decor",
+      "displayOrder": 4,
+      "isActive": true,
+      "createdAt": "2024-11-15T10:03:00Z"
+    },
+    {
+      "id": "cat-005",
+      "name": "Books",
+      "displayOrder": 5,
+      "isActive": true,
+      "createdAt": "2024-11-15T10:04:00Z"
+    }
+  ],
+  "items": [
+    {
+      "id": "item-001",
+      "sku": "VLJ2024001",
+      "title": "Vintage Leather Jacket",
+      "description": "Classic brown leather jacket from the 1980s, excellent condition",
+      "category": "Clothing",
+      "condition": "Good",
+      "price": 125.00,
+      "originalPrice": 350.00,
+      "status": "Available",
+      "primaryImageUrl": "https://example.com/images/jacket.jpg",
+      "materials": "Genuine leather, cotton lining",
+      "measurements": "Chest: 42in, Length: 26in",
+      "brand": "Wilsons Leather",
+      "size": "Large",
+      "color": "Brown",
+      "season": "Fall/Winter",
+      "year": 1985,
+      "providerId": "prov-001",
+      "providerName": "Sarah Thompson",
+      "commissionRate": 50,
+      "location": "Rack A-3",
+      "notes": "Minor scuff on left sleeve",
+      "internalNotes": "Popular vintage item, price competitively",
+      "createdAt": "2024-11-15T14:30:00Z",
+      "updatedAt": "2024-11-15T14:30:00Z",
+      "images": [
+        {
+          "id": "img-001",
+          "imageUrl": "https://example.com/images/jacket-front.jpg",
+          "displayOrder": 1,
+          "isPrimary": true,
+          "createdAt": "2024-11-15T14:30:00Z"
+        },
+        {
+          "id": "img-002",
+          "imageUrl": "https://example.com/images/jacket-back.jpg",
+          "displayOrder": 2,
+          "isPrimary": false,
+          "createdAt": "2024-11-15T14:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "item-002",
+      "sku": "AJB2024002",
+      "title": "Antique Jewelry Box",
+      "description": "Handcrafted wooden jewelry box with intricate carvings",
+      "category": "Jewelry",
+      "condition": "LikeNew",
+      "price": 89.99,
+      "originalPrice": 200.00,
+      "status": "Available",
+      "primaryImageUrl": "https://example.com/images/jewelry-box.jpg",
+      "materials": "Mahogany wood, velvet lining",
+      "measurements": "8x6x4 inches",
+      "brand": "Artisan Made",
+      "color": "Dark Brown",
+      "year": 1920,
+      "providerId": "prov-002",
+      "providerName": "Mike Chen",
+      "commissionRate": 50,
+      "location": "Display Case 2",
+      "notes": "Beautiful antique piece",
+      "internalNotes": "High-quality craftsmanship, price to sell",
+      "createdAt": "2024-11-16T10:15:00Z",
+      "updatedAt": "2024-11-16T10:15:00Z",
+      "images": [
+        {
+          "id": "img-003",
+          "imageUrl": "https://example.com/images/jewelry-box-closed.jpg",
+          "displayOrder": 1,
+          "isPrimary": true,
+          "createdAt": "2024-11-16T10:15:00Z"
+        }
+      ]
+    },
+    {
+      "id": "item-003",
+      "sku": "DHB2024003",
+      "title": "Designer Handbag",
+      "description": "Authentic Louis Vuitton handbag in excellent condition",
+      "category": "Clothing",
+      "condition": "New",
+      "price": 275.00,
+      "originalPrice": 1200.00,
+      "status": "Sold",
+      "primaryImageUrl": "https://example.com/images/handbag.jpg",
+      "materials": "Canvas, leather trim",
+      "measurements": "12x8x5 inches",
+      "brand": "Louis Vuitton",
+      "color": "Monogram Brown",
+      "season": "All Season",
+      "providerId": "prov-003",
+      "providerName": "Emma Rodriguez",
+      "commissionRate": 50,
+      "location": "Sold",
+      "notes": "Authentic with dust bag",
+      "internalNotes": "Quick seller, authenticate on arrival",
+      "createdAt": "2024-11-17T16:45:00Z",
+      "updatedAt": "2024-11-20T14:30:00Z",
+      "transactionId": "txn-001",
+      "salePrice": 275.00,
+      "images": []
+    },
+    {
+      "id": "item-004",
+      "sku": "VWT2024004",
+      "title": "Vintage Watch",
+      "description": "Classic Omega Seamaster watch, fully serviced",
+      "category": "Jewelry",
+      "condition": "Good",
+      "price": 450.00,
+      "originalPrice": 800.00,
+      "status": "Available",
+      "primaryImageUrl": "https://example.com/images/watch.jpg",
+      "materials": "Stainless steel",
+      "brand": "Omega",
+      "color": "Silver",
+      "year": 1975,
+      "providerId": "prov-001",
+      "providerName": "Sarah Thompson",
+      "commissionRate": 50,
+      "location": "Jewelry Case A",
+      "notes": "Recently serviced, includes original box",
+      "internalNotes": "High-value item, secure storage",
+      "createdAt": "2024-11-18T11:20:00Z",
+      "updatedAt": "2024-11-18T11:20:00Z",
+      "images": []
+    },
+    {
+      "id": "item-005",
+      "sku": "CVR2024005",
+      "title": "Collector's Vinyl Record",
+      "description": "First edition Pink Floyd - Dark Side of the Moon",
+      "category": "Electronics",
+      "condition": "Fair",
+      "price": 35.00,
+      "originalPrice": 80.00,
+      "status": "Available",
+      "materials": "Vinyl",
+      "brand": "Capitol Records",
+      "year": 1973,
+      "providerId": "prov-002",
+      "providerName": "Mike Chen",
+      "commissionRate": 50,
+      "location": "Music Section",
+      "notes": "Some surface scratches but plays well",
+      "internalNotes": "Popular collector item despite condition",
+      "createdAt": "2024-11-19T09:30:00Z",
+      "updatedAt": "2024-11-19T09:30:00Z",
+      "images": []
+    }
+  ],
+  "pagedResult": {
+    "items": [],
+    "totalCount": 5,
+    "page": 1,
+    "pageSize": 10,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPreviousPage": false,
+    "organizationId": "demo-org"
+  },
+  "newItem": {
+    "providerId": "prov-001",
+    "title": "Art Deco Lamp",
+    "description": "Beautiful 1920s Art Deco table lamp with original shade",
+    "category": "Home & Decor",
+    "condition": "Good",
+    "price": 180.00,
+    "originalPrice": 400.00,
+    "materials": "Brass, glass",
+    "measurements": "Height: 24in, Base: 8in diameter",
+    "brand": "Unknown",
+    "color": "Brass",
+    "year": 1925,
+    "location": "Table Display 3",
+    "notes": "Original electrical components replaced for safety",
+    "internalNotes": "Period piece, price to move"
+  },
+  "updatedItem": {
+    "id": "item-001",
+    "providerId": "prov-001",
+    "title": "Vintage Leather Jacket - Updated",
+    "description": "Classic brown leather jacket from the 1980s, excellent condition - UPDATED",
+    "category": "Clothing",
+    "condition": "LikeNew",
+    "price": 150.00,
+    "originalPrice": 350.00,
+    "materials": "Genuine leather, cotton lining",
+    "measurements": "Chest: 42in, Length: 26in",
+    "brand": "Wilsons Leather",
+    "size": "Large",
+    "color": "Brown",
+    "season": "Fall/Winter",
+    "year": 1985,
+    "location": "Rack A-1",
+    "notes": "Minor scuff on left sleeve - cleaned",
+    "internalNotes": "Popular vintage item, raised price due to condition improvement"
+  },
+  "categoryUsageStats": [
+    {
+      "categoryId": "cat-001",
+      "categoryName": "Clothing",
+      "itemCount": 2,
+      "availableItemCount": 1,
+      "soldItemCount": 1
+    },
+    {
+      "categoryId": "cat-002",
+      "categoryName": "Jewelry",
+      "itemCount": 2,
+      "availableItemCount": 2,
+      "soldItemCount": 0
+    },
+    {
+      "categoryId": "cat-003",
+      "categoryName": "Electronics",
+      "itemCount": 1,
+      "availableItemCount": 1,
+      "soldItemCount": 0
+    },
+    {
+      "categoryId": "cat-004",
+      "categoryName": "Home & Decor",
+      "itemCount": 0,
+      "availableItemCount": 0,
+      "soldItemCount": 0
+    },
+    {
+      "categoryId": "cat-005",
+      "categoryName": "Books",
+      "itemCount": 0,
+      "availableItemCount": 0,
+      "soldItemCount": 0
+    }
+  ]
+}

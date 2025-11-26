@@ -1,0 +1,36 @@
+# Environment & Config files with secrets
+.env
+.env.*
+*.key
+*.pem
+config/database.yml
+config/secrets.yml
+config/master.key
+
+# Database
+*.sqlite3
+*.db
+
+# Dependencies
+node_modules/
+vendor/
+bundle/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+log/
+tmp/
+
+# Build outputs
+dist/
+build/
