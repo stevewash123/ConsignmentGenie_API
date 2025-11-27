@@ -1,4 +1,5 @@
 using ConsignmentGenie.Application.DTOs;
+using ConsignmentGenie.Application.DTOs.Auth;
 using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Core.DTOs;
 using ConsignmentGenie.Core.Entities;
@@ -19,17 +20,20 @@ public class OwnerInvitationService : IOwnerInvitationService
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<OwnerInvitationService> _logger;
+    private readonly IAuthService _authService;
 
     public OwnerInvitationService(
         ConsignmentGenieContext context,
         IEmailService emailService,
         IConfiguration configuration,
-        ILogger<OwnerInvitationService> logger)
+        ILogger<OwnerInvitationService> logger,
+        IAuthService authService)
     {
         _context = context;
         _emailService = emailService;
         _configuration = configuration;
         _logger = logger;
+        _authService = authService;
     }
 
     public async Task<ServiceResult<OwnerInvitationDetailDto>> CreateInvitationAsync(CreateOwnerInvitationRequest request, Guid invitedById)
@@ -323,16 +327,27 @@ public class OwnerInvitationService : IOwnerInvitationService
                 // Send welcome email
                 await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name);
 
+                // Generate JWT token for the new user to auto-login
+                var loginRequest = new LoginRequest
+                {
+                    Email = user.Email,
+                    Password = request.Password
+                };
+
+                var loginResponse = await _authService.LoginAsync(loginRequest);
+                var jwtToken = loginResponse?.Token;
+
                 var redirectUrl = $"{_configuration["App:BaseUrl"] ?? "http://localhost:4200"}/owner/dashboard";
 
-                _logger.LogInformation("Registration completed for user: UserId={UserId}, OrganizationId={OrganizationId}, RedirectUrl={RedirectUrl}",
-                    user.Id, organization.Id, redirectUrl);
+                _logger.LogError("REGISTRATION DEBUG: Generated JWT token for new user: UserId={UserId}, HasToken={HasToken}",
+                    user.Id, jwtToken != null);
 
                 var response = new OwnerRegistrationResponse
                 {
                     Success = true,
                     UserId = user.Id,
                     OrganizationId = organization.Id,
+                    Token = jwtToken,
                     RedirectUrl = redirectUrl
                 };
 
