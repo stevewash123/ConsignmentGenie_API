@@ -64,20 +64,20 @@ public class RegistrationService : IRegistrationService
                 };
             }
 
-            // Create organization
+            // Create organization (auto-approved for low friction signup)
             var organization = new Organization
             {
                 Name = request.ShopName,
                 ShopName = request.ShopName,
                 StoreCode = _storeCodeService.GenerateStoreCode(),
                 StoreCodeEnabled = true,
-                Status = "pending"
+                Status = "active" // Auto-approve for immediate setup
             };
 
             _context.Organizations.Add(organization);
             await _context.SaveChangesAsync();
 
-            // Create user
+            // Create user (auto-approved for low friction signup)
             var user = new User
             {
                 Email = request.Email,
@@ -85,34 +85,38 @@ public class RegistrationService : IRegistrationService
                 FullName = request.FullName,
                 Phone = request.Phone,
                 Role = UserRole.Owner,
-                ApprovalStatus = ApprovalStatus.Pending,
+                ApprovalStatus = ApprovalStatus.Approved, // Auto-approve for immediate access
+                ApprovedAt = DateTime.UtcNow,
                 OrganizationId = organization.Id
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // Send confirmation email to owner
+            // Send welcome email to owner
             var ownerEmailBody = $@"
-                <h2>Welcome to ConsignmentGenie</h2>
+                <h2>Welcome to ConsignmentGenie!</h2>
                 <p>Hi {request.FullName},</p>
-                <p>Thanks for registering {request.ShopName} with ConsignmentGenie!</p>
-                <p>Your account is being reviewed by our team. You'll receive an email when your shop is ready to go.</p>
-                <p>This usually takes 1-2 business days.</p>
+                <p>Your shop ""{request.ShopName}"" is now ready to go!</p>
+                <p>You can log in and start:</p>
+                <ul>
+                    <li>Adding providers (consigners)</li>
+                    <li>Setting up your shop details and commission rates</li>
+                    <li>Managing inventory and transactions</li>
+                </ul>
+                <p>Your store code for providers: <strong>{organization.StoreCode}</strong></p>
                 <p>Questions? Reply to this email.</p>
                 <p>- The ConsignmentGenie Team</p>";
 
             await _emailService.SendSimpleEmailAsync(
                 request.Email,
-                "Welcome to ConsignmentGenie - Account Pending",
+                "Welcome to ConsignmentGenie - Your Shop is Ready!",
                 ownerEmailBody);
-
-            // TODO: Send notification to admin about new owner registration
 
             return new RegistrationResultDto
             {
                 Success = true,
-                Message = "Account created successfully. You'll receive an email when approved."
+                Message = "Account created successfully! You can now log in and start setting up your shop."
             };
         }
         catch (Exception ex)

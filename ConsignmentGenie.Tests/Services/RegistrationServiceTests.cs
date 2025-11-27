@@ -207,18 +207,20 @@ namespace ConsignmentGenie.Tests.Services
             Assert.NotNull(createdUser);
             Assert.Equal("New Owner", createdUser.FullName);
             Assert.Equal(UserRole.Owner, createdUser.Role);
-            Assert.Equal(ApprovalStatus.Pending, createdUser.ApprovalStatus);
+            Assert.Equal(ApprovalStatus.Approved, createdUser.ApprovalStatus);
+            Assert.NotNull(createdUser.ApprovedAt);
 
             // Verify organization was created
             var createdOrg = await _context.Organizations.FirstOrDefaultAsync(o => o.Id == createdUser.OrganizationId);
             Assert.NotNull(createdOrg);
             Assert.Equal("New Shop", createdOrg.ShopName);
             Assert.Equal("4321", createdOrg.StoreCode);
+            Assert.Equal("active", createdOrg.Status);
 
             // Verify email was sent
             _mockEmailService.Verify(e => e.SendSimpleEmailAsync(
                 "newowner@test.com",
-                "Welcome to ConsignmentGenie - Account Pending",
+                "Welcome to ConsignmentGenie - Your Shop is Ready!",
                 It.IsAny<string>(),
                 true), Times.Once);
         }

@@ -1,4 +1,6 @@
-# ConsignmentGenie
+# ConsignmentGenie API
+
+**🚨 CRITICAL: Read [Master CLAUDE.md](../../CLAUDE.md) FIRST for ConsignmentGenie context, workspace structure, and development guidelines.**
 
 ## Project Overview
 Multi-tenant consignment management platform with Phase 1 focus on core shop owner functionality: provider tracking, inventory management, split payment calculation, and accounting export.
