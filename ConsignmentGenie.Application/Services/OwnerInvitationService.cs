@@ -264,8 +264,8 @@ public class OwnerInvitationService : IOwnerInvitationService
                 return ServiceResult<OwnerRegistrationResponse>.FailureResult("This subdomain is already taken.");
             }
 
-            _logger.LogInformation("Starting registration: Email={Email}, ShopName={ShopName}, Subdomain={Subdomain}",
-                request.Email, request.ShopName, request.Subdomain);
+            _logger.LogWarning("REGISTRATION DEBUG: Starting registration: Email={Email}, ShopName={ShopName}, Subdomain={Subdomain}",
+                request.Email, request.ShopName, request.Subdomain ?? "NULL");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -283,18 +283,18 @@ public class OwnerInvitationService : IOwnerInvitationService
                     SetupStep = 1
                 };
 
-                _logger.LogInformation("About to create organization: Name={Name}, Subdomain={Subdomain}, Slug={Slug}",
-                    organization.Name, organization.Subdomain, organization.Slug);
+                _logger.LogWarning("REGISTRATION DEBUG: About to create organization: Name={Name}, Subdomain={Subdomain}, Slug={Slug}",
+                    organization.Name, organization.Subdomain ?? "NULL", organization.Slug ?? "NULL");
 
                 _context.Organizations.Add(organization);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Organization saved with ID: {OrganizationId}. Reloading to verify...", organization.Id);
+                _logger.LogWarning("REGISTRATION DEBUG: Organization saved with ID: {OrganizationId}. Reloading to verify...", organization.Id);
 
                 // Reload from database to verify it was saved correctly
                 var savedOrganization = await _context.Organizations.FindAsync(organization.Id);
-                _logger.LogInformation("Reloaded organization: Id={Id}, Name={Name}, Subdomain={Subdomain}, Slug={Slug}",
-                    savedOrganization?.Id, savedOrganization?.Name, savedOrganization?.Subdomain, savedOrganization?.Slug);
+                _logger.LogError("REGISTRATION DEBUG: Reloaded organization: Id={Id}, Name={Name}, Subdomain={Subdomain}, Slug={Slug}",
+                    savedOrganization?.Id, savedOrganization?.Name, savedOrganization?.Subdomain ?? "NULL", savedOrganization?.Slug ?? "NULL");
 
                 // Create user
                 var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
