@@ -40,7 +40,8 @@ namespace ConsignmentGenie.Tests.Controllers
             var storeCodeServiceMock = new Mock<IStoreCodeService>();
 
             // Create real RegistrationService with mocked dependencies
-            _registrationService = new RegistrationService(_context, emailServiceMock.Object, storeCodeServiceMock.Object);
+            var authServiceMock = new Mock<IAuthService>();
+            _registrationService = new RegistrationService(_context, emailServiceMock.Object, storeCodeServiceMock.Object, authServiceMock.Object);
 
             var ownerInvitationServiceMock = new Mock<IOwnerInvitationService>();
             _controller = new AdminController(_context, _loggerMock.Object, _registrationService, ownerInvitationServiceMock.Object);

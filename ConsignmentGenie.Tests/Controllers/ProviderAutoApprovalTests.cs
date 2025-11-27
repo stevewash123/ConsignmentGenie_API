@@ -3,6 +3,7 @@ using ConsignmentGenie.API.Controllers;
 using ConsignmentGenie.Core.DTOs.Registration;
 using ConsignmentGenie.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -16,7 +17,8 @@ namespace ConsignmentGenie.Tests.Controllers
         public ProviderAutoApprovalTests()
         {
             _mockRegistrationService = new Mock<IRegistrationService>();
-            _controller = new RegistrationController(_mockRegistrationService.Object);
+            var mockLogger = new Mock<ILogger<RegistrationController>>();
+            _controller = new RegistrationController(_mockRegistrationService.Object, mockLogger.Object);
         }
 
         [Fact]

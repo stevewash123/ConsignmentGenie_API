@@ -17,6 +17,9 @@ public class RegisterOwnerRequest
     [Required]
     public string ShopName { get; set; } = string.Empty;
 
+    [Required]
+    public string Subdomain { get; set; } = string.Empty;
+
     // Optional for initial signup
     public string? Phone { get; set; }
 

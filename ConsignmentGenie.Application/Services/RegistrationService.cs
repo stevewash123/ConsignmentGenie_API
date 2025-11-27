@@ -14,15 +14,18 @@ public class RegistrationService : IRegistrationService
     private readonly ConsignmentGenieContext _context;
     private readonly IEmailService _emailService;
     private readonly IStoreCodeService _storeCodeService;
+    private readonly IAuthService _authService;
 
     public RegistrationService(
         ConsignmentGenieContext context,
         IEmailService emailService,
-        IStoreCodeService storeCodeService)
+        IStoreCodeService storeCodeService,
+        IAuthService authService)
     {
         _context = context;
         _emailService = emailService;
         _storeCodeService = storeCodeService;
+        _authService = authService;
     }
 
     public async Task<StoreCodeValidationDto> ValidateStoreCodeAsync(string code)
@@ -69,6 +72,8 @@ public class RegistrationService : IRegistrationService
             {
                 Name = request.ShopName,
                 ShopName = request.ShopName,
+                Subdomain = request.Subdomain,
+                Slug = request.Subdomain, // Use subdomain as slug for now
                 StoreCode = _storeCodeService.GenerateStoreCode(),
                 StoreCodeEnabled = true,
                 Status = "active" // Auto-approve for immediate setup
@@ -113,10 +118,21 @@ public class RegistrationService : IRegistrationService
                 "Welcome to ConsignmentGenie - Your Shop is Ready!",
                 ownerEmailBody);
 
+            // Generate JWT token for immediate authentication
+            var token = _authService.GenerateJwtToken(user.Id, user.Email, user.Role.ToString(), user.OrganizationId);
+            var expiresAt = DateTime.UtcNow.AddHours(24);
+
             return new RegistrationResultDto
             {
                 Success = true,
-                Message = "Account created successfully! You can now log in and start setting up your shop."
+                Message = "Account created successfully! You can now log in and start setting up your shop.",
+                Token = token,
+                UserId = user.Id,
+                Email = user.Email,
+                Role = user.Role,
+                OrganizationId = user.OrganizationId,
+                OrganizationName = organization.ShopName,
+                ExpiresAt = expiresAt
             };
         }
         catch (Exception ex)

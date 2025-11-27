@@ -21,6 +21,7 @@ namespace ConsignmentGenie.Tests.Services
         private readonly ConsignmentGenieContext _context;
         private readonly Mock<IEmailService> _mockEmailService;
         private readonly Mock<IStoreCodeService> _mockStoreCodeService;
+        private readonly Mock<IAuthService> _mockAuthService;
         private readonly RegistrationService _registrationService;
 
         private readonly Guid _organizationId = new("11111111-1111-1111-1111-111111111111");
@@ -31,11 +32,13 @@ namespace ConsignmentGenie.Tests.Services
             _context = TestDbContextFactory.CreateInMemoryContext();
             _mockEmailService = new Mock<IEmailService>();
             _mockStoreCodeService = new Mock<IStoreCodeService>();
+            _mockAuthService = new Mock<IAuthService>();
 
             _registrationService = new RegistrationService(
                 _context,
                 _mockEmailService.Object,
-                _mockStoreCodeService.Object);
+                _mockStoreCodeService.Object,
+                _mockAuthService.Object);
 
             SeedTestData().Wait();
         }
