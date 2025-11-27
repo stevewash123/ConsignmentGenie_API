@@ -11,10 +11,12 @@ namespace ConsignmentGenie.API.Controllers;
 public class RegistrationController : ControllerBase
 {
     private readonly IRegistrationService _registrationService;
+    private readonly ILogger<RegistrationController> _logger;
 
-    public RegistrationController(IRegistrationService registrationService)
+    public RegistrationController(IRegistrationService registrationService, ILogger<RegistrationController> logger)
     {
         _registrationService = registrationService;
+        _logger = logger;
     }
 
     [HttpGet("validate-store-code/{code}")]
@@ -29,7 +31,14 @@ public class RegistrationController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<RegistrationResultDto>> RegisterOwner([FromBody] RegisterOwnerRequest request)
     {
+        _logger.LogError("ACTUAL-FLOW-1: RegistrationController.RegisterOwner called with Email={Email}, ShopName={ShopName}",
+            request.Email, request.ShopName);
+
         var result = await _registrationService.RegisterOwnerAsync(request);
+
+        _logger.LogError("ACTUAL-FLOW-2: RegisterOwnerAsync completed. Success={Success}",
+            result.Success);
+
         return Ok(result);
     }
 
