@@ -283,6 +283,9 @@ public class OwnerInvitationService : IOwnerInvitationService
                 _context.Organizations.Add(organization);
                 await _context.SaveChangesAsync();
 
+                _logger.LogInformation("Created organization for registration: Id={OrganizationId}, Name={ShopName}, Subdomain={Subdomain}",
+                    organization.Id, request.ShopName, request.Subdomain);
+
                 // Create user
                 var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
                 var user = new User
@@ -298,6 +301,9 @@ public class OwnerInvitationService : IOwnerInvitationService
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
+                _logger.LogInformation("Created user for registration: Id={UserId}, Email={Email}, OrganizationId={OrganizationId}",
+                    user.Id, request.Email, organization.Id);
+
                 // Mark invitation as accepted
                 invitation.Status = InvitationStatus.Accepted;
                 await _context.SaveChangesAsync();
@@ -307,12 +313,17 @@ public class OwnerInvitationService : IOwnerInvitationService
                 // Send welcome email
                 await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name);
 
+                var redirectUrl = $"{_configuration["App:BaseUrl"] ?? "http://localhost:4200"}/owner/dashboard";
+
+                _logger.LogInformation("Registration completed for user: UserId={UserId}, OrganizationId={OrganizationId}, RedirectUrl={RedirectUrl}",
+                    user.Id, organization.Id, redirectUrl);
+
                 var response = new OwnerRegistrationResponse
                 {
                     Success = true,
                     UserId = user.Id,
                     OrganizationId = organization.Id,
-                    RedirectUrl = $"{_configuration["App:BaseUrl"] ?? "http://localhost:4200"}/owner/dashboard"
+                    RedirectUrl = redirectUrl
                 };
 
                 return ServiceResult<OwnerRegistrationResponse>.SuccessResult(response);
