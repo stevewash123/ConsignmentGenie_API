@@ -328,19 +328,29 @@ public class OwnerInvitationService : IOwnerInvitationService
                 await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name);
 
                 // Generate JWT token for the new user to auto-login
-                var loginRequest = new LoginRequest
+                string? jwtToken = null;
+                try
                 {
-                    Email = user.Email,
-                    Password = request.Password
-                };
+                    var loginRequest = new LoginRequest
+                    {
+                        Email = user.Email,
+                        Password = request.Password
+                    };
 
-                var loginResponse = await _authService.LoginAsync(loginRequest);
-                var jwtToken = loginResponse?.Token;
+                    _logger.LogError("REGISTRATION DEBUG: About to call AuthService.LoginAsync for user: {Email}", user.Email);
+                    var loginResponse = await _authService.LoginAsync(loginRequest);
+                    jwtToken = loginResponse?.Token;
+                    _logger.LogError("REGISTRATION DEBUG: LoginAsync completed. HasToken={HasToken}", jwtToken != null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "REGISTRATION DEBUG: Failed to generate JWT token for user {UserId}: {Error}", user.Id, ex.Message);
+                }
 
                 var redirectUrl = $"{_configuration["App:BaseUrl"] ?? "http://localhost:4200"}/owner/dashboard";
 
-                _logger.LogError("REGISTRATION DEBUG: Generated JWT token for new user: UserId={UserId}, HasToken={HasToken}",
-                    user.Id, jwtToken != null);
+                _logger.LogError("REGISTRATION DEBUG: Final result - UserId={UserId}, HasToken={HasToken}, Token={TokenPreview}",
+                    user.Id, jwtToken != null, jwtToken?.Substring(0, Math.Min(20, jwtToken.Length ?? 0)) + "...");
 
                 var response = new OwnerRegistrationResponse
                 {
