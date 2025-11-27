@@ -20,15 +20,12 @@ public class RegisterOwnerRequest
     [Required]
     public string ShopName { get; set; } = string.Empty;
 
-    [Required]
-    public string Address { get; set; } = string.Empty;
+    public string? Address { get; set; }
+    public string? ShopType { get; set; }
 
-    [Required]
-    public string ShopType { get; set; } = string.Empty;
-
-    // Step 3: Business Details
-    [Required, Range(10, 80)]
-    public decimal DefaultCommissionRate { get; set; } = 50;
+    // Step 3: Business Details (optional - can be set later in settings)
+    [Range(10, 80)]
+    public decimal? DefaultCommissionRate { get; set; }
 
     public string? TaxId { get; set; }
 
