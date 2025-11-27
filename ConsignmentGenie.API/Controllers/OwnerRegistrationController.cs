@@ -61,7 +61,13 @@ public class OwnerRegistrationController : ControllerBase
     {
         try
         {
+            _logger.LogError("FLOW-1: Controller received registration request for Email={Email}, ShopName={ShopName}, Subdomain={Subdomain}",
+                request.Email, request.ShopName, request.Subdomain);
+
             var result = await _ownerInvitationService.ProcessRegistrationAsync(request);
+
+            _logger.LogError("FLOW-2: Service returned Success={Success}, Message={Message}",
+                result.Success, result.Message);
 
             if (!result.Success)
             {

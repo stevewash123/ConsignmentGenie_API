@@ -234,9 +234,15 @@ public class OwnerInvitationService : IOwnerInvitationService
     {
         try
         {
+            _logger.LogError("FLOW-3: Service started ProcessRegistrationAsync for Email={Email}, Token={TokenPrefix}",
+                request.Email, request.Token?.Substring(0, Math.Min(8, request.Token.Length)));
+
             // Validate invitation token
             var invitation = await _context.OwnerInvitations
                 .FirstOrDefaultAsync(oi => oi.Token == request.Token);
+
+            _logger.LogError("FLOW-4: Token validation - Found invitation: {Found}",
+                invitation != null);
 
             if (invitation == null || invitation.Status != InvitationStatus.Pending)
             {
@@ -268,7 +274,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                 return ServiceResult<OwnerRegistrationResponse>.FailureResult("This subdomain is already taken.");
             }
 
-            _logger.LogWarning("REGISTRATION DEBUG: Starting registration: Email={Email}, ShopName={ShopName}, Subdomain={Subdomain}",
+            _logger.LogError("FLOW-5: Validation passed - Starting organization creation. Email={Email}, ShopName={ShopName}, Subdomain={Subdomain}",
                 request.Email, request.ShopName, request.Subdomain ?? "NULL");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -287,17 +293,17 @@ public class OwnerInvitationService : IOwnerInvitationService
                     SetupStep = 1
                 };
 
-                _logger.LogWarning("REGISTRATION DEBUG: About to create organization: Name={Name}, Subdomain={Subdomain}, Slug={Slug}",
+                _logger.LogError("FLOW-6: About to save organization: Name={Name}, Subdomain={Subdomain}, Slug={Slug}",
                     organization.Name, organization.Subdomain ?? "NULL", organization.Slug ?? "NULL");
 
                 _context.Organizations.Add(organization);
                 await _context.SaveChangesAsync();
 
-                _logger.LogWarning("REGISTRATION DEBUG: Organization saved with ID: {OrganizationId}. Reloading to verify...", organization.Id);
+                _logger.LogError("FLOW-7: Organization saved with ID: {OrganizationId}", organization.Id);
 
                 // Reload from database to verify it was saved correctly
                 var savedOrganization = await _context.Organizations.FindAsync(organization.Id);
-                _logger.LogError("REGISTRATION DEBUG: Reloaded organization: Id={Id}, Name={Name}, Subdomain={Subdomain}, Slug={Slug}",
+                _logger.LogError("FLOW-8: Reloaded organization: Id={Id}, Name={Name}, Subdomain={Subdomain}, Slug={Slug}",
                     savedOrganization?.Id, savedOrganization?.Name, savedOrganization?.Subdomain ?? "NULL", savedOrganization?.Slug ?? "NULL");
 
                 // Create user
@@ -312,17 +318,23 @@ public class OwnerInvitationService : IOwnerInvitationService
                     LastName = request.Name.Contains(' ') ? request.Name.Substring(request.Name.IndexOf(' ') + 1) : ""
                 };
 
+                _logger.LogError("FLOW-9: About to save user: Email={Email}, OrganizationId={OrganizationId}",
+                    user.Email, organization.Id);
+
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Created user for registration: Id={UserId}, Email={Email}, OrganizationId={OrganizationId}",
-                    user.Id, request.Email, organization.Id);
+                _logger.LogError("FLOW-10: User saved with ID: {UserId}", user.Id);
 
                 // Mark invitation as accepted
                 invitation.Status = InvitationStatus.Accepted;
                 await _context.SaveChangesAsync();
 
+                _logger.LogError("FLOW-11: Invitation marked as accepted, committing transaction");
+
                 await transaction.CommitAsync();
+
+                _logger.LogError("FLOW-12: Transaction committed successfully");
 
                 // Send welcome email
                 await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name);
@@ -337,20 +349,20 @@ public class OwnerInvitationService : IOwnerInvitationService
                         Password = request.Password
                     };
 
-                    _logger.LogError("REGISTRATION DEBUG: About to call AuthService.LoginAsync for user: {Email}", user.Email);
+                    _logger.LogError("FLOW-13: About to call AuthService.LoginAsync for user: {Email}", user.Email);
                     var loginResponse = await _authService.LoginAsync(loginRequest);
                     jwtToken = loginResponse?.Token;
-                    _logger.LogError("REGISTRATION DEBUG: LoginAsync completed. HasToken={HasToken}", jwtToken != null);
+                    _logger.LogError("FLOW-14: LoginAsync completed. HasToken={HasToken}", jwtToken != null);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "REGISTRATION DEBUG: Failed to generate JWT token for user {UserId}: {Error}", user.Id, ex.Message);
+                    _logger.LogError(ex, "FLOW-15: JWT token generation failed for user {UserId}: {Error}", user.Id, ex.Message);
                 }
 
                 var redirectUrl = $"{_configuration["App:BaseUrl"] ?? "http://localhost:4200"}/owner/dashboard";
 
-                _logger.LogError("REGISTRATION DEBUG: Final result - UserId={UserId}, HasToken={HasToken}, Token={TokenPreview}",
-                    user.Id, jwtToken != null, jwtToken?.Substring(0, Math.Min(20, jwtToken.Length ?? 0)) + "...");
+                _logger.LogError("FLOW-16: Creating response - UserId={UserId}, OrganizationId={OrganizationId}, HasToken={HasToken}, RedirectUrl={RedirectUrl}",
+                    user.Id, organization.Id, jwtToken != null, redirectUrl);
 
                 var response = new OwnerRegistrationResponse
                 {
@@ -360,6 +372,9 @@ public class OwnerInvitationService : IOwnerInvitationService
                     Token = jwtToken,
                     RedirectUrl = redirectUrl
                 };
+
+                _logger.LogError("FLOW-17: Returning success response with Token length: {TokenLength}",
+                    jwtToken?.Length ?? 0);
 
                 return ServiceResult<OwnerRegistrationResponse>.SuccessResult(response);
             }

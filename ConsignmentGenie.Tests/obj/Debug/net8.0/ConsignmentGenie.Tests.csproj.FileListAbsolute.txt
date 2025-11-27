@@ -433,6 +433,8 @@ C:/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/obj/Deb
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/obj/Debug/net8.0/ConsignmentGenie.Tests.genruntimeconfig.cache
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/obj/Debug/net8.0/ref/ConsignmentGenie.Tests.dll
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\CoverletSourceRootsMapping_ConsignmentGenie.Tests
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\appsettings.Development.json
+C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\appsettings.json
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\ConsignmentGenie.API.staticwebassets.endpoints.json
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\testhost.exe
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\testhost.dll
@@ -460,8 +462,6 @@ C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Deb
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\LatoFont\OFL.txt
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\ConsignmentGenie.API.deps.json
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\ConsignmentGenie.API.runtimeconfig.json
-C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\appsettings.Development.json
-C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\appsettings.json
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\ConsignmentGenie.API.exe
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\ConsignmentGenie.Tests.deps.json
 C:\Projects\ConsignmentGenie\ConsignmentGenie_API\ConsignmentGenie.Tests\bin\Debug\net8.0\ConsignmentGenie.Tests.runtimeconfig.json
