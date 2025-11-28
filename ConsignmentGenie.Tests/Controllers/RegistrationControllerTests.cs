@@ -143,8 +143,8 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.RegisterOwner(request);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualResult = Assert.IsType<RegistrationResultDto>(okResult.Value);
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            var actualResult = Assert.IsType<RegistrationResultDto>(badRequestResult.Value);
 
             Assert.False(actualResult.Success);
             Assert.Equal(expectedResult.Message, actualResult.Message);
@@ -218,8 +218,8 @@ namespace ConsignmentGenie.Tests.Controllers
             var result = await _controller.RegisterProvider(request);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualResult = Assert.IsType<RegistrationResultDto>(okResult.Value);
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            var actualResult = Assert.IsType<RegistrationResultDto>(badRequestResult.Value);
 
             Assert.False(actualResult.Success);
             Assert.Equal(expectedResult.Message, actualResult.Message);

@@ -469,6 +469,100 @@ namespace ConsignmentGenie.Tests.Services
                 _registrationService.ApproveUserAsync(_userId, _userId));
         }
 
+        [Fact]
+        public async Task RegisterOwnerAsync_WithValidRequest_GeneratesValidStoreCode()
+        {
+            // Arrange
+            var request = new RegisterOwnerRequest
+            {
+                FullName = "John Doe",
+                Email = "john@example.com",
+                Password = "SecurePassword123!",
+                ShopName = "John's Shop",
+                Subdomain = "johns-shop"
+            };
+
+            var testCode = "123AB4";
+
+            _mockStoreCodeService
+                .Setup(s => s.GenerateStoreCode())
+                .Returns(testCode);
+
+            _mockStoreCodeService
+                .Setup(s => s.IsValidStoreCode(testCode))
+                .Returns(true);
+
+            _mockAuthService
+                .Setup(s => s.GenerateJwtToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>()))
+                .Returns("test-token");
+
+            // Act
+            var result = await _registrationService.RegisterOwnerAsync(request);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.NotNull(result.Token);
+
+            var organization = await _context.Organizations
+                .Where(o => o.Subdomain == request.Subdomain)
+                .FirstAsync();
+
+            Assert.Equal(testCode, organization.StoreCode);
+            Assert.True(organization.StoreCodeEnabled);
+
+            // Verify store code service was called
+            _mockStoreCodeService.Verify(s => s.GenerateStoreCode(), Times.Once);
+        }
+
+        [Fact]
+        public async Task RegisterOwnerAsync_WithStoreCodeGeneration_CreatesOrganizationAndUser()
+        {
+            // Arrange
+            var request = new RegisterOwnerRequest
+            {
+                FullName = "Jane Smith",
+                Email = "jane@example.com",
+                Password = "SecurePassword123!",
+                ShopName = "Jane's Shop",
+                Subdomain = "janes-shop"
+            };
+
+            var testCode = "789XY4";
+
+            _mockStoreCodeService
+                .Setup(s => s.GenerateStoreCode())
+                .Returns(testCode);
+
+            _mockAuthService
+                .Setup(s => s.GenerateJwtToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>()))
+                .Returns("test-token");
+
+            // Act
+            var result = await _registrationService.RegisterOwnerAsync(request);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.NotNull(result.Token);
+
+            // Verify organization was created correctly
+            var organization = await _context.Organizations
+                .Where(o => o.Subdomain == request.Subdomain)
+                .FirstAsync();
+
+            Assert.Equal(testCode, organization.StoreCode);
+            Assert.True(organization.StoreCodeEnabled);
+            Assert.Equal(request.ShopName, organization.Name);
+
+            // Verify user was created and linked correctly
+            var user = await _context.Users
+                .Where(u => u.Email == request.Email)
+                .FirstAsync();
+
+            Assert.Equal(organization.Id, user.OrganizationId);
+            Assert.Equal(request.FullName, user.FullName);
+            Assert.Equal(UserRole.Owner, user.Role);
+        }
+
         public void Dispose()
         {
             _context.Dispose();
