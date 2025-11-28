@@ -1,6 +1,0 @@
-@ConsignmentGenie.API_HostAddress = http://localhost:5028
-
-GET {{ConsignmentGenie.API_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
