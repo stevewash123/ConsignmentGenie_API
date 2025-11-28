@@ -171,8 +171,8 @@ namespace ConsignmentGenie.Tests.Integration
             Assert.NotNull(result.LastRegenerated);
 
             // Verify timestamp is after original (should be updated)
-            var timeDifference = (result.LastRegenerated.Value - originalTimestamp).TotalMilliseconds;
-            Assert.True(timeDifference >= 0, $"Timestamp should be updated. Original: {originalTimestamp}, New: {result.LastRegenerated}");
+            Assert.True(result.LastRegenerated.Value >= originalTimestamp,
+                $"Timestamp should be updated. Original: {originalTimestamp}, New: {result.LastRegenerated}");
 
             // Verify in database
             var updatedOrg = await _context.Organizations.FindAsync(organization.Id);

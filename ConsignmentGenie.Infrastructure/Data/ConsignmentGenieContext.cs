@@ -705,7 +705,7 @@ public class ConsignmentGenieContext : DbContext
     private void UpdateTimestamps()
     {
         var entities = ChangeTracker.Entries()
-            .Where(x => x.Entity is BaseEntity && x.State == EntityState.Modified)
+            .Where(x => x.Entity is BaseEntity && (x.State == EntityState.Modified || x.State == EntityState.Added))
             .Select(x => x.Entity as BaseEntity);
 
         foreach (var entity in entities)
