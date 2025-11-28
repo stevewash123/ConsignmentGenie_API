@@ -31,13 +31,19 @@ public class RegistrationController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<RegistrationResultDto>> RegisterOwner([FromBody] RegisterOwnerRequest request)
     {
-        _logger.LogError("ACTUAL-FLOW-1: RegistrationController.RegisterOwner called with Email={Email}, ShopName={ShopName}",
+        _logger.LogInformation("Owner registration attempt for Email={Email}, ShopName={ShopName}",
             request.Email, request.ShopName);
 
         var result = await _registrationService.RegisterOwnerAsync(request);
 
-        _logger.LogError("ACTUAL-FLOW-2: RegisterOwnerAsync completed. Success={Success}",
-            result.Success);
+        _logger.LogInformation("Owner registration completed. Success={Success}, Message={Message}",
+            result.Success, result.Message);
+
+        if (!result.Success)
+        {
+            // Return 400 Bad Request for validation errors (email exists, subdomain taken, etc.)
+            return BadRequest(result);
+        }
 
         return Ok(result);
     }
@@ -47,6 +53,12 @@ public class RegistrationController : ControllerBase
     public async Task<ActionResult<RegistrationResultDto>> RegisterProvider([FromBody] RegisterProviderRequest request)
     {
         var result = await _registrationService.RegisterProviderAsync(request);
+
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
         return Ok(result);
     }
 
@@ -63,6 +75,12 @@ public class RegistrationController : ControllerBase
     public async Task<ActionResult<RegistrationResultDto>> RegisterProviderFromInvitation([FromBody] RegisterProviderFromInvitationRequest request)
     {
         var result = await _registrationService.RegisterProviderFromInvitationAsync(request);
+
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
         return Ok(result);
     }
 }

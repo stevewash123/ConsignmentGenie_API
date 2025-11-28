@@ -67,6 +67,20 @@ public class RegistrationService : IRegistrationService
                 };
             }
 
+            // Check if subdomain/slug already exists
+            var existingOrganization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Subdomain == request.Subdomain || o.Slug == request.Subdomain);
+
+            if (existingOrganization != null)
+            {
+                return new RegistrationResultDto
+                {
+                    Success = false,
+                    Message = "This shop name is already taken. Please choose a different one.",
+                    Errors = new List<string> { "Subdomain already in use" }
+                };
+            }
+
             // Create organization (auto-approved for low friction signup)
             var organization = new Organization
             {
