@@ -81,20 +81,42 @@ public class RegistrationService : IRegistrationService
                 };
             }
 
-            // Create organization (auto-approved for low friction signup)
-            var organization = new Organization
-            {
-                Name = request.ShopName,
-                ShopName = request.ShopName,
-                Subdomain = request.Subdomain,
-                Slug = request.Subdomain, // Use subdomain as slug for now
-                StoreCode = _storeCodeService.GenerateStoreCode(),
-                StoreCodeEnabled = true,
-                Status = "active" // Auto-approve for immediate setup
-            };
+            // Create organization with retry logic for store code collisions
+            const int maxRetries = 5;
+            Organization organization = null;
 
-            _context.Organizations.Add(organization);
-            await _context.SaveChangesAsync();
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                try
+                {
+                    organization = new Organization
+                    {
+                        Name = request.ShopName,
+                        ShopName = request.ShopName,
+                        Subdomain = request.Subdomain,
+                        Slug = request.Subdomain, // Use subdomain as slug for now
+                        StoreCode = _storeCodeService.GenerateStoreCode(),
+                        StoreCodeEnabled = true,
+                        Status = "active" // Auto-approve for immediate setup
+                    };
+
+                    _context.Organizations.Add(organization);
+                    await _context.SaveChangesAsync();
+                    break; // Success, exit retry loop
+                }
+                catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+                {
+                    // Remove the failed organization from tracking
+                    if (organization != null)
+                    {
+                        _context.Organizations.Remove(organization);
+                    }
+
+                    // Collision occurred, retry with new code
+                    if (attempt == maxRetries - 1)
+                        throw new Exception("Failed to generate unique store code after multiple attempts");
+                }
+            }
 
             // Create user (auto-approved for low friction signup)
             var user = new User
@@ -737,5 +759,13 @@ public class RegistrationService : IRegistrationService
                 Errors = new List<string> { ex.Message }
             };
         }
+    }
+
+    private bool IsUniqueConstraintViolation(DbUpdateException ex)
+    {
+        // PostgreSQL unique constraint violation
+        return ex.InnerException?.Message.Contains("unique constraint") == true
+            || ex.InnerException?.Message.Contains("duplicate key") == true
+            || ex.InnerException?.Message.Contains("23505") == true;
     }
 }

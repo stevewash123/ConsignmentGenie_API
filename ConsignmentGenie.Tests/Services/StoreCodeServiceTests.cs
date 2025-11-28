@@ -32,7 +32,7 @@ namespace ConsignmentGenie.Tests.Services
             {
                 Id = _organizationId,
                 Name = "Test Shop",
-                StoreCode = "1234",
+                StoreCode = "888TG4",
                 StoreCodeEnabled = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -44,7 +44,7 @@ namespace ConsignmentGenie.Tests.Services
             {
                 Id = Guid.NewGuid(),
                 Name = "Other Shop",
-                StoreCode = "5678",
+                StoreCode = "999AK7",
                 StoreCodeEnabled = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -61,7 +61,7 @@ namespace ConsignmentGenie.Tests.Services
             var result = await _storeCodeService.GetStoreCodeAsync(_organizationId);
 
             // Assert
-            Assert.Equal("1234", result.StoreCode);
+            Assert.Equal("888TG4", result.StoreCode);
             Assert.True(result.IsEnabled);
             Assert.NotNull(result.LastRegenerated);
         }
@@ -84,8 +84,8 @@ namespace ConsignmentGenie.Tests.Services
             var result = await _storeCodeService.RegenerateStoreCodeAsync(_organizationId);
 
             // Assert
-            Assert.NotEqual("1234", result.StoreCode); // Should be different from original
-            Assert.Matches(@"^\d{4,5}$", result.StoreCode); // Should be 4 or 5 digits
+            Assert.NotEqual("888TG4", result.StoreCode); // Should be different from original
+            Assert.Matches(@"^\d{3}[ABCDEFGHJKMNPQRTUVWXY]{2}\d$", result.StoreCode); // Should match NNNLLN pattern
             Assert.True(result.IsEnabled);
             Assert.NotNull(result.LastRegenerated);
 
@@ -133,7 +133,7 @@ namespace ConsignmentGenie.Tests.Services
             var storeCode = _storeCodeService.GenerateStoreCode();
 
             // Assert
-            Assert.Matches(@"^\d{4,5}$", storeCode); // Should be 4 or 5 digits
+            Assert.Matches(@"^\d{3}[ABCDEFGHJKMNPQRTUVWXY]{2}\d$", storeCode); // Should match NNNLLN pattern
             Assert.NotNull(storeCode);
             Assert.NotEmpty(storeCode);
         }
@@ -181,6 +181,88 @@ namespace ConsignmentGenie.Tests.Services
             Assert.NotNull(updatedOrg);
             Assert.True(updatedOrg.UpdatedAt > originalTimestamp);
             Assert.Equal(result.LastRegenerated, updatedOrg.UpdatedAt);
+        }
+
+        [Theory]
+        [InlineData("123AB4", true)]   // Valid NNNLLN format
+        [InlineData("999TG7", true)]   // Valid NNNLLN format
+        [InlineData("000ZZ0", false)]  // Invalid - Z is not allowed
+        [InlineData("1234", false)]    // Invalid - old 4-digit format
+        [InlineData("12345", false)]   // Invalid - old 5-digit format
+        [InlineData("12AB34", false)]  // Invalid - too long
+        [InlineData("12AB", false)]    // Invalid - too short
+        [InlineData("ABC123", false)]  // Invalid - wrong pattern
+        [InlineData("", false)]        // Invalid - empty
+        [InlineData(null, false)]      // Invalid - null
+        public void IsValidStoreCode_WithVariousFormats_ReturnsCorrectValidation(string code, bool expected)
+        {
+            // Act
+            var result = _storeCodeService.IsValidStoreCode(code);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void IsValidStoreCode_WithExcludedLetters_ReturnsFalse()
+        {
+            // Arrange - Test excluded letters: O, I, L, S, Z
+            var codesWithExcludedLetters = new[]
+            {
+                "123OA4", // O excluded
+                "123IA4", // I excluded
+                "123LA4", // L excluded
+                "123SA4", // S excluded
+                "123ZA4", // Z excluded
+                "123AO4", // O excluded in second position
+                "123AI4", // I excluded in second position
+                "123AL4", // L excluded in second position
+                "123AS4", // S excluded in second position
+                "123AZ4"  // Z excluded in second position
+            };
+
+            // Act & Assert
+            foreach (var code in codesWithExcludedLetters)
+            {
+                var result = _storeCodeService.IsValidStoreCode(code);
+                Assert.False(result, $"Code {code} should be invalid due to excluded letters");
+            }
+        }
+
+        [Fact]
+        public void GenerateStoreCode_NeverGeneratesExcludedLetters()
+        {
+            // Arrange
+            var excludedLetters = new[] { 'O', 'I', 'L', 'S', 'Z' };
+
+            // Act - Generate many codes to test
+            for (int i = 0; i < 100; i++)
+            {
+                var code = _storeCodeService.GenerateStoreCode();
+
+                // Assert - Check that no excluded letters appear in positions 3-4
+                Assert.DoesNotContain(excludedLetters, letter => code[3] == letter);
+                Assert.DoesNotContain(excludedLetters, letter => code[4] == letter);
+            }
+        }
+
+        [Fact]
+        public void GenerateStoreCode_AlwaysFollowsNNNLLNPattern()
+        {
+            // Act - Generate many codes to test pattern consistency
+            for (int i = 0; i < 100; i++)
+            {
+                var code = _storeCodeService.GenerateStoreCode();
+
+                // Assert
+                Assert.Equal(6, code.Length);
+                Assert.True(char.IsDigit(code[0]), $"Position 0 should be digit in code {code}");
+                Assert.True(char.IsDigit(code[1]), $"Position 1 should be digit in code {code}");
+                Assert.True(char.IsDigit(code[2]), $"Position 2 should be digit in code {code}");
+                Assert.True(char.IsLetter(code[3]), $"Position 3 should be letter in code {code}");
+                Assert.True(char.IsLetter(code[4]), $"Position 4 should be letter in code {code}");
+                Assert.True(char.IsDigit(code[5]), $"Position 5 should be digit in code {code}");
+            }
         }
 
         public void Dispose()

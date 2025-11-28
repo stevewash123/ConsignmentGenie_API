@@ -8,4 +8,5 @@ public interface IStoreCodeService
     Task<StoreCodeDto> RegenerateStoreCodeAsync(Guid organizationId);
     Task ToggleStoreCodeAsync(Guid organizationId, bool enabled);
     string GenerateStoreCode();
+    bool IsValidStoreCode(string code);
 }
