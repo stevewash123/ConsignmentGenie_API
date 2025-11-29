@@ -272,7 +272,7 @@ public class OwnerInvitationService : IOwnerInvitationService
 
             // Check if subdomain is available
             var existingOrg = await _context.Organizations
-                .FirstOrDefaultAsync(o => o.Subdomain.ToLower() == request.Subdomain.ToLower());
+                .FirstOrDefaultAsync(o => o.Subdomain != null && o.Subdomain.ToLower() == request.Subdomain.ToLower());
 
             if (existingOrg != null)
             {
@@ -352,7 +352,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                 _logger.LogInformation("[OWNER_FLOW] Creating welcome notification for user {Email} (ID: {UserId}) in organization {OrganizationId}",
                     user.Email, user.Id, organization.Id);
 
-                var notificationResult = await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
+                await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
                 {
                     OrganizationId = organization.Id,
                     UserId = user.Id,
@@ -360,7 +360,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                     Title = "Welcome to ConsignmentGenie!",
                     Message = $"Welcome to ConsignmentGenie, {organization.Name}! We've sent you a welcome email with getting started tips. Check out your dashboard to begin managing your consignment business."
                 });
-                _logger.LogInformation("[OWNER_FLOW] Welcome notification creation result for {Email}: {NotificationResult}", user.Email, notificationResult.Success);
+                _logger.LogInformation("[OWNER_FLOW] Welcome notification created successfully for {Email}", user.Email);
 
                 // Generate JWT token for the new user to auto-login
                 string? jwtToken = null;
