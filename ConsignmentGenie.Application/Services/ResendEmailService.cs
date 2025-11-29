@@ -28,77 +28,43 @@ public class ResendEmailService : IEmailService
     {
         try
         {
-            var subject = "Welcome to ConsignmentGenie!";
-            var htmlContent = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset=""utf-8"">
-    <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
-    <title>Welcome to ConsignmentGenie</title>
-</head>
-<body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
-    <div style=""background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
-        <h1 style=""margin: 0; font-size: 28px;"">Welcome to ConsignmentGenie!</h1>
-    </div>
+            var subject = "Welcome to Consignment Genie!";
 
-    <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
-        <h2 style=""color: #667eea; margin-top: 0;"">Hello {organizationName}!</h2>
+            // Load HTML template
+            var htmlTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.html";
+            var htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
 
-        <p>Welcome to ConsignmentGenie - your complete consignment management solution. We're excited to help you streamline your consignment business operations.</p>
+            // Load plain text template
+            var textTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.txt";
+            var textTemplate = await File.ReadAllTextAsync(textTemplatePath);
 
-        <div style=""background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;"">
-            <h3 style=""margin-top: 0; color: #667eea;"">Getting Started:</h3>
-            <ul style=""padding-left: 20px;"">
-                <li>Set up your organization profile</li>
-                <li>Add your first providers (consigners)</li>
-                <li>Start tracking inventory and transactions</li>
-                <li>Generate payout reports with ease</li>
-            </ul>
-        </div>
+            // For now, extract first name from email (will be improved when we pass more data)
+            var ownerFirstName = email.Split('@')[0];
+            var loginUrl = "http://localhost:4200/owner/dashboard";
+            var storeCode = "PENDING"; // Default when not yet generated
+            var unsubscribeUrl = "#"; // Placeholder for now
 
-        <p>If you have any questions, our support team is here to help. Simply reply to this email or check out our documentation.</p>
+            // Replace template variables in HTML
+            var htmlContent = htmlTemplate
+                .Replace("{{OwnerFirstName}}", ownerFirstName)
+                .Replace("{{ShopName}}", organizationName)
+                .Replace("{{LoginUrl}}", loginUrl)
+                .Replace("{{StoreCode}}", storeCode)
+                .Replace("{{UnsubscribeUrl}}", unsubscribeUrl);
 
-        <div style=""text-align: center; margin: 30px 0;"">
-            <a href=""http://localhost:4200/owner/dashboard"" style=""display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;"">Get Started</a>
-        </div>
-
-        <hr style=""border: none; border-top: 1px solid #eee; margin: 30px 0;"">
-
-        <p style=""color: #666; font-size: 14px; text-align: center;"">
-            Best regards,<br>
-            The ConsignmentGenie Team<br>
-            <a href=""mailto:support@microsaasbuilders.com"" style=""color: #667eea;"">support@microsaasbuilders.com</a>
-        </p>
-    </div>
-</body>
-</html>";
-
-            var textContent = $@"
-Welcome to ConsignmentGenie, {organizationName}!
-
-We're excited to help you streamline your consignment business operations.
-
-Getting Started:
-- Set up your organization profile
-- Add your first providers (consigners)
-- Start tracking inventory and transactions
-- Generate payout reports with ease
-
-If you have any questions, our support team is here to help. Simply reply to this email.
-
-Get started: http://localhost:4200/owner/dashboard
-
-Best regards,
-The ConsignmentGenie Team
-support@microsaasbuilders.com
-";
+            // Replace template variables in text
+            var textContent = textTemplate
+                .Replace("{{OwnerFirstName}}", ownerFirstName)
+                .Replace("{{ShopName}}", organizationName)
+                .Replace("{{LoginUrl}}", loginUrl)
+                .Replace("{{StoreCode}}", storeCode)
+                .Replace("{{UnsubscribeUrl}}", unsubscribeUrl);
 
             return await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send welcome email to {Email}", email);
+            _logger.LogError(ex, "Failed to send welcome email to {Email}\nTemplate loading failed or variable substitution failed", email);
             return false;
         }
     }
