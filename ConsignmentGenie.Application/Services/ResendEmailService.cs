@@ -407,13 +407,49 @@ ConsignmentGenie Suggestion System
             var fromEmail = _configuration["Resend:FromEmail"] ?? "noreply@microsaasbuilders.com";
             var fromName = _configuration["Resend:FromName"] ?? "ConsignmentGenie";
 
+            // TEMPORARY WORKAROUND: Redirect all emails to verified address due to Resend domain restrictions
+            var actualRecipient = toEmail;
+            var redirectEmail = "stevewash123@gmail.com";
+            var originalSubject = subject;
+
+            // Modify subject to include original recipient
+            var modifiedSubject = $"[FOR: {actualRecipient}] {originalSubject}";
+
+            // Add original recipient info to email body
+            var recipientNotice = $@"
+                <div style='background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px; margin: 20px 0; color: #856404;'>
+                    <strong>📧 Original Recipient:</strong> {actualRecipient}<br>
+                    <strong>📝 Note:</strong> This email was redirected to {redirectEmail} due to email domain verification requirements.
+                </div>";
+
+            // Insert recipient notice at the beginning of the HTML body
+            string modifiedHtmlBody;
+            if (htmlBody != null && htmlBody.Contains("<body"))
+            {
+                // Find the end of the opening body tag and insert the notice right after it
+                var bodyTagEndIndex = htmlBody.IndexOf('>', htmlBody.IndexOf("<body")) + 1;
+                modifiedHtmlBody = htmlBody.Insert(bodyTagEndIndex, recipientNotice);
+            }
+            else if (htmlBody != null)
+            {
+                modifiedHtmlBody = $"{recipientNotice}{htmlBody}";
+            }
+            else
+            {
+                modifiedHtmlBody = $"{recipientNotice}<div>No content</div>";
+            }
+
+            var modifiedTextBody = textBody != null ?
+                $"[ORIGINAL RECIPIENT: {actualRecipient}]\n[NOTE: Redirected due to domain verification]\n\n{textBody}" :
+                null;
+
             var emailData = new
             {
                 from = $"{fromName} <{fromEmail}>",
-                to = new[] { toEmail },
-                subject = subject,
-                html = htmlBody,
-                text = textBody
+                to = new[] { redirectEmail },
+                subject = modifiedSubject,
+                html = modifiedHtmlBody,
+                text = modifiedTextBody
             };
 
             var json = JsonSerializer.Serialize(emailData);
@@ -427,14 +463,15 @@ ConsignmentGenie Suggestion System
                 var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent);
                 var messageId = responseData.TryGetProperty("id", out var id) ? id.GetString() : "unknown";
 
-                _logger.LogInformation("Email sent successfully to {Email} via Resend. Message ID: {MessageId}", toEmail, messageId);
+                _logger.LogInformation("Email sent successfully to {Email} (redirected from {OriginalEmail}) via Resend. Message ID: {MessageId}",
+                    redirectEmail, actualRecipient, messageId);
                 return true;
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Failed to send email to {Email} via Resend. Status: {Status}, Response: {Response}",
-                    toEmail, response.StatusCode, errorContent);
+                _logger.LogError("Failed to send email to {Email} (redirected from {OriginalEmail}) via Resend. Status: {Status}, Response: {Response}",
+                    redirectEmail, actualRecipient, response.StatusCode, errorContent);
                 return false;
             }
         }
