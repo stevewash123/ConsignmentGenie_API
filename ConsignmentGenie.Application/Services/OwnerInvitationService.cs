@@ -342,10 +342,17 @@ public class OwnerInvitationService : IOwnerInvitationService
                 _logger.LogError("FLOW-12: Transaction committed successfully");
 
                 // Send welcome email
-                await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name);
+                _logger.LogInformation("[OWNER_FLOW] Sending welcome email to {Email} for organization {OrganizationName} (ID: {OrganizationId})",
+                    user.Email, organization.Name, organization.Id);
+
+                var emailResult = await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name);
+                _logger.LogInformation("[OWNER_FLOW] Welcome email send result for {Email}: {EmailResult}", user.Email, emailResult);
 
                 // Create welcome notification for the user to see in notification center
-                await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
+                _logger.LogInformation("[OWNER_FLOW] Creating welcome notification for user {Email} (ID: {UserId}) in organization {OrganizationId}",
+                    user.Email, user.Id, organization.Id);
+
+                var notificationResult = await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
                 {
                     OrganizationId = organization.Id,
                     UserId = user.Id,
@@ -353,6 +360,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                     Title = "Welcome to ConsignmentGenie!",
                     Message = $"Welcome to ConsignmentGenie, {organization.Name}! We've sent you a welcome email with getting started tips. Check out your dashboard to begin managing your consignment business."
                 });
+                _logger.LogInformation("[OWNER_FLOW] Welcome notification creation result for {Email}: {NotificationResult}", user.Email, notificationResult.Success);
 
                 // Generate JWT token for the new user to auto-login
                 string? jwtToken = null;

@@ -12,10 +12,12 @@ namespace ConsignmentGenie.API.Controllers;
 public class DashboardController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
+    private readonly ILogger<DashboardController> _logger;
 
-    public DashboardController(ConsignmentGenieContext context)
+    public DashboardController(ConsignmentGenieContext context, ILogger<DashboardController> logger)
     {
         _context = context;
+        _logger = logger;
     }
     [HttpGet("metrics")]
     public IActionResult GetDashboardMetrics()
@@ -144,56 +146,91 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<object>> GetOnboardingStatus()
     {
         var organizationId = GetOrganizationId();
+        _logger.LogInformation("[ONBOARDING] Getting onboarding status for organization {OrganizationId}", organizationId);
 
-        var organization = await _context.Organizations
-            .Include(o => o.Providers)
-            .Include(o => o.Items)
-            .FirstOrDefaultAsync(o => o.Id == organizationId);
-
-        if (organization == null)
+        try
         {
-            return NotFound("Organization not found");
-        }
+            var organization = await _context.Organizations
+                .Include(o => o.Providers)
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
 
-        var status = new OnboardingStatusDto
-        {
-            Dismissed = organization.OnboardingDismissed,
-            Steps = new OnboardingStepsDto
+            if (organization == null)
             {
-                HasProviders = organization.Providers.Any(),
-                StorefrontConfigured = organization.StoreEnabled ||
-                                      organization.StripeConnected ||
-                                      !string.IsNullOrEmpty(organization.ShopName),
-                HasInventory = organization.Items.Any(),
-                QuickBooksConnected = organization.QuickBooksConnected
+                _logger.LogWarning("[ONBOARDING] Organization {OrganizationId} not found", organizationId);
+                return NotFound("Organization not found");
             }
-        };
 
-        return Ok(new { success = true, data = status });
+            _logger.LogDebug("[ONBOARDING] Organization {OrganizationId} found: Name={OrganizationName}, OnboardingDismissed={OnboardingDismissed}, ProviderCount={ProviderCount}, ItemCount={ItemCount}, StoreEnabled={StoreEnabled}, StripeConnected={StripeConnected}, QuickBooksConnected={QuickBooksConnected}",
+                organizationId, organization.Name, organization.OnboardingDismissed, organization.Providers?.Count ?? 0, organization.Items?.Count ?? 0, organization.StoreEnabled, organization.StripeConnected, organization.QuickBooksConnected);
+
+            var hasProviders = organization.Providers.Any();
+            var storefrontConfigured = organization.StoreEnabled ||
+                                      organization.StripeConnected ||
+                                      !string.IsNullOrEmpty(organization.ShopName);
+            var hasInventory = organization.Items.Any();
+            var quickBooksConnected = organization.QuickBooksConnected;
+
+            var status = new OnboardingStatusDto
+            {
+                Dismissed = organization.OnboardingDismissed,
+                Steps = new OnboardingStepsDto
+                {
+                    HasProviders = hasProviders,
+                    StorefrontConfigured = storefrontConfigured,
+                    HasInventory = hasInventory,
+                    QuickBooksConnected = quickBooksConnected
+                }
+            };
+
+            _logger.LogInformation("[ONBOARDING] Onboarding status calculated for organization {OrganizationId}: Dismissed={Dismissed}, HasProviders={HasProviders}, StorefrontConfigured={StorefrontConfigured}, HasInventory={HasInventory}, QuickBooksConnected={QuickBooksConnected}",
+                organizationId, status.Dismissed, hasProviders, storefrontConfigured, hasInventory, quickBooksConnected);
+
+            return Ok(new { success = true, data = status });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ONBOARDING] Error getting onboarding status for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
     }
 
     [HttpPost("organization/dismiss-onboarding")]
     public async Task<ActionResult<object>> DismissOnboarding([FromBody] DismissOnboardingRequestDto request)
     {
         var organizationId = GetOrganizationId();
+        _logger.LogInformation("[ONBOARDING] Dismissing onboarding for organization {OrganizationId}, Dismissed={Dismissed}", organizationId, request.Dismissed);
 
-        var organization = await _context.Organizations
-            .FirstOrDefaultAsync(o => o.Id == organizationId);
-
-        if (organization == null)
+        try
         {
-            return NotFound("Organization not found");
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[ONBOARDING] Organization {OrganizationId} not found during dismiss operation", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            var previousStatus = organization.OnboardingDismissed;
+            organization.OnboardingDismissed = request.Dismissed;
+            organization.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("[ONBOARDING] Onboarding dismissed updated for organization {OrganizationId}: {PreviousStatus} -> {NewStatus}",
+                organizationId, previousStatus, request.Dismissed);
+
+            return Ok(new {
+                success = true,
+                message = "Onboarding status updated successfully"
+            });
         }
-
-        organization.OnboardingDismissed = request.Dismissed;
-        organization.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        return Ok(new {
-            success = true,
-            message = "Onboarding status updated successfully"
-        });
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ONBOARDING] Error dismissing onboarding for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
     }
 
     private Guid GetOrganizationId()

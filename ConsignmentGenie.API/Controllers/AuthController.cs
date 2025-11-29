@@ -252,16 +252,25 @@ public class AuthController : ControllerBase
     [HttpGet("validate-subdomain/{subdomain}")]
     public async Task<ActionResult<ApiResponse<SubdomainValidationResponse>>> ValidateSubdomain(string subdomain)
     {
+        _logger.LogInformation("[VALIDATION] Validating subdomain: {Subdomain}", subdomain);
+
         try
         {
+            var normalizedSubdomain = subdomain.ToLower();
+            _logger.LogDebug("[VALIDATION] Normalized subdomain: {NormalizedSubdomain}", normalizedSubdomain);
+
             // Check if subdomain is already taken
             var existingOrg = await _unitOfWork.Organizations
-                .GetAsync(o => o.Subdomain == subdomain.ToLower());
+                .GetAsync(o => o.Subdomain == normalizedSubdomain);
+
+            var isAvailable = existingOrg == null;
+            _logger.LogInformation("[VALIDATION] Subdomain validation result: Subdomain={Subdomain}, IsAvailable={IsAvailable}, ExistingOrgId={ExistingOrgId}",
+                normalizedSubdomain, isAvailable, existingOrg?.Id);
 
             var response = new SubdomainValidationResponse
             {
-                IsAvailable = existingOrg == null,
-                Subdomain = subdomain.ToLower()
+                IsAvailable = isAvailable,
+                Subdomain = normalizedSubdomain
             };
 
             return Ok(ApiResponse<SubdomainValidationResponse>.SuccessResult(response,
@@ -269,7 +278,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating subdomain: {Subdomain}", subdomain);
+            _logger.LogError(ex, "[VALIDATION] Error validating subdomain: {Subdomain}", subdomain);
             return StatusCode(500, ApiResponse<SubdomainValidationResponse>.ErrorResult("Validation failed"));
         }
     }

@@ -5,6 +5,7 @@ using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Application.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using BCrypt.Net;
 
 namespace ConsignmentGenie.Application.Services;
@@ -15,17 +16,20 @@ public class RegistrationService : IRegistrationService
     private readonly IEmailService _emailService;
     private readonly IStoreCodeService _storeCodeService;
     private readonly IAuthService _authService;
+    private readonly ILogger<RegistrationService> _logger;
 
     public RegistrationService(
         ConsignmentGenieContext context,
         IEmailService emailService,
         IStoreCodeService storeCodeService,
-        IAuthService authService)
+        IAuthService authService,
+        ILogger<RegistrationService> logger)
     {
         _context = context;
         _emailService = emailService;
         _storeCodeService = storeCodeService;
         _authService = authService;
+        _logger = logger;
     }
 
     public async Task<StoreCodeValidationDto> ValidateStoreCodeAsync(string code)
@@ -184,12 +188,20 @@ public class RegistrationService : IRegistrationService
 
     public async Task<RegistrationResultDto> RegisterProviderAsync(RegisterProviderRequest request)
     {
+        _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration for email {Email} with store code {StoreCode}",
+            request.Email, request.StoreCode);
+        _logger.LogDebug("[PROVIDER_INVITATION] Provider registration details: FullName={FullName}, Phone={Phone}, PreferredPayment={PreferredPaymentMethod}",
+            request.FullName, request.Phone, request.PreferredPaymentMethod);
+
         try
         {
             // Validate store code
+            _logger.LogDebug("[PROVIDER_INVITATION] Validating store code {StoreCode}", request.StoreCode);
             var validation = await ValidateStoreCodeAsync(request.StoreCode);
             if (!validation.IsValid)
             {
+                _logger.LogWarning("[PROVIDER_INVITATION] Store code validation failed for {StoreCode}: {ErrorMessage}",
+                    request.StoreCode, validation.ErrorMessage);
                 return new RegistrationResultDto
                 {
                     Success = false,
@@ -197,13 +209,17 @@ public class RegistrationService : IRegistrationService
                     Errors = new List<string> { "Invalid store code" }
                 };
             }
+            _logger.LogInformation("[PROVIDER_INVITATION] Store code {StoreCode} validated successfully for shop {ShopName}",
+                request.StoreCode, validation.ShopName);
 
             // Check if email already exists
+            _logger.LogDebug("[PROVIDER_INVITATION] Checking if email {Email} already exists", request.Email);
             var existingUser = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (existingUser != null)
             {
+                _logger.LogWarning("[PROVIDER_INVITATION] Registration failed - email {Email} already exists", request.Email);
                 return new RegistrationResultDto
                 {
                     Success = false,
@@ -213,11 +229,13 @@ public class RegistrationService : IRegistrationService
             }
 
             // Get organization
+            _logger.LogDebug("[PROVIDER_INVITATION] Retrieving organization for store code {StoreCode}", request.StoreCode);
             var organization = await _context.Organizations
                 .FirstOrDefaultAsync(o => o.StoreCode == request.StoreCode);
 
             if (organization == null)
             {
+                _logger.LogError("[PROVIDER_INVITATION] Organization not found for store code {StoreCode}", request.StoreCode);
                 return new RegistrationResultDto
                 {
                     Success = false,
@@ -226,7 +244,12 @@ public class RegistrationService : IRegistrationService
                 };
             }
 
+            _logger.LogInformation("[PROVIDER_INVITATION] Found organization {OrganizationName} (ID: {OrganizationId}) for store code {StoreCode}, AutoApprove: {AutoApproveProviders}",
+                organization.Name, organization.Id, request.StoreCode, organization.AutoApproveProviders);
+
             // Create user
+            _logger.LogInformation("[PROVIDER_INVITATION] Creating user account for {Email} with role Provider, approval status will be {ApprovalStatus}",
+                request.Email, organization.AutoApproveProviders ? "Approved" : "Pending");
             var user = new User
             {
                 Email = request.Email,
@@ -240,10 +263,12 @@ public class RegistrationService : IRegistrationService
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("[PROVIDER_INVITATION] User {Email} created successfully with ID {UserId}", request.Email, user.Id);
 
             // If auto-approved, create Provider record immediately
             if (organization.AutoApproveProviders)
             {
+                _logger.LogInformation("[PROVIDER_INVITATION] Auto-approval enabled - creating Provider record for {Email}", request.Email);
                 var provider = new Provider
                 {
                     OrganizationId = organization.Id,
@@ -261,9 +286,15 @@ public class RegistrationService : IRegistrationService
 
                 _context.Providers.Add(provider);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("[PROVIDER_INVITATION] Provider record created for {Email} with ID {ProviderId}", request.Email, provider.Id);
+            }
+            else
+            {
+                _logger.LogInformation("[PROVIDER_INVITATION] Manual approval required - Provider record will be created after approval");
             }
 
             // Send confirmation email to provider
+            _logger.LogInformation("[PROVIDER_INVITATION] Sending confirmation email to provider {Email}", request.Email);
             var providerEmailBody = $@"
                 <h2>Welcome to ConsignmentGenie</h2>
                 <p>Hi {request.FullName},</p>
@@ -275,20 +306,27 @@ public class RegistrationService : IRegistrationService
                 <p>Questions? Reply to this email.</p>
                 <p>- The ConsignmentGenie Team</p>";
 
-            await _emailService.SendSimpleEmailAsync(
+            var emailResult = await _emailService.SendSimpleEmailAsync(
                 request.Email,
                 organization.AutoApproveProviders ? "Account Approved - You're In! 🎉" : "Welcome to ConsignmentGenie - Account Pending",
                 providerEmailBody);
+            _logger.LogInformation("[PROVIDER_INVITATION] Provider confirmation email sent to {Email}: {EmailResult}", request.Email, emailResult);
 
             // Send notification to owner if not auto-approved
             if (!organization.AutoApproveProviders)
             {
+                _logger.LogInformation("[PROVIDER_INVITATION] Manual approval required - sending notification to shop owners");
                 var ownerUsers = await _context.Users
                     .Where(u => u.OrganizationId == organization.Id && u.Role == UserRole.Owner)
                     .ToListAsync();
 
+                _logger.LogDebug("[PROVIDER_INVITATION] Found {OwnerCount} owners to notify for organization {OrganizationId}",
+                    ownerUsers.Count, organization.Id);
+
                 foreach (var owner in ownerUsers)
                 {
+                    _logger.LogDebug("[PROVIDER_INVITATION] Sending owner notification to {OwnerEmail} for new provider request from {ProviderEmail}",
+                        owner.Email, request.Email);
                     var ownerEmailBody = $@"
                         <h2>New Provider Request</h2>
                         <p>Hi {validation.ShopName},</p>
@@ -300,12 +338,17 @@ public class RegistrationService : IRegistrationService
                         <p>Log in to review and approve this request.</p>
                         <p>- ConsignmentGenie</p>";
 
-                    await _emailService.SendSimpleEmailAsync(
+                    var ownerEmailResult = await _emailService.SendSimpleEmailAsync(
                         owner.Email,
                         $"New Provider Request - {request.FullName}",
                         ownerEmailBody);
+                    _logger.LogInformation("[PROVIDER_INVITATION] Owner notification sent to {OwnerEmail}: {EmailResult}",
+                        owner.Email, ownerEmailResult);
                 }
             }
+
+            _logger.LogInformation("[PROVIDER_INVITATION] Provider registration completed successfully for {Email} - AutoApproved: {AutoApproved}",
+                request.Email, organization.AutoApproveProviders);
 
             return new RegistrationResultDto
             {
@@ -317,6 +360,7 @@ public class RegistrationService : IRegistrationService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "[PROVIDER_INVITATION] Provider registration failed for {Email}", request.Email);
             return new RegistrationResultDto
             {
                 Success = false,
@@ -360,6 +404,9 @@ public class RegistrationService : IRegistrationService
 
     public async Task ApproveUserAsync(Guid userId, Guid approvedByUserId)
     {
+        _logger.LogInformation("[PROVIDER_INVITATION] Starting user approval process for user {UserId} by approver {ApprovedByUserId}",
+            userId, approvedByUserId);
+
         // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
         foreach (var entry in _context.ChangeTracker.Entries().ToList())
         {
@@ -367,17 +414,29 @@ public class RegistrationService : IRegistrationService
         }
 
         // Load user with organization for business logic
+        _logger.LogDebug("[PROVIDER_INVITATION] Loading user {UserId} with organization details", userId);
         var user = await _context.Users
             .Include(u => u.Organization)
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
+        {
+            _logger.LogError("[PROVIDER_INVITATION] User {UserId} not found for approval", userId);
             throw new ArgumentException("User not found");
+        }
+
+        _logger.LogInformation("[PROVIDER_INVITATION] Found user {Email} with role {Role} in organization {OrganizationName} (ID: {OrganizationId}), current status: {ApprovalStatus}",
+            user.Email, user.Role, user.Organization?.Name, user.OrganizationId, user.ApprovalStatus);
 
         if (user.ApprovalStatus != ApprovalStatus.Pending)
+        {
+            _logger.LogWarning("[PROVIDER_INVITATION] User {Email} is not pending approval - current status: {ApprovalStatus}",
+                user.Email, user.ApprovalStatus);
             throw new InvalidOperationException("User is not pending approval");
+        }
 
         // Update user status
+        _logger.LogInformation("[PROVIDER_INVITATION] Approving user {Email} with role {Role}", user.Email, user.Role);
         user.ApprovalStatus = ApprovalStatus.Approved;
         user.ApprovedBy = approvedByUserId;
         user.ApprovedAt = DateTime.UtcNow;
@@ -385,6 +444,8 @@ public class RegistrationService : IRegistrationService
         // 🏗️ AGGREGATE ROOT PATTERN: If provider, create provider record
         if (user.Role == UserRole.Provider)
         {
+            _logger.LogInformation("[PROVIDER_INVITATION] Creating Provider record for approved user {Email}", user.Email);
+            var providerNumber = await GenerateProviderNumberAsync(user.OrganizationId);
             var provider = new Provider
             {
                 OrganizationId = user.OrganizationId,
@@ -397,15 +458,21 @@ public class RegistrationService : IRegistrationService
                 Status = ProviderStatus.Active,
                 ApprovalStatus = "Approved",
                 ApprovedBy = approvedByUserId,
-                ProviderNumber = await GenerateProviderNumberAsync(user.OrganizationId)
+                ProviderNumber = providerNumber
             };
 
             _context.Providers.Add(provider);
+            _logger.LogInformation("[PROVIDER_INVITATION] Provider record will be created with number {ProviderNumber} for {Email}",
+                providerNumber, user.Email);
         }
 
         await _context.SaveChangesAsync();
+        _logger.LogInformation("[PROVIDER_INVITATION] User approval completed successfully for {Email} with role {Role}",
+            user.Email, user.Role);
 
         // Send approval email
+        _logger.LogInformation("[PROVIDER_INVITATION] Sending approval notification email to {Email} for role {Role}",
+            user.Email, user.Role);
         var emailBody = user.Role == UserRole.Provider
             ? $@"
                 <h2>Account Approved - You're In! 🎉</h2>
@@ -428,10 +495,12 @@ public class RegistrationService : IRegistrationService
                 <p>Welcome to ConsignmentGenie!</p>
                 <p>- The ConsignmentGenie Team</p>";
 
-        await _emailService.SendSimpleEmailAsync(
+        var emailResult = await _emailService.SendSimpleEmailAsync(
             user.Email,
             user.Role == UserRole.Provider ? "Account Approved - You're In! 🎉" : "Your Shop is Ready! 🎉",
             emailBody);
+        _logger.LogInformation("[PROVIDER_INVITATION] Approval notification email sent to {Email}: {EmailResult}",
+            user.Email, emailResult);
     }
 
     public async Task RejectUserAsync(Guid userId, Guid rejectedByUserId, string? reason)
@@ -583,12 +652,15 @@ public class RegistrationService : IRegistrationService
 
     public async Task<InvitationValidationDto> ValidateInvitationTokenAsync(string token)
     {
+        _logger.LogInformation("[PROVIDER_INVITATION] Validating invitation token: {Token}", token?.Substring(0, Math.Min(token?.Length ?? 0, 8)) + "...");
+
         var invitation = await _context.ProviderInvitations
             .Include(i => i.Organization)
             .FirstOrDefaultAsync(i => i.Token == token);
 
         if (invitation == null)
         {
+            _logger.LogWarning("[PROVIDER_INVITATION] Invitation token not found: {Token}", token?.Substring(0, Math.Min(token?.Length ?? 0, 8)) + "...");
             return new InvitationValidationDto
             {
                 IsValid = false,
@@ -596,8 +668,13 @@ public class RegistrationService : IRegistrationService
             };
         }
 
+        _logger.LogDebug("[PROVIDER_INVITATION] Found invitation for {Email} in organization {OrganizationName} (ID: {OrganizationId}), expires: {ExpirationDate}",
+            invitation.Email, invitation.Organization.Name, invitation.OrganizationId, invitation.ExpirationDate);
+
         if (invitation.ExpirationDate <= DateTime.UtcNow)
         {
+            _logger.LogWarning("[PROVIDER_INVITATION] Invitation token expired for {Email} - expired on {ExpirationDate}",
+                invitation.Email, invitation.ExpirationDate);
             return new InvitationValidationDto
             {
                 IsValid = false,
@@ -606,17 +683,23 @@ public class RegistrationService : IRegistrationService
         }
 
         // Check if already used (user exists with this email)
+        _logger.LogDebug("[PROVIDER_INVITATION] Checking if user with email {Email} already exists", invitation.Email);
         var existingUser = await _context.Users
             .FirstOrDefaultAsync(u => u.Email == invitation.Email);
 
         if (existingUser != null)
         {
+            _logger.LogWarning("[PROVIDER_INVITATION] User with email {Email} already exists - invitation cannot be used",
+                invitation.Email);
             return new InvitationValidationDto
             {
                 IsValid = false,
                 Message = "An account with this email already exists"
             };
         }
+
+        _logger.LogInformation("[PROVIDER_INVITATION] Invitation token validation successful for {Email} in organization {OrganizationName}",
+            invitation.Email, invitation.Organization.Name);
 
         return new InvitationValidationDto
         {
@@ -630,12 +713,19 @@ public class RegistrationService : IRegistrationService
 
     public async Task<RegistrationResultDto> RegisterProviderFromInvitationAsync(RegisterProviderFromInvitationRequest request)
     {
+        _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration from invitation for email {Email}", request.Email);
+        _logger.LogDebug("[PROVIDER_INVITATION] Invitation registration details: FullName={FullName}, Phone={Phone}, Address={Address}",
+            request.FullName, request.Phone, request.Address);
+
         try
         {
             // Validate the invitation first
+            _logger.LogDebug("[PROVIDER_INVITATION] Validating invitation token for registration");
             var validation = await ValidateInvitationTokenAsync(request.InvitationToken);
             if (!validation.IsValid)
             {
+                _logger.LogWarning("[PROVIDER_INVITATION] Invitation validation failed for {Email}: {ValidationMessage}",
+                    request.Email, validation.Message);
                 return new RegistrationResultDto
                 {
                     Success = false,
@@ -643,18 +733,26 @@ public class RegistrationService : IRegistrationService
                 };
             }
 
+            _logger.LogInformation("[PROVIDER_INVITATION] Invitation validated successfully for {Email} joining {ShopName}",
+                request.Email, validation.ShopName);
+
+            _logger.LogDebug("[PROVIDER_INVITATION] Retrieving invitation details from database");
             var invitation = await _context.ProviderInvitations
                 .Include(i => i.Organization)
                 .FirstOrDefaultAsync(i => i.Token == request.InvitationToken);
 
             if (invitation == null)
             {
+                _logger.LogError("[PROVIDER_INVITATION] Invitation not found in database for token");
                 return new RegistrationResultDto
                 {
                     Success = false,
                     Message = "Invitation not found"
                 };
             }
+
+            _logger.LogInformation("[PROVIDER_INVITATION] Creating user account for invited provider {Email} in organization {OrganizationName} (ID: {OrganizationId})",
+                request.Email, invitation.Organization.Name, invitation.OrganizationId);
 
             // Create the user
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
@@ -674,8 +772,11 @@ public class RegistrationService : IRegistrationService
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("[PROVIDER_INVITATION] User account created successfully for {Email} with ID {UserId}", request.Email, user.Id);
 
             // Create the provider record
+            _logger.LogInformation("[PROVIDER_INVITATION] Creating Provider record for {Email}", request.Email);
+            var providerNumber = await GenerateProviderNumberAsync(invitation.OrganizationId);
             var provider = new Provider
             {
                 OrganizationId = invitation.OrganizationId,
@@ -689,18 +790,22 @@ public class RegistrationService : IRegistrationService
                 Status = ProviderStatus.Active,
                 ApprovalStatus = "Approved",
                 ApprovedBy = invitation.InvitedById,
-                ProviderNumber = await GenerateProviderNumberAsync(invitation.OrganizationId)
+                ProviderNumber = providerNumber
             };
 
             _context.Providers.Add(provider);
 
             // Mark invitation as used
+            _logger.LogDebug("[PROVIDER_INVITATION] Marking invitation as used for {Email}", request.Email);
             invitation.IsUsed = true;
             invitation.UsedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation("[PROVIDER_INVITATION] Provider record created successfully with number {ProviderNumber} for {Email}",
+                providerNumber, request.Email);
 
             // Send welcome email to provider
+            _logger.LogInformation("[PROVIDER_INVITATION] Sending welcome email to new provider {Email}", request.Email);
             var providerEmailBody = $@"
                 <h2>Welcome to {validation.ShopName}! 🎉</h2>
                 <p>Hi {request.FullName},</p>
@@ -714,17 +819,23 @@ public class RegistrationService : IRegistrationService
                 <p>Welcome aboard!</p>
                 <p>- The ConsignmentGenie Team</p>";
 
-            await _emailService.SendSimpleEmailAsync(
+            var providerEmailResult = await _emailService.SendSimpleEmailAsync(
                 request.Email,
                 "Welcome to ConsignmentGenie! 🎉",
                 providerEmailBody);
+            _logger.LogInformation("[PROVIDER_INVITATION] Welcome email sent to provider {Email}: {EmailResult}",
+                request.Email, providerEmailResult);
 
             // Notify the shop owner
+            _logger.LogDebug("[PROVIDER_INVITATION] Looking up shop owner (ID: {InvitedById}) to notify about new provider",
+                invitation.InvitedById);
             var ownerUser = await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == invitation.InvitedById);
 
             if (ownerUser != null)
             {
+                _logger.LogInformation("[PROVIDER_INVITATION] Sending shop owner notification to {OwnerEmail} about new provider {ProviderEmail}",
+                    ownerUser.Email, request.Email);
                 var ownerEmailBody = $@"
                     <h2>Provider Joined Your Shop</h2>
                     <p>Hi {validation.ShopName},</p>
@@ -738,11 +849,21 @@ public class RegistrationService : IRegistrationService
                     <p>They can now start adding items to consign with your shop.</p>
                     <p>- ConsignmentGenie</p>";
 
-                await _emailService.SendSimpleEmailAsync(
+                var ownerEmailResult = await _emailService.SendSimpleEmailAsync(
                     ownerUser.Email,
                     $"New Provider Joined - {request.FullName}",
                     ownerEmailBody);
+                _logger.LogInformation("[PROVIDER_INVITATION] Shop owner notification sent to {OwnerEmail}: {EmailResult}",
+                    ownerUser.Email, ownerEmailResult);
             }
+            else
+            {
+                _logger.LogWarning("[PROVIDER_INVITATION] Could not find shop owner (ID: {InvitedById}) to notify about new provider {ProviderEmail}",
+                    invitation.InvitedById, request.Email);
+            }
+
+            _logger.LogInformation("[PROVIDER_INVITATION] Provider registration from invitation completed successfully for {Email} - provider number {ProviderNumber}",
+                request.Email, providerNumber);
 
             return new RegistrationResultDto
             {
@@ -752,6 +873,7 @@ public class RegistrationService : IRegistrationService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "[PROVIDER_INVITATION] Provider registration from invitation failed for {Email}", request.Email);
             return new RegistrationResultDto
             {
                 Success = false,

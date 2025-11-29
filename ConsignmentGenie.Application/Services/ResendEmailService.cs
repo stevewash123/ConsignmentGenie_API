@@ -26,23 +26,47 @@ public class ResendEmailService : IEmailService
 
     public async Task<bool> SendWelcomeEmailAsync(string email, string organizationName)
     {
+        _logger.LogInformation("[EMAIL] Starting welcome email send to {Email} for organization {OrganizationName}", email, organizationName);
+
         try
         {
             var subject = "Welcome to Consignment Genie!";
+            _logger.LogDebug("[EMAIL] Welcome email subject: {Subject}", subject);
 
             // Load HTML template
             var htmlTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.html";
+            _logger.LogDebug("[EMAIL] Loading HTML template from {HtmlTemplatePath}", htmlTemplatePath);
+
+            if (!File.Exists(htmlTemplatePath))
+            {
+                _logger.LogError("[EMAIL] HTML template file not found at {HtmlTemplatePath}", htmlTemplatePath);
+                return false;
+            }
+
             var htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
+            _logger.LogDebug("[EMAIL] HTML template loaded, length: {TemplateLength} characters", htmlTemplate.Length);
 
             // Load plain text template
             var textTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.txt";
+            _logger.LogDebug("[EMAIL] Loading text template from {TextTemplatePath}", textTemplatePath);
+
+            if (!File.Exists(textTemplatePath))
+            {
+                _logger.LogError("[EMAIL] Text template file not found at {TextTemplatePath}", textTemplatePath);
+                return false;
+            }
+
             var textTemplate = await File.ReadAllTextAsync(textTemplatePath);
+            _logger.LogDebug("[EMAIL] Text template loaded, length: {TemplateLength} characters", textTemplate.Length);
 
             // For now, extract first name from email (will be improved when we pass more data)
             var ownerFirstName = email.Split('@')[0];
             var loginUrl = "http://localhost:4200/owner/dashboard";
             var storeCode = "PENDING"; // Default when not yet generated
             var unsubscribeUrl = "#"; // Placeholder for now
+
+            _logger.LogDebug("[EMAIL] Template variables: OwnerFirstName={OwnerFirstName}, ShopName={ShopName}, LoginUrl={LoginUrl}, StoreCode={StoreCode}, UnsubscribeUrl={UnsubscribeUrl}",
+                ownerFirstName, organizationName, loginUrl, storeCode, unsubscribeUrl);
 
             // Replace template variables in HTML
             var htmlContent = htmlTemplate
@@ -60,11 +84,16 @@ public class ResendEmailService : IEmailService
                 .Replace("{{StoreCode}}", storeCode)
                 .Replace("{{UnsubscribeUrl}}", unsubscribeUrl);
 
-            return await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
+            _logger.LogInformation("[EMAIL] Templates processed successfully for welcome email to {Email}, calling SendSimpleEmailAsync", email);
+
+            var result = await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
+            _logger.LogInformation("[EMAIL] Welcome email send result for {Email}: {Result}", email, result);
+
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send welcome email to {Email}\nTemplate loading failed or variable substitution failed", email);
+            _logger.LogError(ex, "[EMAIL] Failed to send welcome email to {Email} for organization {OrganizationName} - Template loading failed or variable substitution failed", email, organizationName);
             return false;
         }
     }
@@ -426,6 +455,9 @@ ConsignmentGenie Suggestion System
 
     public async Task<bool> SendProviderInvitationAsync(string email, string providerName, string shopName, string inviteLink, string expirationDate)
     {
+        _logger.LogInformation("[EMAIL] Starting provider invitation email to {Email} for provider {ProviderName} from shop {ShopName}", email, providerName, shopName);
+        _logger.LogDebug("[EMAIL] Provider invitation details: InviteLink={InviteLink}, ExpirationDate={ExpirationDate}", inviteLink, expirationDate);
+
         try
         {
             var subject = $"Join {shopName} as a Provider - Invitation to ConsignmentGenie";
@@ -500,11 +532,13 @@ ConsignmentGenie Suggestion System
 </body>
 </html>";
 
-            return await SendSimpleEmailAsync(email, subject, htmlContent);
+            var result = await SendSimpleEmailAsync(email, subject, htmlContent);
+            _logger.LogInformation("[EMAIL] Provider invitation email send result for {Email}: {Result}", email, result);
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send provider invitation email to {Email}", email);
+            _logger.LogError(ex, "[EMAIL] Failed to send provider invitation email to {Email} for provider {ProviderName} from shop {ShopName}", email, providerName, shopName);
             return false;
         }
     }
