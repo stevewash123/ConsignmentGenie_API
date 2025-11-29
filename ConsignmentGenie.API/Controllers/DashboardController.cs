@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using ConsignmentGenie.Core.DTOs.Onboarding;
 
 namespace ConsignmentGenie.API.Controllers;
 
@@ -136,6 +137,62 @@ public class DashboardController : ControllerBase
                 ? "Provider auto-approval enabled. New providers will be automatically approved."
                 : "Provider auto-approval disabled. New providers will require manual approval.",
             data = new { autoApproveProviders = organization.AutoApproveProviders }
+        });
+    }
+
+    [HttpGet("organization/onboarding-status")]
+    public async Task<ActionResult<object>> GetOnboardingStatus()
+    {
+        var organizationId = GetOrganizationId();
+
+        var organization = await _context.Organizations
+            .Include(o => o.Providers)
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+        if (organization == null)
+        {
+            return NotFound("Organization not found");
+        }
+
+        var status = new OnboardingStatusDto
+        {
+            Dismissed = organization.OnboardingDismissed,
+            Steps = new OnboardingStepsDto
+            {
+                HasProviders = organization.Providers.Any(),
+                StorefrontConfigured = organization.StoreEnabled ||
+                                      organization.StripeConnected ||
+                                      !string.IsNullOrEmpty(organization.ShopName),
+                HasInventory = organization.Items.Any(),
+                QuickBooksConnected = organization.QuickBooksConnected
+            }
+        };
+
+        return Ok(new { success = true, data = status });
+    }
+
+    [HttpPost("organization/dismiss-onboarding")]
+    public async Task<ActionResult<object>> DismissOnboarding([FromBody] DismissOnboardingRequestDto request)
+    {
+        var organizationId = GetOrganizationId();
+
+        var organization = await _context.Organizations
+            .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+        if (organization == null)
+        {
+            return NotFound("Organization not found");
+        }
+
+        organization.OnboardingDismissed = request.Dismissed;
+        organization.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new {
+            success = true,
+            message = "Onboarding status updated successfully"
         });
     }
 

@@ -92,6 +92,9 @@ public class Organization : BaseEntity
 
     public int SetupStep { get; set; } = 0;  // Track wizard progress (0 = not started)
 
+    // Onboarding
+    public bool OnboardingDismissed { get; set; } = false;  // Track whether welcome modal was dismissed
+
     // Shop Profile
     [MaxLength(200)]
     public string? ShopName { get; set; }
