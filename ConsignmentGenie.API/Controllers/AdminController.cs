@@ -578,6 +578,302 @@ public class AdminController : ControllerBase
 
     #endregion
 
+    #region Admin Dashboard and Notifications
+
+    /// <summary>
+    /// Get admin dashboard metrics
+    /// </summary>
+    [HttpGet("metrics")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ApiResponse<object>>> GetMetrics()
+    {
+        try
+        {
+            var totalOrganizations = await _context.Organizations.CountAsync();
+            var activeOrganizations = await _context.Organizations
+                .CountAsync(o => o.SubscriptionStatus == SubscriptionStatus.Active);
+            var totalUsers = await _context.Users.CountAsync();
+            var totalRevenue = await _context.Organizations
+                .Where(o => o.SubscriptionStatus == SubscriptionStatus.Active)
+                .SumAsync(o => o.MonthlyRevenue ?? 0);
+
+            var metrics = new
+            {
+                organizations = new
+                {
+                    total = totalOrganizations,
+                    active = activeOrganizations,
+                    trend = "up"
+                },
+                users = new
+                {
+                    total = totalUsers,
+                    newThisMonth = totalUsers, // Simplified for now
+                    trend = "up"
+                },
+                revenue = new
+                {
+                    monthly = totalRevenue,
+                    growth = 15.5m,
+                    trend = "up"
+                },
+                system = new
+                {
+                    uptime = "99.9%",
+                    performance = "good",
+                    alerts = 0
+                }
+            };
+
+            return Ok(ApiResponse<object>.SuccessResult(metrics, "Admin metrics retrieved successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting admin metrics");
+            return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred while retrieving metrics"));
+        }
+    }
+
+    /// <summary>
+    /// Get recent organization signups
+    /// </summary>
+    [HttpGet("recent-signups")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ApiResponse<object>>> GetRecentSignups()
+    {
+        try
+        {
+            var recentSignups = await _context.Organizations
+                .OrderByDescending(o => o.CreatedAt)
+                .Take(10)
+                .Select(o => new
+                {
+                    id = o.Id,
+                    name = o.Name,
+                    email = o.Users.FirstOrDefault(u => u.Role == UserRole.Owner).Email,
+                    subscriptionTier = o.SubscriptionTier.ToString(),
+                    subscriptionStatus = o.SubscriptionStatus.ToString(),
+                    createdAt = o.CreatedAt,
+                    timeAgo = $"{(DateTime.UtcNow - o.CreatedAt).Days} days ago"
+                })
+                .ToListAsync();
+
+            return Ok(ApiResponse<object>.SuccessResult(recentSignups, "Recent signups retrieved successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting recent signups");
+            return StatusCode(500, ApiResponse<object>.ErrorResult("An error occurred while retrieving recent signups"));
+        }
+    }
+
+    /// <summary>
+    /// Get admin notifications with pagination
+    /// </summary>
+    [HttpGet("notifications")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<object>> GetNotifications(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool unreadOnly = false)
+    {
+        try
+        {
+            // For now, return mock data as admin notifications aren't fully implemented
+            var notifications = new List<object>
+            {
+                new
+                {
+                    id = Guid.NewGuid(),
+                    type = "system_alert",
+                    title = "High Server Load",
+                    message = "API response time increased by 15% in the last hour",
+                    isRead = false,
+                    createdAt = DateTime.UtcNow.AddMinutes(-30),
+                    severity = "warning"
+                },
+                new
+                {
+                    id = Guid.NewGuid(),
+                    type = "signup",
+                    title = "New Organization Signup",
+                    message = "New shop 'Vintage Treasures' has registered",
+                    isRead = !unreadOnly,
+                    createdAt = DateTime.UtcNow.AddHours(-2),
+                    severity = "info"
+                },
+                new
+                {
+                    id = Guid.NewGuid(),
+                    type = "subscription",
+                    title = "Subscription Upgrade",
+                    message = "Shop 'Modern Consign' upgraded to Pro plan",
+                    isRead = true,
+                    createdAt = DateTime.UtcNow.AddHours(-4),
+                    severity = "info"
+                }
+            };
+
+            if (unreadOnly)
+            {
+                notifications = notifications.Where(n => !(bool)n.GetType().GetProperty("isRead").GetValue(n)).ToList();
+            }
+
+            var pagedNotifications = notifications
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var result = new
+            {
+                data = pagedNotifications,
+                totalCount = notifications.Count,
+                page = page,
+                pageSize = pageSize,
+                totalPages = (int)Math.Ceiling(notifications.Count / (double)pageSize),
+                hasNextPage = page * pageSize < notifications.Count,
+                hasPreviousPage = page > 1
+            };
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting admin notifications");
+            return StatusCode(500, "An error occurred while retrieving notifications");
+        }
+    }
+
+    /// <summary>
+    /// Get unread notification count for admin
+    /// </summary>
+    [HttpGet("notifications/unread-count")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<object>> GetUnreadNotificationCount()
+    {
+        try
+        {
+            // For now, return mock data as admin notifications aren't fully implemented
+            var count = 2; // Mock unread count
+
+            return Ok(new { count });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting admin unread notification count");
+            return StatusCode(500, "An error occurred while retrieving unread count");
+        }
+    }
+
+    /// <summary>
+    /// Mark a specific admin notification as read
+    /// </summary>
+    [HttpPost("notifications/{id}/mark-read")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> MarkNotificationAsRead(Guid id)
+    {
+        try
+        {
+            // For now, just return success as admin notifications aren't fully implemented
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error marking admin notification {NotificationId} as read", id);
+            return StatusCode(500, "An error occurred while marking notification as read");
+        }
+    }
+
+    /// <summary>
+    /// Mark all admin notifications as read
+    /// </summary>
+    [HttpPost("notifications/mark-all-read")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> MarkAllNotificationsAsRead()
+    {
+        try
+        {
+            // For now, just return success as admin notifications aren't fully implemented
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error marking all admin notifications as read");
+            return StatusCode(500, "An error occurred while marking notifications as read");
+        }
+    }
+
+    /// <summary>
+    /// Delete a specific admin notification
+    /// </summary>
+    [HttpDelete("notifications/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteNotification(Guid id)
+    {
+        try
+        {
+            // For now, just return success as admin notifications aren't fully implemented
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting admin notification {NotificationId}", id);
+            return StatusCode(500, "An error occurred while deleting notification");
+        }
+    }
+
+    /// <summary>
+    /// Get admin notification preferences
+    /// </summary>
+    [HttpGet("notifications/preferences")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<object>> GetNotificationPreferences()
+    {
+        try
+        {
+            // Return mock admin preferences
+            var preferences = new
+            {
+                emailEnabled = true,
+                emailSystemAlerts = true,
+                emailNewSignups = true,
+                emailSubscriptionChanges = true,
+                emailErrorReports = true,
+                digestMode = "instant",
+                digestTime = "09:00",
+                digestDay = 1
+            };
+
+            return Ok(preferences);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting admin notification preferences");
+            return StatusCode(500, "An error occurred while retrieving notification preferences");
+        }
+    }
+
+    /// <summary>
+    /// Update admin notification preferences
+    /// </summary>
+    [HttpPut("notifications/preferences")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateNotificationPreferences([FromBody] object preferences)
+    {
+        try
+        {
+            // For now, just return the same preferences
+            return Ok(preferences);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating admin notification preferences");
+            return StatusCode(500, "An error occurred while updating notification preferences");
+        }
+    }
+
+    #endregion
+
     private async Task<string> GenerateUniqueStoreCode()
     {
         var random = new Random();

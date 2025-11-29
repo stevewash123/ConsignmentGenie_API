@@ -180,6 +180,28 @@ public class OwnerController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Delete a specific notification
+    /// </summary>
+    [HttpDelete("notifications/{id}")]
+    public async Task<IActionResult> DeleteNotification(Guid id)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized();
+
+            await _notificationService.DeleteAsync(id, userId.Value);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting owner notification {NotificationId}", id);
+            return StatusCode(500, "An error occurred while deleting notification");
+        }
+    }
+
     private Guid? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
