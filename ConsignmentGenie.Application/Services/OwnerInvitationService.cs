@@ -2,8 +2,10 @@ using ConsignmentGenie.Application.DTOs;
 using ConsignmentGenie.Application.DTOs.Auth;
 using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Core.DTOs;
+using ConsignmentGenie.Core.DTOs.Notifications;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,19 +23,22 @@ public class OwnerInvitationService : IOwnerInvitationService
     private readonly IConfiguration _configuration;
     private readonly ILogger<OwnerInvitationService> _logger;
     private readonly IAuthService _authService;
+    private readonly IProviderNotificationService _notificationService;
 
     public OwnerInvitationService(
         ConsignmentGenieContext context,
         IEmailService emailService,
         IConfiguration configuration,
         ILogger<OwnerInvitationService> logger,
-        IAuthService authService)
+        IAuthService authService,
+        IProviderNotificationService notificationService)
     {
         _context = context;
         _emailService = emailService;
         _configuration = configuration;
         _logger = logger;
         _authService = authService;
+        _notificationService = notificationService;
     }
 
     public async Task<ServiceResult<OwnerInvitationDetailDto>> CreateInvitationAsync(CreateOwnerInvitationRequest request, Guid invitedById)
@@ -338,6 +343,16 @@ public class OwnerInvitationService : IOwnerInvitationService
 
                 // Send welcome email
                 await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name);
+
+                // Create welcome notification for the user to see in notification center
+                await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
+                {
+                    OrganizationId = organization.Id,
+                    UserId = user.Id,
+                    Type = NotificationType.WelcomeEmail,
+                    Title = "Welcome to ConsignmentGenie!",
+                    Message = $"Welcome to ConsignmentGenie, {organization.Name}! We've sent you a welcome email with getting started tips. Check out your dashboard to begin managing your consignment business."
+                });
 
                 // Generate JWT token for the new user to auto-login
                 string? jwtToken = null;

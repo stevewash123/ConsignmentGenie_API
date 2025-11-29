@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ConsignmentGenie.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4363f00a8a644a0823580c434148a96d6c1ff4c2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+70f405abdcc933dcfa51f330e45bba4d70ffa83b")]
 [assembly: System.Reflection.AssemblyProductAttribute("ConsignmentGenie.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ConsignmentGenie.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
