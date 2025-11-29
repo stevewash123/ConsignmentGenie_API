@@ -248,6 +248,31 @@ public class AuthController : ControllerBase
             return StatusCode(500, ApiResponse<LoginResponse>.ErrorResult("Login failed"));
         }
     }
+
+    [HttpGet("validate-subdomain/{subdomain}")]
+    public async Task<ActionResult<ApiResponse<SubdomainValidationResponse>>> ValidateSubdomain(string subdomain)
+    {
+        try
+        {
+            // Check if subdomain is already taken
+            var existingOrg = await _unitOfWork.Organizations
+                .GetAsync(o => o.Subdomain == subdomain.ToLower());
+
+            var response = new SubdomainValidationResponse
+            {
+                IsAvailable = existingOrg == null,
+                Subdomain = subdomain.ToLower()
+            };
+
+            return Ok(ApiResponse<SubdomainValidationResponse>.SuccessResult(response,
+                response.IsAvailable ? "Subdomain is available" : "Subdomain is already taken"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating subdomain: {Subdomain}", subdomain);
+            return StatusCode(500, ApiResponse<SubdomainValidationResponse>.ErrorResult("Validation failed"));
+        }
+    }
 }
 
 // Request DTOs
@@ -262,4 +287,10 @@ public class ProviderLoginRequest
 {
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+}
+
+public class SubdomainValidationResponse
+{
+    public bool IsAvailable { get; set; }
+    public string Subdomain { get; set; } = string.Empty;
 }
