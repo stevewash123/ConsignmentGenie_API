@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\ConsignmentGenie.Tests.csproj": {}
+    "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/ConsignmentGenie.Tests.csproj": {}
   },
   "projects": {
-    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj": {
+    "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/ConsignmentGenie.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj",
+        "projectUniqueName": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/ConsignmentGenie.API.csproj",
         "projectName": "ConsignmentGenie.API",
-        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj",
-        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\obj\\",
+        "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/ConsignmentGenie.API.csproj",
+        "packagesPath": "/home/swash/.nuget/packages/",
+        "outputPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/swash/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -26,11 +26,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Application/ConsignmentGenie.Application.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Application/ConsignmentGenie.Application.csproj"
               },
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj"
               }
             }
           }
@@ -44,8 +44,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -121,21 +120,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.414/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj": {
+    "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Application/ConsignmentGenie.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj",
+        "projectUniqueName": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Application/ConsignmentGenie.Application.csproj",
         "projectName": "ConsignmentGenie.Application",
-        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj",
-        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\obj\\",
+        "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Application/ConsignmentGenie.Application.csproj",
+        "packagesPath": "/home/swash/.nuget/packages/",
+        "outputPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Application/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/swash/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -147,11 +146,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj"
               },
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj"
               }
             }
           }
@@ -165,8 +164,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -237,21 +235,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.414/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
+    "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj",
+        "projectUniqueName": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj",
         "projectName": "ConsignmentGenie.Core",
-        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj",
-        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\obj\\",
+        "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj",
+        "packagesPath": "/home/swash/.nuget/packages/",
+        "outputPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/swash/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -274,8 +272,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -296,21 +293,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.414/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj": {
+    "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj",
+        "projectUniqueName": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj",
         "projectName": "ConsignmentGenie.Infrastructure",
-        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\obj\\",
+        "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj",
+        "packagesPath": "/home/swash/.nuget/packages/",
+        "outputPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/swash/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -322,8 +319,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj"
               }
             }
           }
@@ -337,8 +334,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -383,21 +379,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.414/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\ConsignmentGenie.Tests.csproj": {
+    "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/ConsignmentGenie.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\ConsignmentGenie.Tests.csproj",
+        "projectUniqueName": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/ConsignmentGenie.Tests.csproj",
         "projectName": "ConsignmentGenie.Tests",
-        "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\ConsignmentGenie.Tests.csproj",
-        "packagesPath": "C:\\Users\\owner\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Tests\\obj\\",
+        "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/ConsignmentGenie.Tests.csproj",
+        "packagesPath": "/home/swash/.nuget/packages/",
+        "outputPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\owner\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/swash/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -409,17 +405,17 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.API\\ConsignmentGenie.API.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/ConsignmentGenie.API.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/ConsignmentGenie.API.csproj"
               },
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Application\\ConsignmentGenie.Application.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Application/ConsignmentGenie.Application.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Application/ConsignmentGenie.Application.csproj"
               },
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Core\\ConsignmentGenie.Core.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Core/ConsignmentGenie.Core.csproj"
               },
-              "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj": {
-                "projectPath": "C:\\Projects\\ConsignmentGenie\\ConsignmentGenie_API\\ConsignmentGenie.Infrastructure\\ConsignmentGenie.Infrastructure.csproj"
+              "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj": {
+                "projectPath": "/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Infrastructure/ConsignmentGenie.Infrastructure.csproj"
               }
             }
           }
@@ -433,8 +429,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -489,7 +484,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.414/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

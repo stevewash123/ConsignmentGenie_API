@@ -161,7 +161,7 @@
         "runtime": {
           "lib/netcoreapp3.0/Hangfire.AspNetCore.dll": {
             "assemblyVersion": "1.8.14.0",
-            "fileVersion": "1.8.14.0"
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -172,7 +172,7 @@
         "runtime": {
           "lib/netstandard2.0/Hangfire.Core.dll": {
             "assemblyVersion": "1.8.14.0",
-            "fileVersion": "1.8.14.0"
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -197,7 +197,7 @@
         "runtime": {
           "lib/netstandard2.1/Hangfire.NetCore.dll": {
             "assemblyVersion": "1.8.14.0",
-            "fileVersion": "1.8.14.0"
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -932,7 +932,7 @@
           "runtimes/win-x64/native/libwinpthread-1.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "1.0.0.0"
+            "fileVersion": "0.0.0.0"
           },
           "runtimes/win-x64/native/qpdf.dll": {
             "rid": "win-x64",
@@ -962,7 +962,7 @@
           "runtimes/win-x86/native/libwinpthread-1.dll": {
             "rid": "win-x86",
             "assetType": "native",
-            "fileVersion": "1.0.0.0"
+            "fileVersion": "0.0.0.0"
           },
           "runtimes/win-x86/native/qpdf.dll": {
             "rid": "win-x86",
@@ -1788,7 +1788,7 @@
         "runtime": {
           "lib/netstandard2.0/xunit.abstractions.dll": {
             "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.0.0.0"
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -1850,7 +1850,7 @@
         },
         "runtime": {
           "ConsignmentGenie.API.dll": {
-            "assemblyVersion": "1.0.0.0",
+            "assemblyVersion": "1.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -1874,7 +1874,7 @@
         },
         "runtime": {
           "ConsignmentGenie.Application.dll": {
-            "assemblyVersion": "1.0.0.0",
+            "assemblyVersion": "1.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -1882,7 +1882,7 @@
       "ConsignmentGenie.Core/1.0.0": {
         "runtime": {
           "ConsignmentGenie.Core.dll": {
-            "assemblyVersion": "1.0.0.0",
+            "assemblyVersion": "1.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -1897,7 +1897,7 @@
         },
         "runtime": {
           "ConsignmentGenie.Infrastructure.dll": {
-            "assemblyVersion": "1.0.0.0",
+            "assemblyVersion": "1.0.0",
             "fileVersion": "1.0.0.0"
           }
         }

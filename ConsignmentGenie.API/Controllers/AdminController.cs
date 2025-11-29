@@ -593,9 +593,16 @@ public class AdminController : ControllerBase
             var activeOrganizations = await _context.Organizations
                 .CountAsync(o => o.SubscriptionStatus == SubscriptionStatus.Active);
             var totalUsers = await _context.Users.CountAsync();
-            var totalRevenue = await _context.Organizations
-                .Where(o => o.SubscriptionStatus == SubscriptionStatus.Active)
-                .SumAsync(o => o.MonthlyRevenue ?? 0);
+            // Calculate estimated revenue based on subscription tiers
+            var basicCount = await _context.Organizations
+                .CountAsync(o => o.SubscriptionStatus == SubscriptionStatus.Active && o.SubscriptionTier == SubscriptionTier.Basic);
+            var proCount = await _context.Organizations
+                .CountAsync(o => o.SubscriptionStatus == SubscriptionStatus.Active && o.SubscriptionTier == SubscriptionTier.Pro);
+            var enterpriseCount = await _context.Organizations
+                .CountAsync(o => o.SubscriptionStatus == SubscriptionStatus.Active && o.SubscriptionTier == SubscriptionTier.Enterprise);
+
+            // Estimate monthly revenue (Basic: $29, Pro: $79, Enterprise: $199)
+            var totalRevenue = (basicCount * 29) + (proCount * 79) + (enterpriseCount * 199);
 
             var metrics = new
             {
