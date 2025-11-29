@@ -4,6 +4,7 @@ using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 
 namespace ConsignmentGenie.Application.Services;
@@ -13,12 +14,14 @@ public class ProviderInvitationService : IProviderInvitationService
     private readonly ConsignmentGenieContext _context;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<ProviderInvitationService> _logger;
 
-    public ProviderInvitationService(ConsignmentGenieContext context, IEmailService emailService, IConfiguration configuration)
+    public ProviderInvitationService(ConsignmentGenieContext context, IEmailService emailService, IConfiguration configuration, ILogger<ProviderInvitationService> logger)
     {
         _context = context;
         _emailService = emailService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<ProviderInvitationResultDto> CreateInvitationAsync(CreateProviderInvitationDto request, Guid organizationId, Guid invitedById)
@@ -73,8 +76,15 @@ public class ProviderInvitationService : IProviderInvitationService
             var inviter = await _context.Users.FindAsync(invitedById);
 
             // Generate invitation link
-            var baseUrl = _configuration["App:BaseUrl"] ?? "http://localhost:4200";
+            var appBaseUrl = _configuration["App:BaseUrl"];
+            var clientUrl = _configuration["ClientUrl"];
+
+            _logger.LogInformation("Building provider invitation link - App:BaseUrl: '{AppBaseUrl}', ClientUrl: '{ClientUrl}'", appBaseUrl, clientUrl);
+
+            var baseUrl = appBaseUrl ?? "http://localhost:4200";
             var inviteLink = $"{baseUrl}/provider/register?token={invitation.Token}";
+
+            _logger.LogInformation("Generated provider invitation link: '{InviteLink}' for email: '{Email}'", inviteLink, invitation.Email);
 
             // Send invitation email
             var emailSent = await _emailService.SendProviderInvitationAsync(
@@ -177,8 +187,15 @@ public class ProviderInvitationService : IProviderInvitationService
         await _context.SaveChangesAsync();
 
         // Generate invitation link and send email
-        var baseUrl = _configuration["App:BaseUrl"] ?? "http://localhost:4200";
+        var appBaseUrl = _configuration["App:BaseUrl"];
+        var clientUrl = _configuration["ClientUrl"];
+
+        _logger.LogInformation("Building provider resend invitation link - App:BaseUrl: '{AppBaseUrl}', ClientUrl: '{ClientUrl}'", appBaseUrl, clientUrl);
+
+        var baseUrl = appBaseUrl ?? "http://localhost:4200";
         var inviteLink = $"{baseUrl}/provider/register?token={invitation.Token}";
+
+        _logger.LogInformation("Generated provider resend invitation link: '{InviteLink}' for email: '{Email}'", inviteLink, invitation.Email);
 
         var emailSent = await _emailService.SendProviderInvitationAsync(
             invitation.Email,
