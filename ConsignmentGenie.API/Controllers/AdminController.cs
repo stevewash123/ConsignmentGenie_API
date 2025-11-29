@@ -881,6 +881,73 @@ public class AdminController : ControllerBase
 
     #endregion
 
+    [HttpPost("seed-admin")]
+    public async Task<ActionResult<ApiResponse<object>>> SeedAdmin()
+    {
+        try
+        {
+            _logger.LogInformation("Creating admin user and organization...");
+
+            // Check if admin already exists
+            var existingAdmin = await _context.Users.FirstOrDefaultAsync(u => u.Email == "admin@test.com");
+            if (existingAdmin != null)
+            {
+                return Ok(ApiResponse<object>.SuccessResult(new
+                {
+                    message = "Admin already exists",
+                    email = "admin@test.com",
+                    organizationId = existingAdmin.OrganizationId
+                }, "Admin user already created"));
+            }
+
+            // Create admin organization
+            var organization = new ConsignmentGenie.Core.Entities.Organization
+            {
+                Id = Guid.NewGuid(),
+                Name = "Admin Test Shop",
+                Subdomain = "admin-test",
+                StoreCode = await GenerateUniqueStoreCode(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Organizations.Add(organization);
+
+            // Create admin user
+            var adminUser = new ConsignmentGenie.Core.Entities.User
+            {
+                Id = Guid.NewGuid(),
+                Email = "admin@test.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                FullName = "Admin User",
+                Role = UserRole.Owner,
+                OrganizationId = organization.Id,
+                ApprovalStatus = ApprovalStatus.Approved,
+                ApprovedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(adminUser);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Admin user created successfully: {adminUser.Email}");
+
+            return Ok(ApiResponse<object>.SuccessResult(new
+            {
+                userId = adminUser.Id,
+                email = adminUser.Email,
+                organizationId = organization.Id,
+                organizationName = organization.Name,
+                storeCode = organization.StoreCode,
+                password = "admin123"
+            }, "Admin user created successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating admin user: {Message}", ex.Message);
+            return StatusCode(500, ApiResponse<object>.ErrorResult("Failed to create admin user: " + ex.Message));
+        }
+    }
+
     private async Task<string> GenerateUniqueStoreCode()
     {
         var random = new Random();

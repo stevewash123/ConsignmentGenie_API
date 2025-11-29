@@ -267,7 +267,7 @@ public class SeedDataService
             var salePrice = random.NextDouble() < 0.7 ? item.Price : item.Price * (decimal)(0.85 + random.NextDouble() * 0.1);
 
             // Calculate commission split
-            var providerAmount = salePrice * (provider.CommissionRate / 100);
+            var providerAmount = salePrice * provider.CommissionRate;
             var shopAmount = salePrice - providerAmount;
 
             var transaction = new Transaction
