@@ -342,7 +342,7 @@ public class AdminController : ControllerBase
 
     // Owner Approval Endpoints
     [HttpGet("pending-owners")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<ActionResult<ApiResponse<List<PendingOwnerDto>>>> GetPendingOwners()
     {
         try
@@ -357,7 +357,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("{userId}/approve")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<ActionResult<ApiResponse<ApprovalResponseDto>>> ApproveOwner(Guid userId)
     {
         try
@@ -382,7 +382,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("{userId}/reject")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<ActionResult<ApiResponse<ApprovalResponseDto>>> RejectOwner(Guid userId, [FromBody] RejectUserRequest request)
     {
         try
@@ -584,7 +584,7 @@ public class AdminController : ControllerBase
     /// Get admin dashboard metrics
     /// </summary>
     [HttpGet("metrics")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<ActionResult<ApiResponse<object>>> GetMetrics()
     {
         try
@@ -645,7 +645,7 @@ public class AdminController : ControllerBase
     /// Get recent organization signups
     /// </summary>
     [HttpGet("recent-signups")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<ActionResult<ApiResponse<object>>> GetRecentSignups()
     {
         try
@@ -678,7 +678,7 @@ public class AdminController : ControllerBase
     /// Get admin notifications with pagination
     /// </summary>
     [HttpGet("notifications")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<ActionResult<object>> GetNotifications(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -755,7 +755,7 @@ public class AdminController : ControllerBase
     /// Get unread notification count for admin
     /// </summary>
     [HttpGet("notifications/unread-count")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<ActionResult<object>> GetUnreadNotificationCount()
     {
         try
@@ -776,7 +776,7 @@ public class AdminController : ControllerBase
     /// Mark a specific admin notification as read
     /// </summary>
     [HttpPost("notifications/{id}/mark-read")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<IActionResult> MarkNotificationAsRead(Guid id)
     {
         try
@@ -795,7 +795,7 @@ public class AdminController : ControllerBase
     /// Mark all admin notifications as read
     /// </summary>
     [HttpPost("notifications/mark-all-read")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<IActionResult> MarkAllNotificationsAsRead()
     {
         try
@@ -814,7 +814,7 @@ public class AdminController : ControllerBase
     /// Delete a specific admin notification
     /// </summary>
     [HttpDelete("notifications/{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<IActionResult> DeleteNotification(Guid id)
     {
         try
@@ -833,7 +833,7 @@ public class AdminController : ControllerBase
     /// Get admin notification preferences
     /// </summary>
     [HttpGet("notifications/preferences")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<ActionResult<object>> GetNotificationPreferences()
     {
         try
@@ -864,7 +864,7 @@ public class AdminController : ControllerBase
     /// Update admin notification preferences
     /// </summary>
     [HttpPut("notifications/preferences")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public async Task<IActionResult> UpdateNotificationPreferences([FromBody] object preferences)
     {
         try
