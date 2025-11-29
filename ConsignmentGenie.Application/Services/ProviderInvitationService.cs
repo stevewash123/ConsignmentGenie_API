@@ -76,12 +76,11 @@ public class ProviderInvitationService : IProviderInvitationService
             var inviter = await _context.Users.FindAsync(invitedById);
 
             // Generate invitation link
-            var appBaseUrl = _configuration["App:BaseUrl"];
             var clientUrl = _configuration["ClientUrl"];
 
-            _logger.LogInformation("Building provider invitation link - App:BaseUrl: '{AppBaseUrl}', ClientUrl: '{ClientUrl}'", appBaseUrl, clientUrl);
+            _logger.LogInformation("Building provider invitation link - ClientUrl: '{ClientUrl}'", clientUrl);
 
-            var baseUrl = appBaseUrl ?? "http://localhost:4200";
+            var baseUrl = clientUrl ?? "http://localhost:4200";
             var inviteLink = $"{baseUrl}/provider/register?token={invitation.Token}";
 
             _logger.LogInformation("Generated provider invitation link: '{InviteLink}' for email: '{Email}'", inviteLink, invitation.Email);
@@ -187,12 +186,11 @@ public class ProviderInvitationService : IProviderInvitationService
         await _context.SaveChangesAsync();
 
         // Generate invitation link and send email
-        var appBaseUrl = _configuration["App:BaseUrl"];
         var clientUrl = _configuration["ClientUrl"];
 
-        _logger.LogInformation("Building provider resend invitation link - App:BaseUrl: '{AppBaseUrl}', ClientUrl: '{ClientUrl}'", appBaseUrl, clientUrl);
+        _logger.LogInformation("Building provider resend invitation link - ClientUrl: '{ClientUrl}'", clientUrl);
 
-        var baseUrl = appBaseUrl ?? "http://localhost:4200";
+        var baseUrl = clientUrl ?? "http://localhost:4200";
         var inviteLink = $"{baseUrl}/provider/register?token={invitation.Token}";
 
         _logger.LogInformation("Generated provider resend invitation link: '{InviteLink}' for email: '{Email}'", inviteLink, invitation.Email);

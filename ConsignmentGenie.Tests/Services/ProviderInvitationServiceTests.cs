@@ -4,6 +4,7 @@ using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Tests.Helpers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -13,6 +14,7 @@ public class ProviderInvitationServiceTests : IDisposable
 {
     private readonly Mock<IEmailService> _mockEmailService;
     private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<ILogger<ProviderInvitationService>> _mockLogger;
     private readonly ProviderInvitationService _service;
     private readonly Infrastructure.Data.ConsignmentGenieContext _context;
     private readonly Guid _organizationId = Guid.NewGuid();
@@ -23,8 +25,9 @@ public class ProviderInvitationServiceTests : IDisposable
         _context = TestDbContextFactory.CreateInMemoryContext();
         _mockEmailService = new Mock<IEmailService>();
         _mockConfiguration = new Mock<IConfiguration>();
-        _mockConfiguration.Setup(x => x["App:BaseUrl"]).Returns("http://localhost:4200");
-        _service = new ProviderInvitationService(_context, _mockEmailService.Object, _mockConfiguration.Object);
+        _mockLogger = new Mock<ILogger<ProviderInvitationService>>();
+        _mockConfiguration.Setup(x => x["ClientUrl"]).Returns("http://localhost:4200");
+        _service = new ProviderInvitationService(_context, _mockEmailService.Object, _mockConfiguration.Object, _mockLogger.Object);
         SeedTestData();
     }
 
