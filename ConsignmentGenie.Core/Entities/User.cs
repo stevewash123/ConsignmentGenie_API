@@ -47,6 +47,16 @@ public class User : BaseEntity
     [MaxLength(20)]
     public string? Phone { get; set; }
 
+    // Clerk-specific fields
+    [MaxLength(100)]
+    public string? ClerkPin { get; set; }  // Optional clerk-level PIN (hashed)
+
+    public bool IsActive { get; set; } = true;  // For deactivating clerks
+
+    public DateTime? HiredDate { get; set; }  // When clerk was added
+
+    public DateTime? LastLoginAt { get; set; }  // Track clerk login activity
+
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public Provider? Provider { get; set; }  // For Provider role users

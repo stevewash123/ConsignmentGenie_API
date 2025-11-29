@@ -45,6 +45,8 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<IntegrationCredentials> IntegrationCredentials { get; set; }
     public DbSet<ProviderInvitation> ProviderInvitations { get; set; }
     public DbSet<OwnerInvitation> OwnerInvitations { get; set; }
+    public DbSet<ClerkInvitation> ClerkInvitations { get; set; }
+    public DbSet<ClerkPermissions> ClerkPermissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -219,6 +221,22 @@ public class ConsignmentGenieContext : DbContext
         modelBuilder.Entity<Transaction>(entity =>
         {
             entity.HasIndex(t => t.SquarePaymentId).IsUnique();
+
+            // Clerk audit trail relationship
+            entity.HasOne(t => t.ProcessedByUser)
+                  .WithMany()
+                  .HasForeignKey(t => t.ProcessedByUserId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ClerkPermissions configuration
+        modelBuilder.Entity<ClerkPermissions>(entity =>
+        {
+            entity.HasIndex(cp => cp.OrganizationId).IsUnique();
+            entity.HasOne(cp => cp.Organization)
+                  .WithMany()
+                  .HasForeignKey(cp => cp.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // PaymentGatewayConnection configuration
@@ -673,6 +691,24 @@ public class ConsignmentGenieContext : DbContext
             entity.HasOne(pi => pi.InvitedBy)
                   .WithMany()
                   .HasForeignKey(pi => pi.InvitedById)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ClerkInvitation configuration
+        modelBuilder.Entity<ClerkInvitation>(entity =>
+        {
+            entity.HasIndex(ci => ci.OrganizationId);
+            entity.HasIndex(ci => ci.Token).IsUnique();
+            entity.HasIndex(ci => new { ci.OrganizationId, ci.Email });
+            entity.HasIndex(ci => ci.Status);
+            entity.HasIndex(ci => ci.ExpiresAt);
+            entity.HasOne(ci => ci.Organization)
+                  .WithMany()
+                  .HasForeignKey(ci => ci.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(ci => ci.InvitedBy)
+                  .WithMany()
+                  .HasForeignKey(ci => ci.InvitedById)
                   .OnDelete(DeleteBehavior.SetNull);
         });
 

@@ -88,7 +88,14 @@ public class Transaction : BaseEntity
     [MaxLength(20)]
     public string Status { get; set; } = "Completed"; // "Completed", "Pending", "Cancelled"
 
+    // Clerk audit trail
+    public Guid? ProcessedByUserId { get; set; }  // Who processed this transaction
+
+    [MaxLength(100)]
+    public string? ProcessedByName { get; set; }  // Denormalized for reports
+
     // Navigation properties
+    public User? ProcessedByUser { get; set; }  // Link to user who processed transaction
     public Organization Organization { get; set; } = null!;
     public Item Item { get; set; } = null!;
     public Provider Provider { get; set; } = null!;
