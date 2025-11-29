@@ -82,7 +82,7 @@ public class OwnerInvitationService : IOwnerInvitationService
             var inviter = await _context.Users.FindAsync(invitedById);
 
             // Generate invitation link
-            var baseUrl = _configuration["App:BaseUrl"] ?? "http://localhost:4200";
+            var baseUrl = _configuration["ClientUrl"] ?? "http://localhost:4200";
             var inviteLink = $"{baseUrl}/owner/register?token={invitation.Token}";
 
             // Send invitation email
@@ -382,7 +382,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                     _logger.LogError(ex, "FLOW-15: JWT token generation failed for user {UserId}: {Error}", user.Id, ex.Message);
                 }
 
-                var redirectUrl = $"{_configuration["App:BaseUrl"] ?? "http://localhost:4200"}/owner/dashboard";
+                var redirectUrl = $"{_configuration["ClientUrl"] ?? "http://localhost:4200"}/owner/dashboard";
 
                 _logger.LogError("FLOW-16: Creating response - UserId={UserId}, OrganizationId={OrganizationId}, HasToken={HasToken}, RedirectUrl={RedirectUrl}",
                     user.Id, organization.Id, jwtToken != null, redirectUrl);
@@ -463,7 +463,7 @@ public class OwnerInvitationService : IOwnerInvitationService
             await _context.SaveChangesAsync();
 
             // Resend email
-            var baseUrl = _configuration["App:BaseUrl"] ?? "http://localhost:4200";
+            var baseUrl = _configuration["ClientUrl"] ?? "http://localhost:4200";
             var inviteLink = $"{baseUrl}/owner/register?token={invitation.Token}";
 
             await SendInvitationEmailAsync(invitation, inviteLink);
@@ -519,7 +519,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                 CreatedAt = oi.CreatedAt,
                 ExpiresAt = oi.ExpiresAt,
                 IsExpired = oi.ExpiresAt < DateTime.UtcNow && oi.Status == InvitationStatus.Pending,
-                InvitationUrl = $"{_configuration["App:BaseUrl"] ?? "http://localhost:4200"}/owner/register?token={oi.Token}"
+                InvitationUrl = $"{_configuration["ClientUrl"] ?? "http://localhost:4200"}/owner/register?token={oi.Token}"
             })
             .FirstOrDefaultAsync();
     }
