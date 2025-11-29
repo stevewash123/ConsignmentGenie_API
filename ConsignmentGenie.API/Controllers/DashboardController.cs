@@ -235,7 +235,7 @@ public class DashboardController : ControllerBase
 
     private Guid GetOrganizationId()
     {
-        var organizationIdClaim = User.FindFirst("organizationId")?.Value;
+        var organizationIdClaim = User.FindFirst("OrganizationId")?.Value;
         if (organizationIdClaim != null && Guid.TryParse(organizationIdClaim, out var organizationId))
         {
             return organizationId;

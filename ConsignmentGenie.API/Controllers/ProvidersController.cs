@@ -691,7 +691,7 @@ public class ProvidersController : ControllerBase
         Console.WriteLine("========================");
 
         // Try both case variations
-        var orgIdClaimLower = User.FindFirst("organizationId")?.Value;
+        var orgIdClaimLower = User.FindFirst("OrganizationId")?.Value;
         var orgIdClaimUpper = User.FindFirst("OrganizationId")?.Value;
 
         Console.WriteLine($"organizationId (lowercase): {orgIdClaimLower}");

@@ -25,7 +25,7 @@ public class SuggestionsController : ControllerBase
         try
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var organizationIdClaim = User.FindFirst("organizationId")?.Value;
+            var organizationIdClaim = User.FindFirst("OrganizationId")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || string.IsNullOrEmpty(organizationIdClaim) ||
                 !Guid.TryParse(userIdClaim, out var userId) ||
@@ -55,7 +55,7 @@ public class SuggestionsController : ControllerBase
     {
         try
         {
-            var organizationIdClaim = User.FindFirst("organizationId")?.Value;
+            var organizationIdClaim = User.FindFirst("OrganizationId")?.Value;
 
             if (string.IsNullOrEmpty(organizationIdClaim) || !Guid.TryParse(organizationIdClaim, out var organizationId))
             {
@@ -78,7 +78,7 @@ public class SuggestionsController : ControllerBase
     {
         try
         {
-            var organizationIdClaim = User.FindFirst("organizationId")?.Value;
+            var organizationIdClaim = User.FindFirst("OrganizationId")?.Value;
 
             if (string.IsNullOrEmpty(organizationIdClaim) || !Guid.TryParse(organizationIdClaim, out var organizationId))
             {

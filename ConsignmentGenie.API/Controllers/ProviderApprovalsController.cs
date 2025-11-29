@@ -395,7 +395,7 @@ public class ProviderApprovalsController : ControllerBase
 
     private Guid GetOrganizationId()
     {
-        var orgIdClaim = User.FindFirst("organizationId")?.Value;
+        var orgIdClaim = User.FindFirst("OrganizationId")?.Value;
         return orgIdClaim != null ? Guid.Parse(orgIdClaim) : Guid.Empty;
     }
 
