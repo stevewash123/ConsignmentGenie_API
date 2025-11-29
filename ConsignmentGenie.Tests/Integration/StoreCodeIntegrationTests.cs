@@ -10,6 +10,7 @@ using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -30,11 +31,13 @@ namespace ConsignmentGenie.Tests.Integration
             _mockAuthService = new Mock<IAuthService>();
 
             _storeCodeService = new StoreCodeService(_context);
+            var mockLogger = new Mock<ILogger<RegistrationService>>();
             _registrationService = new RegistrationService(
                 _context,
                 _mockEmailService.Object,
                 _storeCodeService,
-                _mockAuthService.Object);
+                _mockAuthService.Object,
+                mockLogger.Object);
 
             _mockAuthService
                 .Setup(s => s.GenerateJwtToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>()))

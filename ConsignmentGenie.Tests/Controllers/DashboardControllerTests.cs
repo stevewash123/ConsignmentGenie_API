@@ -8,6 +8,8 @@ using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Tests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace ConsignmentGenie.Tests.Controllers
@@ -21,7 +23,8 @@ namespace ConsignmentGenie.Tests.Controllers
         public DashboardControllerTests()
         {
             _context = TestDbContextFactory.CreateInMemoryContext();
-            _controller = new DashboardController(_context);
+            var mockLogger = new Mock<ILogger<DashboardController>>();
+            _controller = new DashboardController(_context, mockLogger.Object);
 
             // Mock JWT claims
             var claims = new[]

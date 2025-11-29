@@ -11,6 +11,7 @@ using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -34,11 +35,13 @@ namespace ConsignmentGenie.Tests.Services
             _mockStoreCodeService = new Mock<IStoreCodeService>();
             _mockAuthService = new Mock<IAuthService>();
 
+            var mockLogger = new Mock<ILogger<RegistrationService>>();
             _registrationService = new RegistrationService(
                 _context,
                 _mockEmailService.Object,
                 _mockStoreCodeService.Object,
-                _mockAuthService.Object);
+                _mockAuthService.Object,
+                mockLogger.Object);
 
             SeedTestData().Wait();
         }
