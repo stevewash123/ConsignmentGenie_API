@@ -442,6 +442,152 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.Equal("healthy", status);
         }
 
+        #region New Endpoint Tests
+
+        [Fact]
+        public async Task GetMetrics_ReturnsAdminMetrics()
+        {
+            // Act
+            var result = await _controller.GetMetrics();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            dynamic response = okResult.Value;
+
+            var data = response.GetType().GetProperty("Data").GetValue(response, null);
+            var organizations = data.GetType().GetProperty("organizations").GetValue(data, null);
+            var totalOrgs = organizations.GetType().GetProperty("total").GetValue(organizations, null);
+
+            Assert.True((int)totalOrgs >= 0);
+        }
+
+        [Fact]
+        public async Task GetRecentSignups_ReturnsRecentOrganizations()
+        {
+            // Act
+            var result = await _controller.GetRecentSignups();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            dynamic response = okResult.Value;
+
+            var data = response.GetType().GetProperty("Data").GetValue(response, null);
+            Assert.NotNull(data);
+        }
+
+        [Fact]
+        public async Task GetNotifications_ReturnsPagedNotifications()
+        {
+            // Act
+            var result = await _controller.GetNotifications(1, 5, false);
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            dynamic response = okResult.Value;
+
+            var data = response.GetType().GetProperty("data").GetValue(response, null);
+            var totalCount = response.GetType().GetProperty("totalCount").GetValue(response, null);
+
+            Assert.NotNull(data);
+            Assert.True((int)totalCount >= 0);
+        }
+
+        [Fact]
+        public async Task GetNotifications_WithUnreadOnlyTrue_ReturnsFilteredNotifications()
+        {
+            // Act
+            var result = await _controller.GetNotifications(1, 5, true);
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            dynamic response = okResult.Value;
+
+            var data = response.GetType().GetProperty("data").GetValue(response, null);
+            Assert.NotNull(data);
+        }
+
+        [Fact]
+        public async Task GetUnreadNotificationCount_ReturnsCount()
+        {
+            // Act
+            var result = await _controller.GetUnreadNotificationCount();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            dynamic response = okResult.Value;
+
+            var count = response.GetType().GetProperty("count").GetValue(response, null);
+            Assert.True((int)count >= 0);
+        }
+
+        [Fact]
+        public async Task MarkNotificationAsRead_ReturnsNoContent()
+        {
+            // Arrange
+            var notificationId = Guid.NewGuid();
+
+            // Act
+            var result = await _controller.MarkNotificationAsRead(notificationId);
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task MarkAllNotificationsAsRead_ReturnsNoContent()
+        {
+            // Act
+            var result = await _controller.MarkAllNotificationsAsRead();
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task DeleteNotification_ReturnsNoContent()
+        {
+            // Arrange
+            var notificationId = Guid.NewGuid();
+
+            // Act
+            var result = await _controller.DeleteNotification(notificationId);
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task GetNotificationPreferences_ReturnsPreferences()
+        {
+            // Act
+            var result = await _controller.GetNotificationPreferences();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            dynamic response = okResult.Value;
+
+            var emailEnabled = response.GetType().GetProperty("emailEnabled").GetValue(response, null);
+            Assert.NotNull(emailEnabled);
+        }
+
+        [Fact]
+        public async Task UpdateNotificationPreferences_ReturnsUpdatedPreferences()
+        {
+            // Arrange
+            var preferences = new { emailEnabled = true, emailSystemAlerts = false };
+
+            // Act
+            var result = await _controller.UpdateNotificationPreferences(preferences);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(preferences, okResult.Value);
+        }
+
+        #endregion
+
         public void Dispose()
         {
             _context.Dispose();
