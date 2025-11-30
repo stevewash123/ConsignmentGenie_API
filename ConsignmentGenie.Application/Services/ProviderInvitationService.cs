@@ -81,7 +81,7 @@ public class ProviderInvitationService : IProviderInvitationService
             _logger.LogInformation("Building provider invitation link - ClientUrl: '{ClientUrl}'", clientUrl);
 
             var baseUrl = clientUrl ?? "http://localhost:4200";
-            var inviteLink = $"{baseUrl}/provider/register?token={invitation.Token}";
+            var inviteLink = $"{baseUrl}/provider/register?token={invitation.Token}&storeCode={organization?.StoreCode}";
 
             _logger.LogInformation("Generated provider invitation link: '{InviteLink}' for email: '{Email}'", inviteLink, invitation.Email);
 
@@ -191,7 +191,7 @@ public class ProviderInvitationService : IProviderInvitationService
         _logger.LogInformation("Building provider resend invitation link - ClientUrl: '{ClientUrl}'", clientUrl);
 
         var baseUrl = clientUrl ?? "http://localhost:4200";
-        var inviteLink = $"{baseUrl}/provider/register?token={invitation.Token}";
+        var inviteLink = $"{baseUrl}/provider/register?token={invitation.Token}&storeCode={invitation.Organization?.StoreCode}";
 
         _logger.LogInformation("Generated provider resend invitation link: '{InviteLink}' for email: '{Email}'", inviteLink, invitation.Email);
 
