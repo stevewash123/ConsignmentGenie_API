@@ -2,6 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using ConsignmentGenie.API.Controllers;
+using ConsignmentGenie.Core.DTOs.Onboarding;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Infrastructure.Data;

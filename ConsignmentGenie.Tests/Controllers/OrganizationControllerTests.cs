@@ -106,7 +106,8 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                Name = "Test Provider",
+                FirstName = "Test",
+                LastName = "Provider",
                 Email = "test@provider.com",
                 Status = ProviderStatus.Approved,
                 CreatedAt = DateTime.UtcNow
@@ -149,7 +150,8 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                Name = "Test Provider",
+                FirstName = "Test",
+                LastName = "Provider",
                 Email = "test@provider.com",
                 Status = ProviderStatus.Approved,
                 CreatedAt = DateTime.UtcNow
@@ -161,7 +163,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
                 ProviderId = provider.Id,
-                Name = "Test Item",
+                Title = "Test Item",
                 Price = 100.00m,
                 CreatedAt = DateTime.UtcNow
             };

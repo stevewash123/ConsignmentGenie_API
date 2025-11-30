@@ -224,11 +224,11 @@ namespace ConsignmentGenie.Tests.Services
             Assert.Equal("active", createdOrg.Status);
 
             // Verify email was sent
-            _mockEmailService.Verify(e => e.SendSimpleEmailAsync(
+            _mockEmailService.Verify(e => e.SendWelcomeEmailAsync(
                 "newowner@test.com",
-                "Welcome to ConsignmentGenie - Your Shop is Ready!",
-                It.IsAny<string>(),
-                true), Times.Once);
+                "New Shop",
+                "New Owner",
+                "4321"), Times.Once);
         }
 
         [Fact]
