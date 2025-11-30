@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using ConsignmentGenie.Core.DTOs.Onboarding;
+using ConsignmentGenie.Core.DTOs.Organization;
 
 namespace ConsignmentGenie.API.Controllers;
 
@@ -119,6 +120,168 @@ public class OrganizationController : ControllerBase
             _logger.LogError(ex, "[SETUP] Error dismissing welcome guide for organization {OrganizationId}", organizationId);
             return StatusCode(500, "Internal server error");
         }
+    }
+
+    [HttpGet("profile")]
+    public async Task<ActionResult<ShopProfileDto>> GetShopProfile()
+    {
+        var organizationId = GetOrganizationId();
+        _logger.LogInformation("[PROFILE] Getting shop profile for organization {OrganizationId}", organizationId);
+
+        try
+        {
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[PROFILE] Organization {OrganizationId} not found", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            var profile = new ShopProfileDto
+            {
+                ShopName = organization.ShopName ?? organization.Name,
+                ShopDescription = organization.ShopDescription,
+                ShopLogoUrl = organization.ShopLogoUrl,
+                ShopBannerUrl = organization.ShopBannerUrl,
+                ShopAddress1 = organization.ShopAddress1,
+                ShopAddress2 = organization.ShopAddress2,
+                ShopCity = organization.ShopCity,
+                ShopState = organization.ShopState,
+                ShopZip = organization.ShopZip,
+                ShopCountry = organization.ShopCountry,
+                ShopPhone = organization.ShopPhone,
+                ShopEmail = organization.ShopEmail,
+                ShopWebsite = organization.ShopWebsite,
+                ShopTimezone = organization.ShopTimezone
+            };
+
+            _logger.LogDebug("[PROFILE] Shop profile retrieved for organization {OrganizationId}: {ShopName}",
+                organizationId, profile.ShopName);
+
+            return Ok(profile);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[PROFILE] Error getting shop profile for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpPut("profile")]
+    public async Task<ActionResult<object>> UpdateShopProfile([FromBody] ShopProfileDto profileDto)
+    {
+        var organizationId = GetOrganizationId();
+        _logger.LogInformation("[PROFILE] Updating shop profile for organization {OrganizationId}", organizationId);
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[PROFILE] Organization {OrganizationId} not found during update", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            // Update shop profile fields
+            organization.ShopName = profileDto.ShopName;
+            organization.ShopDescription = profileDto.ShopDescription;
+            organization.ShopLogoUrl = profileDto.ShopLogoUrl;
+            organization.ShopBannerUrl = profileDto.ShopBannerUrl;
+            organization.ShopAddress1 = profileDto.ShopAddress1;
+            organization.ShopAddress2 = profileDto.ShopAddress2;
+            organization.ShopCity = profileDto.ShopCity;
+            organization.ShopState = profileDto.ShopState;
+            organization.ShopZip = profileDto.ShopZip;
+            organization.ShopCountry = profileDto.ShopCountry;
+            organization.ShopPhone = profileDto.ShopPhone;
+            organization.ShopEmail = profileDto.ShopEmail;
+            organization.ShopWebsite = profileDto.ShopWebsite;
+            organization.ShopTimezone = profileDto.ShopTimezone;
+            organization.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("[PROFILE] Shop profile updated for organization {OrganizationId}: {ShopName}",
+                organizationId, profileDto.ShopName);
+
+            return Ok(new {
+                success = true,
+                message = "Shop profile updated successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[PROFILE] Error updating shop profile for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpPost("store-code/regenerate")]
+    public async Task<ActionResult<StoreCodeRegenerationDto>> RegenerateStoreCode()
+    {
+        var organizationId = GetOrganizationId();
+        _logger.LogInformation("[STORE_CODE] Regenerating store code for organization {OrganizationId}", organizationId);
+
+        try
+        {
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[STORE_CODE] Organization {OrganizationId} not found", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            var oldStoreCode = organization.StoreCode;
+
+            // Generate new 8-character alphanumeric store code
+            var newStoreCode = GenerateStoreCode();
+
+            // Ensure uniqueness
+            while (await _context.Organizations.AnyAsync(o => o.StoreCode == newStoreCode))
+            {
+                newStoreCode = GenerateStoreCode();
+            }
+
+            organization.StoreCode = newStoreCode;
+            organization.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("[STORE_CODE] Store code regenerated for organization {OrganizationId}: {OldCode} -> {NewCode}",
+                organizationId, oldStoreCode, newStoreCode);
+
+            var result = new StoreCodeRegenerationDto
+            {
+                NewStoreCode = newStoreCode,
+                GeneratedAt = DateTime.UtcNow
+            };
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[STORE_CODE] Error regenerating store code for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    private string GenerateStoreCode()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 8)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
     private Guid GetOrganizationId()

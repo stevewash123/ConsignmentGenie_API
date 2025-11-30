@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
+using ConsignmentGenie.Core.DTOs.Registration;
+using ConsignmentGenie.Core.Enums;
 
 namespace ConsignmentGenie.Application.Services;
 
@@ -204,6 +206,154 @@ public class ProviderInvitationService : IProviderInvitationService
         );
 
         return true;
+    }
+
+    public async Task<RegisterProviderFromInvitationResponse> RegisterFromInvitationAsync(RegisterProviderFromInvitationRequest request)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            // Validate invitation
+            var invitation = await _context.ProviderInvitations
+                .Include(i => i.Organization)
+                .FirstOrDefaultAsync(i => i.Token == request.InvitationToken &&
+                                         i.Status == InvitationStatus.Pending &&
+                                         i.ExpiresAt > DateTime.UtcNow);
+
+            if (invitation == null)
+            {
+                return new RegisterProviderFromInvitationResponse
+                {
+                    Success = false,
+                    Message = "Invalid or expired invitation"
+                };
+            }
+
+            // Check if email matches invitation
+            if (!string.Equals(invitation.Email, request.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                return new RegisterProviderFromInvitationResponse
+                {
+                    Success = false,
+                    Message = "Email address does not match invitation"
+                };
+            }
+
+            // Check if user already exists
+            var existingUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+
+            if (existingUser != null)
+            {
+                return new RegisterProviderFromInvitationResponse
+                {
+                    Success = false,
+                    Message = "A user with this email already exists"
+                };
+            }
+
+            // Generate provider number
+            var providerNumber = await GenerateProviderNumberAsync(invitation.OrganizationId);
+
+            // Create user account
+            var user = new User
+            {
+                Email = request.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Role = UserRole.Provider,
+                OrganizationId = invitation.OrganizationId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Split full name
+            var nameParts = request.FullName.Trim().Split(' ', 2);
+            var firstName = nameParts[0];
+            var lastName = nameParts.Length > 1 ? nameParts[1] : "";
+
+            // Create provider record
+            var provider = new Provider
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = invitation.OrganizationId,
+                UserId = user.Id,
+                ProviderNumber = providerNumber,
+                FirstName = firstName,
+                LastName = lastName,
+                Email = request.Email,
+                Phone = request.Phone,
+                Status = invitation.Organization?.AutoApproveProviders == true
+                    ? ProviderStatus.Active
+                    : ProviderStatus.Pending,
+                ApprovalStatus = invitation.Organization?.AutoApproveProviders == true
+                    ? "Approved"
+                    : "Pending",
+                CommissionRate = invitation.Organization?.DefaultSplitPercentage ?? 60.00m,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = user.Id
+            };
+
+            if (provider.Status == ProviderStatus.Active)
+            {
+                provider.ApprovedAt = DateTime.UtcNow;
+                provider.ApprovedBy = user.Id; // Self-approved via auto-approval
+            }
+
+            _context.Providers.Add(provider);
+
+            // Mark invitation as accepted
+            invitation.Status = InvitationStatus.Accepted;
+            invitation.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("[INVITATION] Provider registered successfully: {Email}, ProviderNumber: {ProviderNumber}",
+                request.Email, providerNumber);
+
+            return new RegisterProviderFromInvitationResponse
+            {
+                Success = true,
+                Message = "Registration completed successfully",
+                ProviderId = provider.Id,
+                ProviderNumber = providerNumber
+            };
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "[INVITATION] Failed to register provider from invitation: {Email}", request.Email);
+
+            return new RegisterProviderFromInvitationResponse
+            {
+                Success = false,
+                Message = "Registration failed. Please try again."
+            };
+        }
+    }
+
+    private async Task<string> GenerateProviderNumberAsync(Guid organizationId)
+    {
+        var lastNumber = await _context.Providers
+            .Where(p => p.OrganizationId == organizationId)
+            .OrderByDescending(p => p.ProviderNumber)
+            .Select(p => p.ProviderNumber)
+            .FirstOrDefaultAsync();
+
+        int nextNumber = 1;
+        if (lastNumber != null)
+        {
+            var parts = lastNumber.Split('-');
+            if (parts.Length > 1 && int.TryParse(parts[1], out int num))
+            {
+                nextNumber = num + 1;
+            }
+        }
+
+        return $"PRV-{nextNumber:D5}";
     }
 
     private async Task<ProviderInvitationDto?> GetInvitationDtoAsync(Guid invitationId)

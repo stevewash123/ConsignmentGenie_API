@@ -1,4 +1,5 @@
 using ConsignmentGenie.Application.DTOs.Provider;
+using ConsignmentGenie.Core.DTOs.Registration;
 
 namespace ConsignmentGenie.Application.Services.Interfaces;
 
@@ -9,4 +10,5 @@ public interface IProviderInvitationService
     Task<ProviderInvitationDto?> GetInvitationByTokenAsync(string token);
     Task<bool> CancelInvitationAsync(Guid invitationId, Guid organizationId);
     Task<bool> ResendInvitationAsync(Guid invitationId, Guid organizationId);
+    Task<RegisterProviderFromInvitationResponse> RegisterFromInvitationAsync(RegisterProviderFromInvitationRequest request);
 }
