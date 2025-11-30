@@ -7,6 +7,12 @@ public class OnboardingStatusDto
     [JsonPropertyName("dismissed")]
     public bool Dismissed { get; set; }
 
+    [JsonPropertyName("welcomeGuideCompleted")]
+    public bool WelcomeGuideCompleted { get; set; }
+
+    [JsonPropertyName("showModal")]
+    public bool ShowModal { get; set; }
+
     [JsonPropertyName("steps")]
     public OnboardingStepsDto Steps { get; set; } = new OnboardingStepsDto();
 }

@@ -94,6 +94,7 @@ public class Organization : BaseEntity
 
     // Onboarding
     public bool OnboardingDismissed { get; set; } = false;  // Track whether welcome modal was dismissed
+    public bool WelcomeGuideCompleted { get; set; } = false;  // Track whether welcome guide was dismissed permanently
 
     // Shop Profile
     [MaxLength(200)]

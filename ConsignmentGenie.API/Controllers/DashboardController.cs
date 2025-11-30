@@ -171,9 +171,19 @@ public class DashboardController : ControllerBase
             var hasInventory = organization.Items.Any();
             var quickBooksConnected = organization.QuickBooksConnected;
 
+            // Calculate showModal based on specification logic
+            var showModal = !organization.WelcomeGuideCompleted && (
+                !hasProviders ||
+                !storefrontConfigured ||
+                !hasInventory ||
+                !quickBooksConnected
+            );
+
             var status = new OnboardingStatusDto
             {
                 Dismissed = organization.OnboardingDismissed,
+                WelcomeGuideCompleted = organization.WelcomeGuideCompleted,
+                ShowModal = showModal,
                 Steps = new OnboardingStepsDto
                 {
                     HasProviders = hasProviders,

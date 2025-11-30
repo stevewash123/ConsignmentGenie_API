@@ -48,6 +48,8 @@ namespace ConsignmentGenie.Tests.Controllers
                 StoreCode = "TEST",
                 StoreCodeEnabled = true,
                 AutoApproveProviders = true,
+                OnboardingDismissed = false,
+                WelcomeGuideCompleted = false,
                 VerticalType = VerticalType.Consignment,
                 SubscriptionStatus = SubscriptionStatus.Active,
                 SubscriptionTier = SubscriptionTier.Pro,
@@ -138,6 +140,83 @@ namespace ConsignmentGenie.Tests.Controllers
             // Verify in database
             var organization = await _context.Organizations.FindAsync(_organizationId);
             Assert.False(organization.AutoApproveProviders);
+        }
+
+        [Fact]
+        public async Task GetOnboardingStatus_ReturnsCorrectStatus_WithNewFields()
+        {
+            // Act
+            var result = await _controller.GetOnboardingStatus();
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+
+            var responseString = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+            var response = doc.RootElement;
+
+            Assert.True(response.GetProperty("success").GetBoolean());
+
+            var data = response.GetProperty("data");
+            Assert.False(data.GetProperty("dismissed").GetBoolean());
+            Assert.False(data.GetProperty("welcomeGuideCompleted").GetBoolean());
+            Assert.True(data.GetProperty("showModal").GetBoolean()); // Should show modal since steps are incomplete
+
+            var steps = data.GetProperty("steps");
+            Assert.False(steps.GetProperty("hasProviders").GetBoolean());
+            Assert.False(steps.GetProperty("storefrontConfigured").GetBoolean());
+            Assert.False(steps.GetProperty("hasInventory").GetBoolean());
+            Assert.False(steps.GetProperty("quickBooksConnected").GetBoolean());
+        }
+
+        [Fact]
+        public async Task GetOnboardingStatus_ReturnsShowModalFalse_WhenWelcomeGuideCompleted()
+        {
+            // Arrange - Complete welcome guide
+            var organization = await _context.Organizations.FindAsync(_organizationId);
+            organization!.WelcomeGuideCompleted = true;
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _controller.GetOnboardingStatus();
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+
+            var responseString = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+            var response = doc.RootElement;
+
+            var data = response.GetProperty("data");
+            Assert.True(data.GetProperty("welcomeGuideCompleted").GetBoolean());
+            Assert.False(data.GetProperty("showModal").GetBoolean()); // Should not show modal since welcome guide completed
+        }
+
+        [Fact]
+        public async Task DismissOnboarding_UpdatesOnboardingDismissed()
+        {
+            // Arrange
+            var request = new DismissOnboardingRequestDto { Dismissed = true };
+
+            // Act
+            var result = await _controller.DismissOnboarding(request);
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+
+            var responseString = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+            var response = doc.RootElement;
+
+            Assert.True(response.GetProperty("success").GetBoolean());
+            Assert.Equal("Onboarding status updated successfully", response.GetProperty("message").GetString());
+
+            // Verify the database was updated
+            var organization = await _context.Organizations.FindAsync(_organizationId);
+            Assert.True(organization!.OnboardingDismissed);
         }
 
         public void Dispose()
