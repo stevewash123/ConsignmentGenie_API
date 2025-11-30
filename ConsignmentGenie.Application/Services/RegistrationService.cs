@@ -138,25 +138,12 @@ public class RegistrationService : IRegistrationService
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // Send welcome email to owner
-            var ownerEmailBody = $@"
-                <h2>Welcome to ConsignmentGenie!</h2>
-                <p>Hi {request.FullName},</p>
-                <p>Your shop ""{request.ShopName}"" is now ready to go!</p>
-                <p>You can log in and start:</p>
-                <ul>
-                    <li>Adding providers (consigners)</li>
-                    <li>Setting up your shop details and commission rates</li>
-                    <li>Managing inventory and transactions</li>
-                </ul>
-                <p>Your store code for providers: <strong>{organization.StoreCode}</strong></p>
-                <p>Questions? Reply to this email.</p>
-                <p>- The ConsignmentGenie Team</p>";
-
-            await _emailService.SendSimpleEmailAsync(
+            // Send welcome email to owner using enhanced template
+            await _emailService.SendWelcomeEmailAsync(
                 request.Email,
-                "Welcome to ConsignmentGenie - Your Shop is Ready!",
-                ownerEmailBody);
+                request.ShopName,
+                request.FullName,
+                organization.StoreCode);
 
             // Generate JWT token for immediate authentication
             var token = _authService.GenerateJwtToken(user.Id, user.Email, user.Role.ToString(), user.OrganizationId);

@@ -44,8 +44,7 @@ public class OrganizationController : ControllerBase
 
             var hasProviders = organization.Providers.Any();
             var storefrontConfigured = organization.StoreEnabled ||
-                                      organization.StripeConnected ||
-                                      !string.IsNullOrEmpty(organization.ShopName);
+                                      organization.StripeConnected;
             var hasInventory = organization.Items.Any();
             var quickBooksConnected = organization.QuickBooksConnected;
 
