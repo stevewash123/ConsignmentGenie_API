@@ -345,7 +345,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                 _logger.LogInformation("[OWNER_FLOW] Sending welcome email to {Email} for organization {OrganizationName} (ID: {OrganizationId})",
                     user.Email, organization.Name, organization.Id);
 
-                var emailResult = await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name);
+                var emailResult = await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name, user.FirstName ?? "Owner", organization.StoreCode ?? "PENDING");
                 _logger.LogInformation("[OWNER_FLOW] Welcome email send result for {Email}: {EmailResult}", user.Email, emailResult);
 
                 // Create welcome notification for the user to see in notification center

@@ -6,6 +6,7 @@ public interface IEmailService
 {
     // Legacy template-based methods (for backwards compatibility)
     Task<bool> SendWelcomeEmailAsync(string email, string organizationName);
+    Task<bool> SendWelcomeEmailAsync(string email, string organizationName, string ownerFirstName, string storeCode);
     Task<bool> SendTrialExpiringEmailAsync(string email, int daysRemaining);
     Task<bool> SendPaymentFailedEmailAsync(string email, decimal amount, DateTime retryDate);
     Task<bool> SendPaymentReceiptAsync(string email, decimal amount, string invoiceUrl);

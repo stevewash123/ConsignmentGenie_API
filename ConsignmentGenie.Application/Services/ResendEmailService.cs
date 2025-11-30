@@ -61,8 +61,10 @@ public class ResendEmailService : IEmailService
 
             // For now, extract first name from email (will be improved when we pass more data)
             var ownerFirstName = email.Split('@')[0];
-            var loginUrl = "http://localhost:4200/owner/dashboard";
-            var storeCode = "PENDING"; // Default when not yet generated
+            var clientUrl = _configuration["ClientUrl"];
+            var baseUrl = clientUrl ?? "http://localhost:4200";
+            var loginUrl = $"{baseUrl}/owner/dashboard";
+            var storeCode = "PENDING"; // Default when not yet generated - this should be passed as parameter
             var unsubscribeUrl = "#"; // Placeholder for now
 
             _logger.LogDebug("[EMAIL] Template variables: OwnerFirstName={OwnerFirstName}, ShopName={ShopName}, LoginUrl={LoginUrl}, StoreCode={StoreCode}, UnsubscribeUrl={UnsubscribeUrl}",
@@ -94,6 +96,80 @@ public class ResendEmailService : IEmailService
         catch (Exception ex)
         {
             _logger.LogError(ex, "[EMAIL] Failed to send welcome email to {Email} for organization {OrganizationName} - Template loading failed or variable substitution failed", email, organizationName);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendWelcomeEmailAsync(string email, string organizationName, string ownerFirstName, string storeCode)
+    {
+        _logger.LogInformation("[EMAIL] Starting enhanced welcome email send to {Email} for organization {OrganizationName}", email, organizationName);
+
+        try
+        {
+            var subject = "Welcome to Consignment Genie!";
+            _logger.LogDebug("[EMAIL] Enhanced welcome email subject: {Subject}", subject);
+
+            // Load HTML template
+            var htmlTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.html";
+            _logger.LogDebug("[EMAIL] Loading HTML template from {HtmlTemplatePath}", htmlTemplatePath);
+
+            if (!File.Exists(htmlTemplatePath))
+            {
+                _logger.LogError("[EMAIL] HTML template file not found at {HtmlTemplatePath}", htmlTemplatePath);
+                return false;
+            }
+
+            var htmlTemplate = await File.ReadAllTextAsync(htmlTemplatePath);
+            _logger.LogDebug("[EMAIL] HTML template loaded, length: {TemplateLength} characters", htmlTemplate.Length);
+
+            // Load plain text template
+            var textTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.txt";
+            _logger.LogDebug("[EMAIL] Loading text template from {TextTemplatePath}", textTemplatePath);
+
+            if (!File.Exists(textTemplatePath))
+            {
+                _logger.LogError("[EMAIL] Text template file not found at {TextTemplatePath}", textTemplatePath);
+                return false;
+            }
+
+            var textTemplate = await File.ReadAllTextAsync(textTemplatePath);
+            _logger.LogDebug("[EMAIL] Text template loaded, length: {TemplateLength} characters", textTemplate.Length);
+
+            // Use the provided parameters
+            var clientUrl = _configuration["ClientUrl"];
+            var baseUrl = clientUrl ?? "http://localhost:4200";
+            var loginUrl = $"{baseUrl}/owner/dashboard";
+            var unsubscribeUrl = "#"; // Placeholder for now
+
+            _logger.LogDebug("[EMAIL] Enhanced template variables: OwnerFirstName={OwnerFirstName}, ShopName={ShopName}, LoginUrl={LoginUrl}, StoreCode={StoreCode}, UnsubscribeUrl={UnsubscribeUrl}",
+                ownerFirstName, organizationName, loginUrl, storeCode, unsubscribeUrl);
+
+            // Replace template variables in HTML
+            var htmlContent = htmlTemplate
+                .Replace("{{OwnerFirstName}}", ownerFirstName)
+                .Replace("{{ShopName}}", organizationName)
+                .Replace("{{LoginUrl}}", loginUrl)
+                .Replace("{{StoreCode}}", storeCode)
+                .Replace("{{UnsubscribeUrl}}", unsubscribeUrl);
+
+            // Replace template variables in text
+            var textContent = textTemplate
+                .Replace("{{OwnerFirstName}}", ownerFirstName)
+                .Replace("{{ShopName}}", organizationName)
+                .Replace("{{LoginUrl}}", loginUrl)
+                .Replace("{{StoreCode}}", storeCode)
+                .Replace("{{UnsubscribeUrl}}", unsubscribeUrl);
+
+            _logger.LogInformation("[EMAIL] Enhanced templates processed successfully for welcome email to {Email}, calling SendSimpleEmailAsync", email);
+
+            var result = await SendSimpleEmailAsync(email, subject, htmlContent, textContent);
+            _logger.LogInformation("[EMAIL] Enhanced welcome email send result for {Email}: {Result}", email, result);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[EMAIL] Failed to send enhanced welcome email to {Email} for organization {OrganizationName} - Template loading failed or variable substitution failed", email, organizationName);
             return false;
         }
     }

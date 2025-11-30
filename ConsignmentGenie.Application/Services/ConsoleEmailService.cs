@@ -32,6 +32,22 @@ public class ConsoleEmailService : IEmailService
         return true;
     }
 
+    public async Task<bool> SendWelcomeEmailAsync(string email, string organizationName, string ownerFirstName, string storeCode)
+    {
+        _logger.LogInformation(
+            "[CONSOLE EMAIL] Enhanced Welcome Email\n" +
+            "  To: {Email}\n" +
+            "  Subject: Welcome to ConsignmentGenie!\n" +
+            "  Organization: {OrganizationName}\n" +
+            "  Owner: {OwnerFirstName}\n" +
+            "  Store Code: {StoreCode}",
+            email, organizationName, ownerFirstName, storeCode
+        );
+
+        await Task.Delay(100);
+        return true;
+    }
+
     public async Task<bool> SendTrialExpiringEmailAsync(string email, int daysRemaining)
     {
         _logger.LogInformation(
