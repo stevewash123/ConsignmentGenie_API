@@ -83,6 +83,7 @@ public class AdminController : ControllerBase
             _context.Transactions.RemoveRange(_context.Transactions);
             _context.Payouts.RemoveRange(_context.Payouts);
             _context.Items.RemoveRange(_context.Items);
+            _context.ProviderInvitations.RemoveRange(_context.ProviderInvitations);
             _context.Providers.RemoveRange(_context.Providers);
             _context.Users.RemoveRange(_context.Users);
             _context.Organizations.RemoveRange(_context.Organizations);
@@ -889,13 +890,13 @@ public class AdminController : ControllerBase
             _logger.LogInformation("Creating admin user and organization...");
 
             // Check if admin already exists
-            var existingAdmin = await _context.Users.FirstOrDefaultAsync(u => u.Email == "admin@test.com");
+            var existingAdmin = await _context.Users.FirstOrDefaultAsync(u => u.Email == "admin@microsaasbuilders.com");
             if (existingAdmin != null)
             {
                 return Ok(ApiResponse<object>.SuccessResult(new
                 {
                     message = "Admin already exists",
-                    email = "admin@test.com",
+                    email = "admin@microsaasbuilders.com",
                     organizationId = existingAdmin.OrganizationId
                 }, "Admin user already created"));
             }
@@ -916,7 +917,7 @@ public class AdminController : ControllerBase
             var adminUser = new ConsignmentGenie.Core.Entities.User
             {
                 Id = Guid.NewGuid(),
-                Email = "admin@test.com",
+                Email = "admin@microsaasbuilders.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                 FullName = "Admin User",
                 Role = UserRole.Owner,

@@ -90,7 +90,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("register/provider")]
+    [HttpPost("provider/register")]
     public async Task<ActionResult<ApiResponse<ProviderRegistrationResponseDto>>> RegisterProvider([FromBody] RegisterProviderRequest request)
     {
         try
