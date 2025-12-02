@@ -920,7 +920,7 @@ public class AdminController : ControllerBase
                 Email = "admin@microsaasbuilders.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                 FullName = "Admin User",
-                Role = UserRole.Owner,
+                Role = UserRole.Admin,
                 OrganizationId = organization.Id,
                 ApprovalStatus = ApprovalStatus.Approved,
                 ApprovedAt = DateTime.UtcNow,
