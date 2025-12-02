@@ -83,10 +83,32 @@ public class OwnerInvitationService : IOwnerInvitationService
 
             // Generate invitation link
             var baseUrl = _configuration["ClientUrl"] ?? "http://localhost:4200";
-            var inviteLink = $"{baseUrl}/owner/register?token={invitation.Token}";
+            var inviteLink = $"{baseUrl}/register/owner?token={invitation.Token}";
 
             // Send invitation email
             var emailSent = await SendInvitationEmailAsync(invitation, inviteLink);
+
+            // Get inviter's organization for the notification
+            var inviterOrganization = await _context.Users
+                .Where(u => u.Id == invitedById)
+                .Select(u => u.OrganizationId)
+                .FirstOrDefaultAsync();
+
+            // Create notification for the inviter to track the invitation
+            if (inviterOrganization.HasValue)
+            {
+                await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
+                {
+                    OrganizationId = inviterOrganization.Value,
+                    UserId = invitedById,
+                    Type = NotificationType.OwnerInvitationSent,
+                    Title = "Owner Invitation Sent",
+                    Message = $"You've successfully sent an owner invitation to {invitation.Email}. They have 7 days to register and accept the invitation.",
+                    RelatedEntityType = "OwnerInvitation",
+                    RelatedEntityId = invitation.Id,
+                    ExpiresAt = invitation.ExpiresAt
+                });
+            }
 
             var result = await GetInvitationDetailAsync(invitation.Id);
 
@@ -464,7 +486,7 @@ public class OwnerInvitationService : IOwnerInvitationService
 
             // Resend email
             var baseUrl = _configuration["ClientUrl"] ?? "http://localhost:4200";
-            var inviteLink = $"{baseUrl}/owner/register?token={invitation.Token}";
+            var inviteLink = $"{baseUrl}/register/owner?token={invitation.Token}";
 
             await SendInvitationEmailAsync(invitation, inviteLink);
 
@@ -519,7 +541,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                 CreatedAt = oi.CreatedAt,
                 ExpiresAt = oi.ExpiresAt,
                 IsExpired = oi.ExpiresAt < DateTime.UtcNow && oi.Status == InvitationStatus.Pending,
-                InvitationUrl = $"{_configuration["ClientUrl"] ?? "http://localhost:4200"}/owner/register?token={oi.Token}"
+                InvitationUrl = $"{_configuration["ClientUrl"] ?? "http://localhost:4200"}/register/owner?token={oi.Token}"
             })
             .FirstOrDefaultAsync();
     }

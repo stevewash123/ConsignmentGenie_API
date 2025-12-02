@@ -14,6 +14,7 @@ public enum NotificationType
     LowInventoryAlert,
     DailySalesSummary,
     SuggestionSubmitted,
+    OwnerInvitationSent,
 
     // System notifications
     PasswordReset,
