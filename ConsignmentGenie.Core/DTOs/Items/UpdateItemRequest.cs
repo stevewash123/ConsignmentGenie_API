@@ -6,7 +6,7 @@ namespace ConsignmentGenie.Core.DTOs.Items;
 public class UpdateItemRequest
 {
     [Required]
-    public Guid ProviderId { get; set; }
+    public Guid ConsignorId { get; set; }
 
     public string? Sku { get; set; }
     public string? Barcode { get; set; }

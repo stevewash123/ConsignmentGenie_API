@@ -1,4 +1,4 @@
-using ConsignmentGenie.Application.DTOs.Provider;
+using ConsignmentGenie.Application.DTOs.Consignor;
 using ConsignmentGenie.Application.Services;
 using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Core.Entities;

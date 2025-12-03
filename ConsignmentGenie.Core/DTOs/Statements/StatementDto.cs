@@ -10,8 +10,8 @@ public class StatementDto
     public DateOnly PeriodEnd { get; set; }
     public string PeriodLabel { get; set; } = string.Empty; // "November 2025"
 
-    // Provider and Organization info
-    public string ProviderName { get; set; } = string.Empty;
+    // Consignor and Organization info
+    public string ConsignorName { get; set; } = string.Empty;
     public string ShopName { get; set; } = string.Empty;
 
     // Summary figures

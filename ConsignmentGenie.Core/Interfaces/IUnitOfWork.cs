@@ -6,7 +6,7 @@ public interface IUnitOfWork : IDisposable
 {
     IRepository<User> Users { get; }
     IRepository<Organization> Organizations { get; }
-    IRepository<Provider> Providers { get; }
+    IRepository<Consignor> Consignors { get; }
     IRepository<Item> Items { get; }
     IRepository<Transaction> Transactions { get; }
     IRepository<Payout> Payouts { get; }

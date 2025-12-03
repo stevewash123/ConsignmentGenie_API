@@ -34,14 +34,14 @@ public class ReportsService : IReportsService
                 .GetAllAsync(t => t.OrganizationId == organizationId &&
                                 t.SaleDate >= filter.StartDate &&
                                 t.SaleDate <= filter.EndDate,
-                    includeProperties: "Item,Provider");
+                    includeProperties: "Item,Consignor");
 
             // Apply filters
             var transactions = transactionsQuery.AsQueryable();
 
-            if (filter.ProviderIds != null && filter.ProviderIds.Any())
+            if (filter.ConsignorIds != null && filter.ConsignorIds.Any())
             {
-                transactions = transactions.Where(t => filter.ProviderIds.Contains(t.ProviderId));
+                transactions = transactions.Where(t => filter.ConsignorIds.Contains(t.ConsignorId));
             }
 
             if (filter.Categories != null && filter.Categories.Any())
@@ -59,7 +59,7 @@ public class ReportsService : IReportsService
             // Calculate metrics
             var totalSales = transactionList.Sum(t => t.SalePrice);
             var shopRevenue = transactionList.Sum(t => t.ShopAmount);
-            var providerPayable = transactionList.Sum(t => t.ProviderAmount);
+            var providerPayable = transactionList.Sum(t => t.ConsignorAmount);
             var transactionCount = transactionList.Count;
             var averageSale = transactionCount > 0 ? totalSales / transactionCount : 0;
 
@@ -71,7 +71,7 @@ public class ReportsService : IReportsService
                     Date = g.Key,
                     GrossSales = g.Sum(t => t.SalePrice),
                     ShopRevenue = g.Sum(t => t.ShopAmount),
-                    ProviderPayable = g.Sum(t => t.ProviderAmount)
+                    ProviderPayable = g.Sum(t => t.ConsignorAmount)
                 })
                 .OrderBy(x => x.Date)
                 .ToList();
@@ -85,10 +85,10 @@ public class ReportsService : IReportsService
                     Date = t.SaleDate,
                     ItemName = t.Item.Title,
                     Category = t.Item.Category ?? "",
-                    ProviderName = t.Provider.DisplayName,
+                    ConsignorName = t.Consignor.DisplayName,
                     SalePrice = t.SalePrice,
                     ShopCut = t.ShopAmount,
-                    ProviderCut = t.ProviderAmount,
+                    ProviderCut = t.ConsignorAmount,
                     PaymentMethod = t.PaymentMethod ?? ""
                 })
                 .ToList();
@@ -118,7 +118,7 @@ public class ReportsService : IReportsService
         try
         {
             // Get providers
-            var providersQuery = await _unitOfWork.Providers
+            var providersQuery = await _unitOfWork.Consignors
                 .GetAllAsync(p => p.OrganizationId == organizationId,
                     includeProperties: "Items,Transactions");
 
@@ -126,7 +126,7 @@ public class ReportsService : IReportsService
 
             if (!filter.IncludeInactive)
             {
-                providers = providers.Where(p => p.Status == ProviderStatus.Active);
+                providers = providers.Where(p => p.Status == ConsignorStatus.Active);
             }
 
             var providerList = providers.ToList();
@@ -159,7 +159,7 @@ public class ReportsService : IReportsService
 
                 var pendingPayout = transactions
                     .Where(t => t.PayoutStatus == "Pending")
-                    .Sum(t => t.ProviderAmount);
+                    .Sum(t => t.ConsignorAmount);
 
                 // Apply minimum items threshold
                 if (filter.MinItemsThreshold.HasValue && totalItems < filter.MinItemsThreshold.Value)
@@ -167,8 +167,8 @@ public class ReportsService : IReportsService
 
                 providerPerformance.Add(new ProviderPerformanceLineDto
                 {
-                    ProviderId = provider.Id,
-                    ProviderName = provider.DisplayName,
+                    ConsignorId = provider.Id,
+                    ConsignorName = provider.DisplayName,
                     ItemsConsigned = totalItems,
                     ItemsSold = itemsSold,
                     ItemsAvailable = itemsAvailable,
@@ -190,9 +190,9 @@ public class ReportsService : IReportsService
                 TotalProviders = totalProviders,
                 TotalSales = totalSalesAmount,
                 AverageSalesPerProvider = averageSalesPerProvider,
-                TopProviderName = topProvider?.ProviderName ?? "",
+                TopProviderName = topProvider?.ConsignorName ?? "",
                 TopProviderSales = topProvider?.TotalSales ?? 0,
-                Providers = orderedProviders
+                Consignors = orderedProviders
             };
 
             return ServiceResult<ProviderPerformanceReportDto>.SuccessResult(result);
@@ -211,7 +211,7 @@ public class ReportsService : IReportsService
             var itemsQuery = await _unitOfWork.Items
                 .GetAllAsync(i => i.OrganizationId == organizationId &&
                                i.Status == ItemStatus.Available,
-                    includeProperties: "Provider");
+                    includeProperties: "Consignor");
 
             var items = itemsQuery.AsQueryable();
 
@@ -221,9 +221,9 @@ public class ReportsService : IReportsService
                 items = items.Where(i => filter.Categories.Contains(i.Category ?? ""));
             }
 
-            if (filter.ProviderIds != null && filter.ProviderIds.Any())
+            if (filter.ConsignorIds != null && filter.ConsignorIds.Any())
             {
-                items = items.Where(i => filter.ProviderIds.Contains(i.ProviderId));
+                items = items.Where(i => filter.ConsignorIds.Contains(i.ConsignorId));
             }
 
             if (filter.MinPrice.HasValue)
@@ -295,7 +295,7 @@ public class ReportsService : IReportsService
                     Name = x.Item.Title,
                     SKU = x.Item.Sku,
                     Category = x.Item.Category ?? "",
-                    ProviderName = x.Item.Provider.DisplayName,
+                    ConsignorName = x.Item.Consignor.DisplayName,
                     Price = x.Item.Price,
                     ListedDate = x.Item.ListedDate!.Value,
                     DaysListed = x.DaysListed,
@@ -332,13 +332,13 @@ public class ReportsService : IReportsService
                 .GetAllAsync(t => t.OrganizationId == organizationId &&
                                 t.SaleDate >= filter.StartDate &&
                                 t.SaleDate <= filter.EndDate,
-                    includeProperties: "Provider,Payout");
+                    includeProperties: "Consignor,Payout");
 
             var transactions = transactionsQuery.AsQueryable();
 
-            if (filter.ProviderIds != null && filter.ProviderIds.Any())
+            if (filter.ConsignorIds != null && filter.ConsignorIds.Any())
             {
-                transactions = transactions.Where(t => filter.ProviderIds.Contains(t.ProviderId));
+                transactions = transactions.Where(t => filter.ConsignorIds.Contains(t.ConsignorId));
             }
 
             if (!string.IsNullOrEmpty(filter.Status))
@@ -358,7 +358,7 @@ public class ReportsService : IReportsService
             var totalPaid = payouts.Sum(p => p.Amount);
             var totalPending = transactionList
                 .Where(t => t.PayoutStatus == "Pending")
-                .Sum(t => t.ProviderAmount);
+                .Sum(t => t.ConsignorAmount);
             var averagePayoutAmount = payouts.Any() ? totalPaid / payouts.Count() : 0;
 
             // Generate chart data
@@ -374,18 +374,18 @@ public class ReportsService : IReportsService
 
             // Generate provider summaries
             var providerSummaries = transactionList
-                .GroupBy(t => new { t.ProviderId, t.Provider.DisplayName })
+                .GroupBy(t => new { t.ConsignorId, t.Consignor.DisplayName })
                 .Select(g =>
                 {
                     var providerTransactions = g.ToList();
                     var totalSales = providerTransactions.Sum(t => t.SalePrice);
-                    var providerCut = providerTransactions.Sum(t => t.ProviderAmount);
+                    var providerCut = providerTransactions.Sum(t => t.ConsignorAmount);
                     var alreadyPaid = providerTransactions
                         .Where(t => t.PayoutStatus == "Paid")
-                        .Sum(t => t.ProviderAmount);
+                        .Sum(t => t.ConsignorAmount);
                     var pendingBalance = providerTransactions
                         .Where(t => t.PayoutStatus == "Pending")
-                        .Sum(t => t.ProviderAmount);
+                        .Sum(t => t.ConsignorAmount);
 
                     var lastPayoutDate = providerTransactions
                         .Where(t => t.Payout != null)
@@ -393,8 +393,8 @@ public class ReportsService : IReportsService
 
                     return new PayoutSummaryLineDto
                     {
-                        ProviderId = g.Key.ProviderId,
-                        ProviderName = g.Key.DisplayName,
+                        ConsignorId = g.Key.ConsignorId,
+                        ConsignorName = g.Key.DisplayName,
                         TotalSales = totalSales,
                         ProviderCut = providerCut,
                         AlreadyPaid = alreadyPaid,
@@ -414,7 +414,7 @@ public class ReportsService : IReportsService
                 ProvidersWithPending = providersWithPending,
                 AveragePayoutAmount = averagePayoutAmount,
                 ChartData = chartData,
-                Providers = providerSummaries
+                Consignors = providerSummaries
             };
 
             return ServiceResult<PayoutSummaryReportDto>.SuccessResult(result);
@@ -601,7 +601,7 @@ public class ReportsService : IReportsService
         try
         {
             var items = await _unitOfWork.Items
-                .GetAllAsync(i => i.OrganizationId == organizationId, includeProperties: "Provider");
+                .GetAllAsync(i => i.OrganizationId == organizationId, includeProperties: "Consignor");
 
             var itemList = items.ToList();
 
@@ -618,11 +618,11 @@ public class ReportsService : IReportsService
                 .ToList();
 
             var providerBreakdown = itemList
-                .GroupBy(i => new { i.ProviderId, i.Provider.DisplayName })
+                .GroupBy(i => new { i.ConsignorId, i.Consignor.DisplayName })
                 .Select(g => new ProviderBreakdownDto
                 {
-                    ProviderId = g.Key.ProviderId,
-                    ProviderName = g.Key.DisplayName,
+                    ConsignorId = g.Key.ConsignorId,
+                    ConsignorName = g.Key.DisplayName,
                     ItemCount = g.Count(),
                     AvailableCount = g.Count(i => i.Status == ItemStatus.Available),
                     SoldCount = g.Count(i => i.Status == ItemStatus.Sold)
@@ -806,9 +806,9 @@ public class ReportsService : IReportsService
         return daysListed switch
         {
             > 180 => "Donate",
-            > 120 => "Return to Provider",
+            > 120 => "Return to Consignor",
             > 90 when price > 50 => "Price Reduce",
-            > 90 => "Return to Provider",
+            > 90 => "Return to Consignor",
             _ => "Monitor"
         };
     }
@@ -848,11 +848,11 @@ public class ReportsService : IReportsService
     private static string GenerateSalesReportCsv(SalesReportDto data)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Date,Item Name,Category,Provider Name,Sale Price,Shop Cut,Provider Cut,Payment Method");
+        csv.AppendLine("Date,Item Name,Category,Consignor Name,Sale Price,Shop Cut,Consignor Cut,Payment Method");
 
         foreach (var transaction in data.Transactions)
         {
-            csv.AppendLine($"{transaction.Date:yyyy-MM-dd},{EscapeCsv(transaction.ItemName)},{EscapeCsv(transaction.Category)},{EscapeCsv(transaction.ProviderName)},{transaction.SalePrice:F2},{transaction.ShopCut:F2},{transaction.ProviderCut:F2},{EscapeCsv(transaction.PaymentMethod)}");
+            csv.AppendLine($"{transaction.Date:yyyy-MM-dd},{EscapeCsv(transaction.ItemName)},{EscapeCsv(transaction.Category)},{EscapeCsv(transaction.ConsignorName)},{transaction.SalePrice:F2},{transaction.ShopCut:F2},{transaction.ProviderCut:F2},{EscapeCsv(transaction.PaymentMethod)}");
         }
 
         return csv.ToString();
@@ -861,11 +861,11 @@ public class ReportsService : IReportsService
     private static string GenerateProviderPerformanceCsv(ProviderPerformanceReportDto data)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Provider Name,Items Consigned,Items Sold,Items Available,Total Sales,Sell-Through Rate %,Avg Days to Sell,Pending Payout");
+        csv.AppendLine("Consignor Name,Items Consigned,Items Sold,Items Available,Total Sales,Sell-Through Rate %,Avg Days to Sell,Pending Payout");
 
-        foreach (var provider in data.Providers)
+        foreach (var provider in data.Consignors)
         {
-            csv.AppendLine($"{EscapeCsv(provider.ProviderName)},{provider.ItemsConsigned},{provider.ItemsSold},{provider.ItemsAvailable},{provider.TotalSales:F2},{provider.SellThroughRate:F1},{provider.AvgDaysToSell:F0},{provider.PendingPayout:F2}");
+            csv.AppendLine($"{EscapeCsv(provider.ConsignorName)},{provider.ItemsConsigned},{provider.ItemsSold},{provider.ItemsAvailable},{provider.TotalSales:F2},{provider.SellThroughRate:F1},{provider.AvgDaysToSell:F0},{provider.PendingPayout:F2}");
         }
 
         return csv.ToString();
@@ -874,11 +874,11 @@ public class ReportsService : IReportsService
     private static string GenerateInventoryAgingCsv(InventoryAgingReportDto data)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Item Name,SKU,Category,Provider Name,Price,Listed Date,Days Listed,Suggested Action");
+        csv.AppendLine("Item Name,SKU,Category,Consignor Name,Price,Listed Date,Days Listed,Suggested Action");
 
         foreach (var item in data.Items)
         {
-            csv.AppendLine($"{EscapeCsv(item.Name)},{EscapeCsv(item.SKU)},{EscapeCsv(item.Category)},{EscapeCsv(item.ProviderName)},{item.Price:F2},{item.ListedDate:yyyy-MM-dd},{item.DaysListed},{EscapeCsv(item.SuggestedAction)}");
+            csv.AppendLine($"{EscapeCsv(item.Name)},{EscapeCsv(item.SKU)},{EscapeCsv(item.Category)},{EscapeCsv(item.ConsignorName)},{item.Price:F2},{item.ListedDate:yyyy-MM-dd},{item.DaysListed},{EscapeCsv(item.SuggestedAction)}");
         }
 
         return csv.ToString();
@@ -887,12 +887,12 @@ public class ReportsService : IReportsService
     private static string GeneratePayoutSummaryCsv(PayoutSummaryReportDto data)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Provider Name,Total Sales,Provider Cut,Already Paid,Pending Balance,Last Payout Date");
+        csv.AppendLine("Consignor Name,Total Sales,Consignor Cut,Already Paid,Pending Balance,Last Payout Date");
 
-        foreach (var provider in data.Providers)
+        foreach (var provider in data.Consignors)
         {
             var lastPayoutDate = provider.LastPayoutDate?.ToString("yyyy-MM-dd") ?? "";
-            csv.AppendLine($"{EscapeCsv(provider.ProviderName)},{provider.TotalSales:F2},{provider.ProviderCut:F2},{provider.AlreadyPaid:F2},{provider.PendingBalance:F2},{lastPayoutDate}");
+            csv.AppendLine($"{EscapeCsv(provider.ConsignorName)},{provider.TotalSales:F2},{provider.ProviderCut:F2},{provider.AlreadyPaid:F2},{provider.PendingBalance:F2},{lastPayoutDate}");
         }
 
         return csv.ToString();
@@ -961,7 +961,7 @@ public class ReportsService : IReportsService
 
                             row.RelativeItem().Border(1).Padding(10).Column(col =>
                             {
-                                col.Item().Text("Provider Payable").FontSize(10);
+                                col.Item().Text("Consignor Payable").FontSize(10);
                                 col.Item().Text($"${data.ProviderPayable:F2}").FontSize(16).SemiBold();
                             });
                         });
@@ -984,7 +984,7 @@ public class ReportsService : IReportsService
                             {
                                 header.Cell().Element(CellStyle).Text("Date");
                                 header.Cell().Element(CellStyle).Text("Item");
-                                header.Cell().Element(CellStyle).Text("Provider");
+                                header.Cell().Element(CellStyle).Text("Consignor");
                                 header.Cell().Element(CellStyle).Text("Amount");
                                 header.Cell().Element(CellStyle).Text("Payment");
 
@@ -998,7 +998,7 @@ public class ReportsService : IReportsService
                             {
                                 table.Cell().Element(CellStyle).Text(transaction.Date.ToString("MM/dd/yyyy"));
                                 table.Cell().Element(CellStyle).Text(transaction.ItemName);
-                                table.Cell().Element(CellStyle).Text(transaction.ProviderName);
+                                table.Cell().Element(CellStyle).Text(transaction.ConsignorName);
                                 table.Cell().Element(CellStyle).Text($"${transaction.SalePrice:F2}");
                                 table.Cell().Element(CellStyle).Text(transaction.PaymentMethod);
 
@@ -1033,7 +1033,7 @@ public class ReportsService : IReportsService
                 page.Margin(2, Unit.Centimetre);
 
                 page.Header()
-                    .Text("Provider Performance Report")
+                    .Text("Consignor Performance Report")
                     .SemiBold().FontSize(20).FontColor(Colors.Blue.Medium);
 
                 page.Content()
@@ -1058,7 +1058,7 @@ public class ReportsService : IReportsService
 
                             table.Header(header =>
                             {
-                                header.Cell().Element(CellStyle).Text("Provider");
+                                header.Cell().Element(CellStyle).Text("Consignor");
                                 header.Cell().Element(CellStyle).Text("Consigned");
                                 header.Cell().Element(CellStyle).Text("Sold");
                                 header.Cell().Element(CellStyle).Text("Available");
@@ -1072,9 +1072,9 @@ public class ReportsService : IReportsService
                                 }
                             });
 
-                            foreach (var provider in data.Providers)
+                            foreach (var provider in data.Consignors)
                             {
-                                table.Cell().Element(CellStyle).Text(provider.ProviderName);
+                                table.Cell().Element(CellStyle).Text(provider.ConsignorName);
                                 table.Cell().Element(CellStyle).Text(provider.ItemsConsigned.ToString());
                                 table.Cell().Element(CellStyle).Text(provider.ItemsSold.ToString());
                                 table.Cell().Element(CellStyle).Text(provider.ItemsAvailable.ToString());
@@ -1131,7 +1131,7 @@ public class ReportsService : IReportsService
                             {
                                 header.Cell().Element(CellStyle).Text("Item");
                                 header.Cell().Element(CellStyle).Text("SKU");
-                                header.Cell().Element(CellStyle).Text("Provider");
+                                header.Cell().Element(CellStyle).Text("Consignor");
                                 header.Cell().Element(CellStyle).Text("Price");
                                 header.Cell().Element(CellStyle).Text("Listed");
                                 header.Cell().Element(CellStyle).Text("Days");
@@ -1147,7 +1147,7 @@ public class ReportsService : IReportsService
                             {
                                 table.Cell().Element(CellStyle).Text(item.Name);
                                 table.Cell().Element(CellStyle).Text(item.SKU);
-                                table.Cell().Element(CellStyle).Text(item.ProviderName);
+                                table.Cell().Element(CellStyle).Text(item.ConsignorName);
                                 table.Cell().Element(CellStyle).Text($"${item.Price:F0}");
                                 table.Cell().Element(CellStyle).Text(item.ListedDate.ToString("MM/dd/yyyy"));
                                 table.Cell().Element(CellStyle).Text(item.DaysListed.ToString());
@@ -1198,7 +1198,7 @@ public class ReportsService : IReportsService
 
                             table.Header(header =>
                             {
-                                header.Cell().Element(CellStyle).Text("Provider");
+                                header.Cell().Element(CellStyle).Text("Consignor");
                                 header.Cell().Element(CellStyle).Text("Sales");
                                 header.Cell().Element(CellStyle).Text("Cut");
                                 header.Cell().Element(CellStyle).Text("Paid");
@@ -1210,9 +1210,9 @@ public class ReportsService : IReportsService
                                 }
                             });
 
-                            foreach (var provider in data.Providers)
+                            foreach (var provider in data.Consignors)
                             {
-                                table.Cell().Element(CellStyle).Text(provider.ProviderName);
+                                table.Cell().Element(CellStyle).Text(provider.ConsignorName);
                                 table.Cell().Element(CellStyle).Text($"${provider.TotalSales:F0}");
                                 table.Cell().Element(CellStyle).Text($"${provider.ProviderCut:F0}");
                                 table.Cell().Element(CellStyle).Text($"${provider.AlreadyPaid:F0}");

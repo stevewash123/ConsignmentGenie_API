@@ -6,7 +6,7 @@ namespace ConsignmentGenie.Application.DTOs.Payout;
 public class CreatePayoutRequestDto
 {
     [Required]
-    public Guid ProviderId { get; set; }
+    public Guid ConsignorId { get; set; }
 
     [Required]
     public DateTime PayoutDate { get; set; }
@@ -41,7 +41,7 @@ public class UpdatePayoutRequestDto
 
 public class PayoutSearchRequestDto
 {
-    public Guid? ProviderId { get; set; }
+    public Guid? ConsignorId { get; set; }
     public DateTime? PayoutDateFrom { get; set; }
     public DateTime? PayoutDateTo { get; set; }
     public PayoutStatus? Status { get; set; }
@@ -55,7 +55,7 @@ public class PayoutSearchRequestDto
 
 public class PendingPayoutsRequestDto
 {
-    public Guid? ProviderId { get; set; }
+    public Guid? ConsignorId { get; set; }
     public DateTime? PeriodEndBefore { get; set; }
     public decimal? MinimumAmount { get; set; }
 }

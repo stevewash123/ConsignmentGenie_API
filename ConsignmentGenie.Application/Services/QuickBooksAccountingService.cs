@@ -13,7 +13,7 @@ public class QuickBooksAccountingService : IAccountingService
     private readonly IConfiguration _configuration;
     private readonly ILogger<QuickBooksAccountingService> _logger;
 
-    public string ProviderName => "QuickBooks";
+    public string ConsignorName => "QuickBooks";
 
     public QuickBooksAccountingService(
         IQuickBooksService quickBooksService,
@@ -83,8 +83,8 @@ public class QuickBooksAccountingService : IAccountingService
     {
         try
         {
-            // Convert AccountingCustomerInfo to Provider entity for QuickBooks service
-            var provider = new ConsignmentGenie.Core.Entities.Provider
+            // Convert AccountingCustomerInfo to Consignor entity for QuickBooks service
+            var provider = new ConsignmentGenie.Core.Entities.Consignor
             {
                 Id = Guid.NewGuid(),
                 DisplayName = customer.Name,

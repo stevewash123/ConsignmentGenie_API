@@ -80,45 +80,45 @@ namespace ConsignmentGenie.Tests.Controllers
             _context.Users.Add(user);
 
             // Add providers
-            var provider1 = new Provider
+            var provider1 = new Consignor
             {
                 Id = _providerId,
                 OrganizationId = _organizationId,
-                ProviderNumber = "PROV001",
+                ConsignorNumber = "PROV001",
                 DisplayName = "John Doe",
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "john@example.com",
                 Phone = "555-123-4567",
                 CommissionRate = 0.60m,
-                Status = ProviderStatus.Active,
+                Status = ConsignorStatus.Active,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = _userId
             };
 
-            var provider2 = new Provider
+            var provider2 = new Consignor
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderNumber = "PROV002",
+                ConsignorNumber = "PROV002",
                 DisplayName = "Jane Smith",
                 FirstName = "Jane",
                 LastName = "Smith",
                 Email = "jane@example.com",
                 CommissionRate = 0.70m,
-                Status = ProviderStatus.Pending,
+                Status = ConsignorStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = _userId
             };
 
-            _context.Providers.AddRange(provider1, provider2);
+            _context.Consignors.AddRange(provider1, provider2);
 
             // Add some items for provider metrics
             var item1 = new Item
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 Sku = "ITEM001",
                 Title = "Test Item 1",
                 Price = 100.00m,
@@ -132,7 +132,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 Sku = "ITEM002",
                 Title = "Test Item 2",
                 Price = 80.00m,
@@ -231,7 +231,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var apiResponse = Assert.IsType<ApiResponse<ProviderDetailDto>>(okResult.Value);
             Assert.True(apiResponse.Success);
-            Assert.Equal(_providerId, apiResponse.Data.ProviderId);
+            Assert.Equal(_providerId, apiResponse.Data.ConsignorId);
             Assert.Equal("John", apiResponse.Data.FirstName);
             Assert.Equal("Doe", apiResponse.Data.LastName);
         }
@@ -249,7 +249,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
             var apiResponse = Assert.IsType<ApiResponse<ProviderDetailDto>>(notFoundResult.Value);
             Assert.False(apiResponse.Success);
-            Assert.Contains("Provider not found", apiResponse.Errors);
+            Assert.Contains("Consignor not found", apiResponse.Errors);
         }
 
         [Fact]
@@ -283,7 +283,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.Equal("alice@example.com", apiResponse.Data.Email);
 
             // Verify provider was created in database
-            var providerInDb = await _context.Providers.FindAsync(apiResponse.Data.ProviderId);
+            var providerInDb = await _context.Consignors.FindAsync(apiResponse.Data.ConsignorId);
             Assert.NotNull(providerInDb);
             Assert.Equal("Alice", providerInDb.FirstName);
         }
@@ -295,7 +295,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var request = new CreateProviderRequest
             {
                 FirstName = "Test",
-                LastName = "Provider",
+                LastName = "Consignor",
                 Email = "john@example.com", // Email already exists
                 CommissionRate = 0.50m
             };
@@ -317,7 +317,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var request = new CreateProviderRequest
             {
                 FirstName = "Test",
-                LastName = "Provider",
+                LastName = "Consignor",
                 Email = "test@example.com",
                 CommissionRate = 0.50m,
                 ContractStartDate = DateTime.UtcNow,

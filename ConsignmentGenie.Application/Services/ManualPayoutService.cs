@@ -35,29 +35,29 @@ public class ManualPayoutService : IPayoutService
 
     public async Task<PayoutReportDto> GeneratePayoutAsync(Guid providerId, DateTime startDate, DateTime endDate)
     {
-        var provider = await _context.Providers
+        var provider = await _context.Consignors
             .FirstOrDefaultAsync(p => p.Id == providerId);
 
         if (provider == null)
-            throw new ArgumentException($"Provider {providerId} not found");
+            throw new ArgumentException($"Consignor {providerId} not found");
 
         // Get all unpaid transactions for this provider in the date range
         var transactions = await _context.Transactions
             .Include(t => t.Item)
-            .Where(t => t.ProviderId == providerId
+            .Where(t => t.ConsignorId == providerId
                      && t.SaleDate >= startDate
                      && t.SaleDate <= endDate
-                     && !t.ProviderPaidOut)
+                     && !t.ConsignorPaidOut)
             .OrderBy(t => t.SaleDate)
             .ToListAsync();
 
-        var totalAmount = transactions.Sum(t => t.ProviderAmount);
+        var totalAmount = transactions.Sum(t => t.ConsignorAmount);
         var transactionCount = transactions.Count;
 
         return new PayoutReportDto
         {
-            ProviderId = providerId,
-            ProviderName = provider.GetDisplayName(),
+            ConsignorId = providerId,
+            ConsignorName = provider.GetDisplayName(),
             StartDate = startDate,
             EndDate = endDate,
             TotalAmount = totalAmount,
@@ -70,7 +70,7 @@ public class ManualPayoutService : IPayoutService
                 ItemName = t.Item.Title,
                 SaleDate = t.SaleDate,
                 SalePrice = t.SalePrice,
-                ProviderAmount = t.ProviderAmount,
+                ConsignorAmount = t.ConsignorAmount,
                 ShopAmount = t.ShopAmount
             }).ToList()
         };
@@ -78,8 +78,8 @@ public class ManualPayoutService : IPayoutService
 
     public async Task<List<PayoutReportDto>> GenerateAllPayoutsAsync(DateTime startDate, DateTime endDate)
     {
-        var providers = await _context.Providers
-            .Where(p => p.Status == Core.Enums.ProviderStatus.Active)
+        var providers = await _context.Consignors
+            .Where(p => p.Status == Core.Enums.ConsignorStatus.Active)
             .ToListAsync();
 
         var payouts = new List<PayoutReportDto>();
@@ -101,13 +101,13 @@ public class ManualPayoutService : IPayoutService
         // In MVP, payoutId represents the provider ID for a date range
         // Mark all unpaid transactions for this provider as paid
         var transactions = await _context.Transactions
-            .Where(t => t.ProviderId == payoutId && !t.ProviderPaidOut)
+            .Where(t => t.ConsignorId == payoutId && !t.ConsignorPaidOut)
             .ToListAsync();
 
         foreach (var transaction in transactions)
         {
-            transaction.ProviderPaidOut = true;
-            transaction.ProviderPaidOutDate = DateTime.UtcNow;
+            transaction.ConsignorPaidOut = true;
+            transaction.ConsignorPaidOutDate = DateTime.UtcNow;
             transaction.PayoutMethod = paymentMethod;
             transaction.PayoutNotes = notes;
         }
@@ -119,18 +119,18 @@ public class ManualPayoutService : IPayoutService
         {
             try
             {
-                var provider = await _context.Providers
+                var provider = await _context.Consignors
                     .FirstOrDefaultAsync(p => p.Id == payoutId);
 
                 if (provider != null && provider.UserId.HasValue)
                 {
-                    var totalAmount = transactions.Sum(t => t.ProviderAmount);
+                    var totalAmount = transactions.Sum(t => t.ConsignorAmount);
 
                     await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
                     {
                         OrganizationId = provider.OrganizationId,
                         UserId = provider.UserId.Value,
-                        ProviderId = provider.Id,
+                        ConsignorId = provider.Id,
                         Type = NotificationType.PayoutProcessed,
                         Title = "Payout Processed 💰",
                         Message = $"A payout of {totalAmount:C} has been processed via {paymentMethod}.",
@@ -148,12 +148,12 @@ public class ManualPayoutService : IPayoutService
             catch (Exception ex)
             {
                 // Log but don't fail the payout if notification fails
-                _logger.LogError(ex, "Failed to send payout notification for provider {ProviderId}", payoutId);
+                _logger.LogError(ex, "Failed to send payout notification for provider {ConsignorId}", payoutId);
             }
         }
 
         _logger.LogInformation(
-            "[MANUAL PAYOUT] Marked {Count} transactions as paid for provider {ProviderId}\n" +
+            "[MANUAL PAYOUT] Marked {Count} transactions as paid for provider {ConsignorId}\n" +
             "  Payment Method: {PaymentMethod}\n" +
             "  Notes: {Notes}",
             transactions.Count, payoutId, paymentMethod, notes ?? "None"
@@ -165,8 +165,8 @@ public class ManualPayoutService : IPayoutService
         // For MVP, this would need the provider ID and date range
         // This is a simplified implementation
         var csv = new StringBuilder();
-        csv.AppendLine("Provider,Item,Sale Date,Sale Price,Provider Amount,Shop Amount");
-        csv.AppendLine($"Sample Provider,Sample Item,{DateTime.Now:yyyy-MM-dd},100.00,50.00,50.00");
+        csv.AppendLine("Consignor,Item,Sale Date,Sale Price,Consignor Amount,Shop Amount");
+        csv.AppendLine($"Sample Consignor,Sample Item,{DateTime.Now:yyyy-MM-dd},100.00,50.00,50.00");
 
         return Encoding.UTF8.GetBytes(csv.ToString());
     }
@@ -174,11 +174,11 @@ public class ManualPayoutService : IPayoutService
     public async Task<byte[]> ExportPayoutsToCsvAsync(List<Guid> payoutIds)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Provider,Item,Sale Date,Sale Price,Provider Amount,Shop Amount");
+        csv.AppendLine("Consignor,Item,Sale Date,Sale Price,Consignor Amount,Shop Amount");
 
         foreach (var payoutId in payoutIds)
         {
-            csv.AppendLine($"Provider {payoutId},Sample Item,{DateTime.Now:yyyy-MM-dd},100.00,50.00,50.00");
+            csv.AppendLine($"Consignor {payoutId},Sample Item,{DateTime.Now:yyyy-MM-dd},100.00,50.00,50.00");
         }
 
         return Encoding.UTF8.GetBytes(csv.ToString());
@@ -187,8 +187,8 @@ public class ManualPayoutService : IPayoutService
     public async Task<decimal> GetPendingPayoutAmountAsync(Guid providerId)
     {
         var pendingAmount = await _context.Transactions
-            .Where(t => t.ProviderId == providerId && !t.ProviderPaidOut)
-            .SumAsync(t => t.ProviderAmount);
+            .Where(t => t.ConsignorId == providerId && !t.ConsignorPaidOut)
+            .SumAsync(t => t.ConsignorAmount);
 
         return pendingAmount;
     }
@@ -196,14 +196,14 @@ public class ManualPayoutService : IPayoutService
     public async Task<List<PayoutSummaryDto>> GetPendingPayoutsAsync()
     {
         var pendingPayouts = await _context.Transactions
-            .Include(t => t.Provider)
-            .Where(t => !t.ProviderPaidOut)
-            .GroupBy(t => t.ProviderId)
+            .Include(t => t.Consignor)
+            .Where(t => !t.ConsignorPaidOut)
+            .GroupBy(t => t.ConsignorId)
             .Select(g => new PayoutSummaryDto
             {
-                ProviderId = g.Key,
-                ProviderName = g.First().Provider.GetDisplayName(),
-                PendingAmount = g.Sum(t => t.ProviderAmount),
+                ConsignorId = g.Key,
+                ConsignorName = g.First().Consignor.GetDisplayName(),
+                PendingAmount = g.Sum(t => t.ConsignorAmount),
                 TransactionCount = g.Count(),
                 OldestTransaction = g.Min(t => t.SaleDate)
             })

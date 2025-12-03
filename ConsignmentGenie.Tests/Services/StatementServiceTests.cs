@@ -39,12 +39,12 @@ public class StatementServiceTests : IDisposable
                 Id = Guid.NewGuid(),
                 OrganizationId = testData.Organization.Id,
                 ItemId = testData.Item1.Id,
-                ProviderId = testData.Provider.Id,
+                ConsignorId = testData.Consignor.Id,
                 SalePrice = 100.00m,
                 TransactionDate = new DateTime(2023, 11, 15),
                 Status = "Completed",
-                ProviderSplitPercentage = 60.00m,
-                ProviderAmount = 60.00m,
+                ConsignorSplitPercentage = 60.00m,
+                ConsignorAmount = 60.00m,
                 ShopAmount = 40.00m
             },
             new Transaction
@@ -52,12 +52,12 @@ public class StatementServiceTests : IDisposable
                 Id = Guid.NewGuid(),
                 OrganizationId = testData.Organization.Id,
                 ItemId = testData.Item2.Id,
-                ProviderId = testData.Provider.Id,
+                ConsignorId = testData.Consignor.Id,
                 SalePrice = 50.00m,
                 TransactionDate = new DateTime(2023, 11, 20),
                 Status = "Completed",
-                ProviderSplitPercentage = 60.00m,
-                ProviderAmount = 30.00m,
+                ConsignorSplitPercentage = 60.00m,
+                ConsignorAmount = 30.00m,
                 ShopAmount = 20.00m
             }
         };
@@ -66,7 +66,7 @@ public class StatementServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _service.GenerateStatementAsync(testData.Provider.Id, periodStart, periodEnd);
+        var result = await _service.GenerateStatementAsync(testData.Consignor.Id, periodStart, periodEnd);
 
         // Assert
         Assert.NotNull(result);
@@ -96,7 +96,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
-            ProviderId = testData.Provider.Id,
+            ConsignorId = testData.Consignor.Id,
             StatementNumber = "STMT-2023-11-TEST",
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
@@ -111,7 +111,7 @@ public class StatementServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _service.GenerateStatementAsync(testData.Provider.Id, periodStart, periodEnd);
+        var result = await _service.GenerateStatementAsync(testData.Consignor.Id, periodStart, periodEnd);
 
         // Assert
         Assert.NotNull(result);
@@ -134,12 +134,12 @@ public class StatementServiceTests : IDisposable
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
             ItemId = testData.Item1.Id,
-            ProviderId = testData.Provider.Id,
+            ConsignorId = testData.Consignor.Id,
             SalePrice = 100.00m,
             TransactionDate = new DateTime(2023, 11, 15),
             Status = "Completed",
-            ProviderSplitPercentage = 60.00m,
-            ProviderAmount = 60.00m,
+            ConsignorSplitPercentage = 60.00m,
+            ConsignorAmount = 60.00m,
             ShopAmount = 40.00m
         };
 
@@ -147,7 +147,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
-            ProviderId = testData.Provider.Id,
+            ConsignorId = testData.Consignor.Id,
             Amount = 30.00m,
             PayoutDate = new DateTime(2023, 11, 25),
             PayoutNumber = "PAY-001",
@@ -160,7 +160,7 @@ public class StatementServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _service.GenerateStatementAsync(testData.Provider.Id, periodStart, periodEnd);
+        var result = await _service.GenerateStatementAsync(testData.Consignor.Id, periodStart, periodEnd);
 
         // Assert
         Assert.Equal(60.00m, result.TotalEarnings);
@@ -181,7 +181,7 @@ public class StatementServiceTests : IDisposable
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = testData.Organization.Id,
-                ProviderId = testData.Provider.Id,
+                ConsignorId = testData.Consignor.Id,
                 StatementNumber = "STMT-2023-10-TEST",
                 PeriodStart = new DateOnly(2023, 10, 1),
                 PeriodEnd = new DateOnly(2023, 10, 31),
@@ -195,7 +195,7 @@ public class StatementServiceTests : IDisposable
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = testData.Organization.Id,
-                ProviderId = testData.Provider.Id,
+                ConsignorId = testData.Consignor.Id,
                 StatementNumber = "STMT-2023-11-TEST",
                 PeriodStart = new DateOnly(2023, 11, 1),
                 PeriodEnd = new DateOnly(2023, 11, 30),
@@ -211,7 +211,7 @@ public class StatementServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _service.GetStatementsAsync(testData.Provider.Id);
+        var result = await _service.GetStatementsAsync(testData.Consignor.Id);
 
         // Assert
         Assert.Equal(2, result.Count);
@@ -230,7 +230,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
-            ProviderId = testData.Provider.Id,
+            ConsignorId = testData.Consignor.Id,
             StatementNumber = "STMT-2023-11-TEST",
             PeriodStart = new DateOnly(2023, 11, 1),
             PeriodEnd = new DateOnly(2023, 11, 30),
@@ -245,13 +245,13 @@ public class StatementServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _service.GetStatementAsync(statement.Id, testData.Provider.Id);
+        var result = await _service.GetStatementAsync(statement.Id, testData.Consignor.Id);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(statement.Id, result.Id);
         Assert.Equal(statement.StatementNumber, result.StatementNumber);
-        Assert.Equal(testData.Provider.FirstName + " " + testData.Provider.LastName, result.ProviderName);
+        Assert.Equal(testData.Consignor.FirstName + " " + testData.Consignor.LastName, result.ConsignorName);
         Assert.Equal(testData.Organization.Name, result.ShopName);
     }
 
@@ -266,7 +266,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
-            ProviderId = testData.Provider.Id,
+            ConsignorId = testData.Consignor.Id,
             StatementNumber = "STMT-2023-11-TEST",
             PeriodStart = new DateOnly(2023, 11, 1),
             PeriodEnd = new DateOnly(2023, 11, 30),
@@ -294,7 +294,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
-            ProviderId = testData.Provider.Id,
+            ConsignorId = testData.Consignor.Id,
             StatementNumber = "STMT-2023-11-TEST",
             PeriodStart = new DateOnly(2023, 11, 1),
             PeriodEnd = new DateOnly(2023, 11, 30),
@@ -307,7 +307,7 @@ public class StatementServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        await _service.MarkAsViewedAsync(statement.Id, testData.Provider.Id);
+        await _service.MarkAsViewedAsync(statement.Id, testData.Consignor.Id);
 
         // Assert
         var updatedStatement = await _context.Statements.FindAsync(statement.Id);
@@ -325,7 +325,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
-            ProviderId = testData.Provider.Id,
+            ConsignorId = testData.Consignor.Id,
             StatementNumber = "STMT-2023-11-OLD",
             PeriodStart = new DateOnly(2023, 11, 1),
             PeriodEnd = new DateOnly(2023, 11, 30),
@@ -345,12 +345,12 @@ public class StatementServiceTests : IDisposable
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
             ItemId = testData.Item1.Id,
-            ProviderId = testData.Provider.Id,
+            ConsignorId = testData.Consignor.Id,
             SalePrice = 100.00m,
             TransactionDate = new DateTime(2023, 11, 15),
             Status = "Completed",
-            ProviderSplitPercentage = 60.00m,
-            ProviderAmount = 60.00m,
+            ConsignorSplitPercentage = 60.00m,
+            ConsignorAmount = 60.00m,
             ShopAmount = 40.00m
         };
 
@@ -358,7 +358,7 @@ public class StatementServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _service.RegenerateStatementAsync(existingStatement.Id, testData.Provider.Id);
+        var result = await _service.RegenerateStatementAsync(existingStatement.Id, testData.Consignor.Id);
 
         // Assert
         Assert.NotNull(result);
@@ -379,20 +379,20 @@ public class StatementServiceTests : IDisposable
         var testData = await CreateTestDataAsync();
 
         // Create a second provider
-        var provider2 = new Provider
+        var provider2 = new Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
             UserId = testData.User.Id,
-            ProviderNumber = "PRV-002",
+            ConsignorNumber = "PRV-002",
             FirstName = "Second",
-            LastName = "Provider",
+            LastName = "Consignor",
             Email = "provider2@test.com",
             CommissionRate = 50.00m,
-            Status = ProviderStatus.Approved
+            Status = ConsignorStatus.Approved
         };
 
-        _context.Providers.Add(provider2);
+        _context.Consignors.Add(provider2);
         await _context.SaveChangesAsync();
 
         // Act
@@ -401,8 +401,8 @@ public class StatementServiceTests : IDisposable
         // Assert
         var statements = await _context.Statements.ToListAsync();
         Assert.Equal(2, statements.Count);
-        Assert.Contains(statements, s => s.ProviderId == testData.Provider.Id);
-        Assert.Contains(statements, s => s.ProviderId == provider2.Id);
+        Assert.Contains(statements, s => s.ConsignorId == testData.Consignor.Id);
+        Assert.Contains(statements, s => s.ConsignorId == provider2.Id);
     }
 
     private async Task<TestData> CreateTestDataAsync()
@@ -421,28 +421,28 @@ public class StatementServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Email = "provider@test.com",
             PasswordHash = "hashedpassword",
-            Role = UserRole.Provider,
+            Role = UserRole.Consignor,
             OrganizationId = organization.Id
         };
 
-        var provider = new Provider
+        var provider = new Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
             UserId = user.Id,
-            ProviderNumber = "PRV-001",
+            ConsignorNumber = "PRV-001",
             FirstName = "Test",
-            LastName = "Provider",
+            LastName = "Consignor",
             Email = "provider@test.com",
             CommissionRate = 60.00m,
-            Status = ProviderStatus.Approved
+            Status = ConsignorStatus.Approved
         };
 
         var item1 = new Item
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             Title = "Test Item 1",
             Description = "Test description 1",
             Price = 100.00m,
@@ -454,7 +454,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             Title = "Test Item 2",
             Description = "Test description 2",
             Price = 50.00m,
@@ -464,7 +464,7 @@ public class StatementServiceTests : IDisposable
 
         _context.Organizations.Add(organization);
         _context.Users.Add(user);
-        _context.Providers.Add(provider);
+        _context.Consignors.Add(provider);
         _context.Items.AddRange(item1, item2);
         await _context.SaveChangesAsync();
 
@@ -472,7 +472,7 @@ public class StatementServiceTests : IDisposable
         {
             Organization = organization,
             User = user,
-            Provider = provider,
+            Consignor = provider,
             Item1 = item1,
             Item2 = item2
         };
@@ -482,7 +482,7 @@ public class StatementServiceTests : IDisposable
     {
         public Organization Organization { get; set; }
         public User User { get; set; }
-        public Provider Provider { get; set; }
+        public Consignor Consignor { get; set; }
         public Item Item1 { get; set; }
         public Item Item2 { get; set; }
     }

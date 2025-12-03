@@ -198,7 +198,7 @@ public class ResendEmailService : IEmailService
         <p>Don't lose access to your consignment management tools! Upgrade now to continue using:</p>
 
         <ul style=""padding-left: 20px;"">
-            <li>Provider management</li>
+            <li>Consignor management</li>
             <li>Inventory tracking</li>
             <li>Transaction recording</li>
             <li>Automated payout calculations</li>
@@ -218,7 +218,7 @@ public class ResendEmailService : IEmailService
 Your ConsignmentGenie trial expires in {daysRemaining} days.
 
 Don't lose access to your consignment management tools! Upgrade now to continue using:
-- Provider management
+- Consignor management
 - Inventory tracking
 - Transaction recording
 - Automated payout calculations
@@ -568,24 +568,24 @@ ConsignmentGenie Suggestion System
 
     public async Task<bool> SendProviderInvitationAsync(string email, string providerName, string shopName, string inviteLink, string expirationDate)
     {
-        _logger.LogInformation("[EMAIL] Starting provider invitation email to {Email} for provider {ProviderName} from shop {ShopName}", email, providerName, shopName);
-        _logger.LogDebug("[EMAIL] Provider invitation details: InviteLink={InviteLink}, ExpirationDate={ExpirationDate}", inviteLink, expirationDate);
+        _logger.LogInformation("[EMAIL] Starting provider invitation email to {Email} for provider {ConsignorName} from shop {ShopName}", email, providerName, shopName);
+        _logger.LogDebug("[EMAIL] Consignor invitation details: InviteLink={InviteLink}, ExpirationDate={ExpirationDate}", inviteLink, expirationDate);
 
         try
         {
-            var subject = $"Join {shopName} as a Provider - Invitation to ConsignmentGenie";
+            var subject = $"Join {shopName} as a Consignor - Invitation to ConsignmentGenie";
             var htmlContent = $@"
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset=""utf-8"">
     <meta name=""viewport"" content=""width=device-width, initial-scale=1"">
-    <title>Provider Invitation</title>
+    <title>Consignor Invitation</title>
 </head>
 <body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"">
     <div style=""background: linear-gradient(135deg, #047857 0%, #065f46 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"">
         <h1 style=""margin: 0; font-size: 28px;"">You're Invited!</h1>
-        <p style=""margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;"">Join {shopName} as a Consignment Provider</p>
+        <p style=""margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;"">Join {shopName} as a Consignment Consignor</p>
     </div>
 
     <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
@@ -646,12 +646,12 @@ ConsignmentGenie Suggestion System
 </html>";
 
             var result = await SendSimpleEmailAsync(email, subject, htmlContent);
-            _logger.LogInformation("[EMAIL] Provider invitation email send result for {Email}: {Result}", email, result);
+            _logger.LogInformation("[EMAIL] Consignor invitation email send result for {Email}: {Result}", email, result);
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[EMAIL] Failed to send provider invitation email to {Email} for provider {ProviderName} from shop {ShopName}", email, providerName, shopName);
+            _logger.LogError(ex, "[EMAIL] Failed to send provider invitation email to {Email} for provider {ConsignorName} from shop {ShopName}", email, providerName, shopName);
             return false;
         }
     }

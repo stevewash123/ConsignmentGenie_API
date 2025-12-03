@@ -4,7 +4,7 @@ namespace ConsignmentGenie.Application.Services.Interfaces;
 
 public interface IAccountingService
 {
-    string ProviderName { get; }
+    string ConsignorName { get; }
 
     // Authentication & Connection
     Task<string> GetAuthorizationUrlAsync(string redirectUri, string state);
@@ -31,7 +31,7 @@ public interface IAccountingService
     Task<List<AccountingCustomerInfo>> SyncCustomersAsync(DateTime? since = null);
     Task<Dictionary<string, object>> GetSyncStatusAsync();
 
-    // Provider-specific features
+    // Consignor-specific features
     Task<bool> SupportsFunctionality(string functionality); // "invoicing", "inventory", "reports", etc.
     Task<Dictionary<string, object>> GetProviderSpecificDataAsync(string entityId, string entityType);
 

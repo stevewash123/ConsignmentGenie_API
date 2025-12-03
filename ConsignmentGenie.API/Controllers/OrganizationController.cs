@@ -30,7 +30,7 @@ public class OrganizationController : ControllerBase
         try
         {
             var organization = await _context.Organizations
-                .Include(o => o.Providers)
+                .Include(o => o.Consignors)
                 .Include(o => o.Items)
                 .FirstOrDefaultAsync(o => o.Id == organizationId);
 
@@ -41,9 +41,9 @@ public class OrganizationController : ControllerBase
             }
 
             _logger.LogDebug("[SETUP] Organization {OrganizationId} found: Name={OrganizationName}, WelcomeGuideCompleted={WelcomeGuideCompleted}, ProviderCount={ProviderCount}, ItemCount={ItemCount}, StoreEnabled={StoreEnabled}, StripeConnected={StripeConnected}, QuickBooksConnected={QuickBooksConnected}",
-                organizationId, organization.Name, organization.WelcomeGuideCompleted, organization.Providers?.Count ?? 0, organization.Items?.Count ?? 0, organization.StoreEnabled, organization.StripeConnected, organization.QuickBooksConnected);
+                organizationId, organization.Name, organization.WelcomeGuideCompleted, organization.Consignors?.Count ?? 0, organization.Items?.Count ?? 0, organization.StoreEnabled, organization.StripeConnected, organization.QuickBooksConnected);
 
-            var hasProviders = organization.Providers.Any();
+            var hasProviders = organization.Consignors.Any();
             var storefrontConfigured = organization.StoreEnabled ||
                                       organization.StripeConnected;
             var hasInventory = organization.Items.Any();

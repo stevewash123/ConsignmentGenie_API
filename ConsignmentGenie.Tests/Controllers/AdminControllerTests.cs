@@ -301,7 +301,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Id = Guid.NewGuid(),
                 Email = "provider@test.com",
                 PasswordHash = "hashed_password",
-                Role = UserRole.Provider, // Not an owner
+                Role = UserRole.Consignor, // Not an owner
                 OrganizationId = _organizationId,
                 ApprovalStatus = ApprovalStatus.Pending,
                 CreatedAt = DateTime.UtcNow,

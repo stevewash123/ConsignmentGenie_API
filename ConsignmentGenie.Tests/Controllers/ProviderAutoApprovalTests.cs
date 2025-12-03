@@ -46,7 +46,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _controller.RegisterProvider(request);
+            var result = await _controller.RegisterConsignor(request);
 
             // Assert - Controller behavior only
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -89,7 +89,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _controller.RegisterProvider(request);
+            var result = await _controller.RegisterConsignor(request);
 
             // Assert - Controller behavior only
             var okResult = Assert.IsType<OkObjectResult>(result.Result);

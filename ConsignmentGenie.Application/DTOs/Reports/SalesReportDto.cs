@@ -25,7 +25,7 @@ public class SalesLineItemDto
     public DateTime Date { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public string ProviderName { get; set; } = string.Empty;
+    public string ConsignorName { get; set; } = string.Empty;
     public decimal SalePrice { get; set; }
     public decimal ShopCut { get; set; }
     public decimal ProviderCut { get; set; }

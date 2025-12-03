@@ -19,7 +19,7 @@ public class AnalyticsEvent : BaseEntity
 
     public Guid? UserId { get; set; }
 
-    public Guid? ProviderId { get; set; }
+    public Guid? ConsignorId { get; set; }
 
     [MaxLength(50)]
     public string Source { get; set; } = "Web"; // POS, Web, Mobile, API
@@ -40,5 +40,5 @@ public class AnalyticsEvent : BaseEntity
     public Item? Item { get; set; }
     public Customer? Customer { get; set; }
     public User? User { get; set; }
-    public Provider? Provider { get; set; }
+    public Consignor? Consignor { get; set; }
 }

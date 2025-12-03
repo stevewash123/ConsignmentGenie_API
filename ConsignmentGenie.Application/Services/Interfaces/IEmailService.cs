@@ -16,6 +16,6 @@ public interface IEmailService
     // New simplified method for notification service
     Task<bool> SendSimpleEmailAsync(string toEmail, string subject, string body, bool isHtml = true);
 
-    // Provider invitation method
+    // Consignor invitation method
     Task<bool> SendProviderInvitationAsync(string email, string providerName, string shopName, string inviteLink, string expirationDate);
 }

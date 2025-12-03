@@ -48,7 +48,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Name = "Test Shop",
                 StoreCode = "TEST",
                 StoreCodeEnabled = true,
-                AutoApproveProviders = true,
+                AutoApproveConsignors = true,
                 OnboardingDismissed = false,
                 WelcomeGuideCompleted = false,
                 VerticalType = VerticalType.Consignment,
@@ -89,7 +89,7 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task UpdateAutoApproveProviders_EnablesAutoApprove()
         {
             // Arrange
-            var request = new UpdateAutoApproveRequest { AutoApproveProviders = true };
+            var request = new UpdateAutoApproveRequest { AutoApproveConsignors = true };
 
             // Act
             var result = await _controller.UpdateAutoApproveProviders(request);
@@ -111,14 +111,14 @@ namespace ConsignmentGenie.Tests.Controllers
 
             // Verify in database
             var organization = await _context.Organizations.FindAsync(_organizationId);
-            Assert.True(organization.AutoApproveProviders);
+            Assert.True(organization.AutoApproveConsignors);
         }
 
         [Fact]
         public async Task UpdateAutoApproveProviders_DisablesAutoApprove()
         {
             // Arrange
-            var request = new UpdateAutoApproveRequest { AutoApproveProviders = false };
+            var request = new UpdateAutoApproveRequest { AutoApproveConsignors = false };
 
             // Act
             var result = await _controller.UpdateAutoApproveProviders(request);
@@ -140,7 +140,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             // Verify in database
             var organization = await _context.Organizations.FindAsync(_organizationId);
-            Assert.False(organization.AutoApproveProviders);
+            Assert.False(organization.AutoApproveConsignors);
         }
 
         [Fact]

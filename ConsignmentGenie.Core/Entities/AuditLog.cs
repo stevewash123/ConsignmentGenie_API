@@ -14,7 +14,7 @@ public class AuditLog : BaseEntity
 
     [Required]
     [MaxLength(100)]
-    public string EntityType { get; set; } = string.Empty; // Item, Provider, Transaction, etc.
+    public string EntityType { get; set; } = string.Empty; // Item, Consignor, Transaction, etc.
 
     public Guid? EntityId { get; set; } // ID of the affected entity
 

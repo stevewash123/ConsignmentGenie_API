@@ -49,33 +49,33 @@ public class ProviderNotificationServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Email = "provider@test.com",
             PasswordHash = "hashedpassword",
-            Role = UserRole.Provider,
+            Role = UserRole.Consignor,
             OrganizationId = organization.Id
         };
 
-        var provider = new Provider
+        var provider = new Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
             UserId = user.Id,
-            ProviderNumber = "PRV-001",
+            ConsignorNumber = "PRV-001",
             FirstName = "Test",
-            LastName = "Provider",
+            LastName = "Consignor",
             Email = "provider@test.com",
             CommissionRate = 60.00m,
-            Status = ProviderStatus.Approved
+            Status = ConsignorStatus.Approved
         };
 
         _context.Organizations.Add(organization);
         _context.Users.Add(user);
-        _context.Providers.Add(provider);
+        _context.Consignors.Add(provider);
         await _context.SaveChangesAsync();
 
         var request = new CreateNotificationRequest
         {
             OrganizationId = organization.Id,
             UserId = user.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             Type = NotificationType.ItemSold,
             Title = "Test Notification",
             Message = "Test message",
@@ -97,7 +97,7 @@ public class ProviderNotificationServiceTests : IDisposable
         Assert.NotNull(notification);
         Assert.Equal(request.OrganizationId, notification.OrganizationId);
         Assert.Equal(request.UserId, notification.UserId);
-        Assert.Equal(request.ProviderId, notification.ProviderId);
+        Assert.Equal(request.ConsignorId, notification.ConsignorId);
         Assert.Equal(request.Type.ToString(), notification.Type);
         Assert.Equal(request.Title, notification.Title);
         Assert.Equal(request.Message, notification.Message);
@@ -122,21 +122,21 @@ public class ProviderNotificationServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Email = "provider@test.com",
             PasswordHash = "hashedpassword",
-            Role = UserRole.Provider,
+            Role = UserRole.Consignor,
             OrganizationId = organization.Id
         };
 
-        var provider = new Provider
+        var provider = new Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
             UserId = user.Id,
-            ProviderNumber = "PRV-001",
+            ConsignorNumber = "PRV-001",
             FirstName = "Test",
-            LastName = "Provider",
+            LastName = "Consignor",
             Email = "provider@test.com",
             CommissionRate = 60.00m,
-            Status = ProviderStatus.Approved
+            Status = ConsignorStatus.Approved
         };
 
         var preference = new UserNotificationPreference
@@ -148,7 +148,7 @@ public class ProviderNotificationServiceTests : IDisposable
 
         _context.Organizations.Add(organization);
         _context.Users.Add(user);
-        _context.Providers.Add(provider);
+        _context.Consignors.Add(provider);
         _context.UserNotificationPreferences.Add(preference);
         await _context.SaveChangesAsync();
 
@@ -159,7 +159,7 @@ public class ProviderNotificationServiceTests : IDisposable
         {
             OrganizationId = organization.Id,
             UserId = user.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             Type = NotificationType.ItemSold,
             Title = "Test Notification",
             Message = "Test message"
@@ -401,7 +401,7 @@ public class ProviderNotificationServiceTests : IDisposable
             Id = userId,
             Email = "test@test.com",
             PasswordHash = "hash",
-            Role = UserRole.Provider
+            Role = UserRole.Consignor
         };
 
         _context.Users.Add(user);

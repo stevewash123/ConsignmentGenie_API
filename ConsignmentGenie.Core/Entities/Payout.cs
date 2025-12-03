@@ -12,8 +12,8 @@ namespace ConsignmentGenie.Core.Entities
         public Organization Organization { get; set; } = null!;
 
         [Required]
-        public Guid ProviderId { get; set; }
-        public Provider Provider { get; set; } = null!;
+        public Guid ConsignorId { get; set; }
+        public Consignor Consignor { get; set; } = null!;
 
         // Payout Details
         [Required]

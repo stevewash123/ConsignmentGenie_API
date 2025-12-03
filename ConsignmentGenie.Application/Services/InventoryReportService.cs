@@ -25,7 +25,7 @@ public class InventoryReportService : IInventoryReportService
             var itemsQuery = await _unitOfWork.Items
                 .GetAllAsync(i => i.OrganizationId == organizationId &&
                                i.Status == ItemStatus.Available,
-                    includeProperties: "Provider");
+                    includeProperties: "Consignor");
 
             var items = itemsQuery.AsQueryable();
 
@@ -35,9 +35,9 @@ public class InventoryReportService : IInventoryReportService
                 items = items.Where(i => filter.Categories.Contains(i.Category ?? ""));
             }
 
-            if (filter.ProviderIds != null && filter.ProviderIds.Any())
+            if (filter.ConsignorIds != null && filter.ConsignorIds.Any())
             {
-                items = items.Where(i => filter.ProviderIds.Contains(i.ProviderId));
+                items = items.Where(i => filter.ConsignorIds.Contains(i.ConsignorId));
             }
 
             if (filter.MinPrice.HasValue)
@@ -109,7 +109,7 @@ public class InventoryReportService : IInventoryReportService
                     Name = x.Item.Title,
                     SKU = x.Item.Sku,
                     Category = x.Item.Category ?? "",
-                    ProviderName = x.Item.Provider.DisplayName,
+                    ConsignorName = x.Item.Consignor.DisplayName,
                     Price = x.Item.Price,
                     ListedDate = x.Item.ListedDate!.Value,
                     DaysListed = x.DaysListed,
@@ -142,7 +142,7 @@ public class InventoryReportService : IInventoryReportService
         try
         {
             var items = await _unitOfWork.Items
-                .GetAllAsync(i => i.OrganizationId == organizationId, includeProperties: "Provider");
+                .GetAllAsync(i => i.OrganizationId == organizationId, includeProperties: "Consignor");
 
             var itemList = items.ToList();
 
@@ -159,11 +159,11 @@ public class InventoryReportService : IInventoryReportService
                 .ToList();
 
             var providerBreakdown = itemList
-                .GroupBy(i => new { i.ProviderId, i.Provider.DisplayName })
+                .GroupBy(i => new { i.ConsignorId, i.Consignor.DisplayName })
                 .Select(g => new ProviderBreakdownDto
                 {
-                    ProviderId = g.Key.ProviderId,
-                    ProviderName = g.Key.DisplayName,
+                    ConsignorId = g.Key.ConsignorId,
+                    ConsignorName = g.Key.DisplayName,
                     ItemCount = g.Count(),
                     AvailableCount = g.Count(i => i.Status == ItemStatus.Available),
                     SoldCount = g.Count(i => i.Status == ItemStatus.Sold)
@@ -196,9 +196,9 @@ public class InventoryReportService : IInventoryReportService
         return daysListed switch
         {
             > 180 => "Donate",
-            > 120 => "Return to Provider",
+            > 120 => "Return to Consignor",
             > 90 when price > 50 => "Price Reduce",
-            > 90 => "Return to Provider",
+            > 90 => "Return to Consignor",
             _ => "Monitor"
         };
     }

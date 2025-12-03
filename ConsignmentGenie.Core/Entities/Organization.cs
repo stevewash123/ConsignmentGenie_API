@@ -65,7 +65,7 @@ public class Organization : BaseEntity
 
     public bool StoreCodeEnabled { get; set; } = true;
 
-    public bool AutoApproveProviders { get; set; } = true;  // MVP: auto-approve by default
+    public bool AutoApproveConsignors { get; set; } = true;  // MVP: auto-approve by default
 
     // Trial & Subscription Status
     [MaxLength(20)]
@@ -139,7 +139,7 @@ public class Organization : BaseEntity
     public string ShopTimezone { get; set; } = "America/New_York";
 
     // Business Settings
-    public decimal DefaultSplitPercentage { get; set; } = 60.00M;  // Provider's cut
+    public decimal DefaultSplitPercentage { get; set; } = 60.00M;  // Consignor's cut
 
     public decimal TaxRate { get; set; } = 0.0000M;
 
@@ -174,7 +174,7 @@ public class Organization : BaseEntity
 
     // Navigation properties
     public ICollection<User> Users { get; set; } = new List<User>();
-    public ICollection<Provider> Providers { get; set; } = new List<Provider>();
+    public ICollection<Consignor> Consignors { get; set; } = new List<Consignor>();
     public ICollection<Item> Items { get; set; } = new List<Item>();
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     public ICollection<Payout> Payouts { get; set; } = new List<Payout>();

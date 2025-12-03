@@ -9,7 +9,7 @@ public class Transaction : BaseEntity
 
     public Guid ItemId { get; set; }
 
-    public Guid ProviderId { get; set; }
+    public Guid ConsignorId { get; set; }
 
     // Link to order (for storefront transactions)
     public Guid? OrderId { get; set; }
@@ -34,10 +34,10 @@ public class Transaction : BaseEntity
 
     // Split calculation (calculated, not user-entered)
     [Column(TypeName = "decimal(5,2)")]
-    public decimal ProviderSplitPercentage { get; set; }
+    public decimal ConsignorSplitPercentage { get; set; }
 
     [Column(TypeName = "decimal(10,2)")]
-    public decimal ProviderAmount { get; set; }
+    public decimal ConsignorAmount { get; set; }
 
     [Column(TypeName = "decimal(10,2)")]
     public decimal ShopAmount { get; set; }
@@ -75,8 +75,8 @@ public class Transaction : BaseEntity
     public string? Notes { get; set; }
 
     // Payout tracking (Enhanced for Phase 1)
-    public bool ProviderPaidOut { get; set; } = false;
-    public DateTime? ProviderPaidOutDate { get; set; }
+    public bool ConsignorPaidOut { get; set; } = false;
+    public DateTime? ConsignorPaidOutDate { get; set; }
     public string? PayoutMethod { get; set; } // "Check", "Cash", "PayPal", "Bank Transfer"
     public string? PayoutNotes { get; set; }
 
@@ -98,7 +98,7 @@ public class Transaction : BaseEntity
     public User? ProcessedByUser { get; set; }  // Link to user who processed transaction
     public Organization Organization { get; set; } = null!;
     public Item Item { get; set; } = null!;
-    public Provider Provider { get; set; } = null!;
+    public Consignor Consignor { get; set; } = null!;
     public Order? Order { get; set; }
     public Payout? Payout { get; set; }
 }

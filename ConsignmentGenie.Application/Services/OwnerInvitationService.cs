@@ -95,11 +95,11 @@ public class OwnerInvitationService : IOwnerInvitationService
                 .FirstOrDefaultAsync();
 
             // Create notification for the inviter to track the invitation
-            if (inviterOrganization.HasValue)
+            if (inviterOrganization != Guid.Empty)
             {
                 await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
                 {
-                    OrganizationId = inviterOrganization.Value,
+                    OrganizationId = inviterOrganization,
                     UserId = invitedById,
                     Type = NotificationType.OwnerInvitationSent,
                     Title = "Owner Invitation Sent",

@@ -21,7 +21,7 @@ public class SplitCalculationService : ISplitCalculationService
 
         return new SplitResult
         {
-            ProviderAmount = providerAmount,
+            ConsignorAmount = providerAmount,
             ShopAmount = shopAmount,
             SplitPercentage = splitPercentage
         };
@@ -29,17 +29,17 @@ public class SplitCalculationService : ISplitCalculationService
 
     public async Task<PayoutSummary> CalculatePayoutsAsync(Guid providerId, DateTime periodStart, DateTime periodEnd)
     {
-        var provider = await _context.Providers
+        var provider = await _context.Consignors
             .FirstOrDefaultAsync(p => p.Id == providerId);
 
         if (provider == null)
         {
-            throw new ArgumentException("Provider not found", nameof(providerId));
+            throw new ArgumentException("Consignor not found", nameof(providerId));
         }
 
         var transactions = await _context.Transactions
             .Include(t => t.Item)
-            .Where(t => t.ProviderId == providerId &&
+            .Where(t => t.ConsignorId == providerId &&
                        t.SaleDate >= periodStart &&
                        t.SaleDate <= periodEnd)
             .OrderBy(t => t.SaleDate)
@@ -51,17 +51,17 @@ public class SplitCalculationService : ISplitCalculationService
             ItemSku = t.Item.Sku,
             ItemTitle = t.Item.Title,
             SalePrice = t.SalePrice,
-            ProviderAmount = t.ProviderAmount,
+            ConsignorAmount = t.ConsignorAmount,
             SaleDate = t.SaleDate
         }).ToList();
 
         return new PayoutSummary
         {
-            ProviderId = providerId,
-            ProviderName = provider.GetDisplayName(),
+            ConsignorId = providerId,
+            ConsignorName = provider.GetDisplayName(),
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
-            TotalAmount = transactions.Sum(t => t.ProviderAmount),
+            TotalAmount = transactions.Sum(t => t.ConsignorAmount),
             TransactionCount = transactions.Count,
             Transactions = payoutTransactions
         };

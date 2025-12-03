@@ -192,9 +192,9 @@ namespace ConsignmentGenie.Tests.Controllers
                 TotalProviders = 5,
                 TotalSales = 5000m,
                 AverageSalesPerProvider = 1000m,
-                TopProviderName = "Top Provider",
+                TopProviderName = "Top Consignor",
                 TopProviderSales = 2000m,
-                Providers = new List<ProviderPerformanceLineDto>()
+                Consignors = new List<ProviderPerformanceLineDto>()
             };
 
             _providerReportServiceMock
@@ -257,7 +257,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 ProvidersWithPending = 3,
                 AveragePayoutAmount = 500m,
                 ChartData = new List<PayoutChartPointDto>(),
-                Providers = new List<PayoutSummaryLineDto>()
+                Consignors = new List<PayoutSummaryLineDto>()
             };
 
             _payoutReportServiceMock
@@ -487,7 +487,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 s => s.GetSalesReportAsync(_organizationId, It.Is<SalesReportFilterDto>(f =>
                     f.StartDate == startDate &&
                     f.EndDate == endDate &&
-                    f.ProviderIds == providerIds &&
+                    f.ConsignorIds == providerIds &&
                     f.Categories == categories &&
                     f.PaymentMethods == paymentMethods)),
                 Times.Once);
@@ -547,7 +547,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 s => s.GetInventoryAgingReportAsync(_organizationId, It.Is<InventoryAgingFilterDto>(f =>
                     f.AgeThreshold == ageThreshold &&
                     f.Categories == categories &&
-                    f.ProviderIds == providerIds &&
+                    f.ConsignorIds == providerIds &&
                     f.MinPrice == minPrice &&
                     f.MaxPrice == maxPrice)),
                 Times.Once);

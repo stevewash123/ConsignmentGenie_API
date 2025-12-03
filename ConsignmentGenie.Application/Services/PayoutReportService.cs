@@ -26,13 +26,13 @@ public class PayoutReportService : IPayoutReportService
                 .GetAllAsync(t => t.OrganizationId == organizationId &&
                                 t.SaleDate >= filter.StartDate &&
                                 t.SaleDate <= filter.EndDate,
-                    includeProperties: "Provider,Payout");
+                    includeProperties: "Consignor,Payout");
 
             var transactions = transactionsQuery.AsQueryable();
 
-            if (filter.ProviderIds != null && filter.ProviderIds.Any())
+            if (filter.ConsignorIds != null && filter.ConsignorIds.Any())
             {
-                transactions = transactions.Where(t => filter.ProviderIds.Contains(t.ProviderId));
+                transactions = transactions.Where(t => filter.ConsignorIds.Contains(t.ConsignorId));
             }
 
             if (!string.IsNullOrEmpty(filter.Status))
@@ -52,7 +52,7 @@ public class PayoutReportService : IPayoutReportService
             var totalPaid = payouts.Sum(p => p.Amount);
             var totalPending = transactionList
                 .Where(t => t.PayoutStatus == "Pending")
-                .Sum(t => t.ProviderAmount);
+                .Sum(t => t.ConsignorAmount);
             var averagePayoutAmount = payouts.Any() ? totalPaid / payouts.Count() : 0;
 
             // Generate chart data
@@ -68,18 +68,18 @@ public class PayoutReportService : IPayoutReportService
 
             // Generate provider summaries
             var providerSummaries = transactionList
-                .GroupBy(t => new { t.ProviderId, t.Provider.DisplayName })
+                .GroupBy(t => new { t.ConsignorId, t.Consignor.DisplayName })
                 .Select(g =>
                 {
                     var providerTransactions = g.ToList();
                     var totalSales = providerTransactions.Sum(t => t.SalePrice);
-                    var providerCut = providerTransactions.Sum(t => t.ProviderAmount);
+                    var providerCut = providerTransactions.Sum(t => t.ConsignorAmount);
                     var alreadyPaid = providerTransactions
                         .Where(t => t.PayoutStatus == "Paid")
-                        .Sum(t => t.ProviderAmount);
+                        .Sum(t => t.ConsignorAmount);
                     var pendingBalance = providerTransactions
                         .Where(t => t.PayoutStatus == "Pending")
-                        .Sum(t => t.ProviderAmount);
+                        .Sum(t => t.ConsignorAmount);
 
                     var lastPayoutDate = providerTransactions
                         .Where(t => t.Payout != null)
@@ -87,8 +87,8 @@ public class PayoutReportService : IPayoutReportService
 
                     return new PayoutSummaryLineDto
                     {
-                        ProviderId = g.Key.ProviderId,
-                        ProviderName = g.Key.DisplayName,
+                        ConsignorId = g.Key.ConsignorId,
+                        ConsignorName = g.Key.DisplayName,
                         TotalSales = totalSales,
                         ProviderCut = providerCut,
                         AlreadyPaid = alreadyPaid,
@@ -108,7 +108,7 @@ public class PayoutReportService : IPayoutReportService
                 ProvidersWithPending = providersWithPending,
                 AveragePayoutAmount = averagePayoutAmount,
                 ChartData = chartData,
-                Providers = providerSummaries
+                Consignors = providerSummaries
             };
 
             return ServiceResult<PayoutSummaryReportDto>.SuccessResult(result);

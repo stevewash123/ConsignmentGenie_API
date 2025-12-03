@@ -18,8 +18,8 @@ public class SalesMetricsDto
 
 public class ProviderSalesDto
 {
-    public Guid ProviderId { get; set; }
-    public string ProviderName { get; set; } = string.Empty;
+    public Guid ConsignorId { get; set; }
+    public string ConsignorName { get; set; } = string.Empty;
     public int TransactionCount { get; set; }
     public decimal TotalSales { get; set; }
     public decimal TotalProviderAmount { get; set; }

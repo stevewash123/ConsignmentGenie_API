@@ -7,7 +7,7 @@ namespace ConsignmentGenie.Core.Entities;
 public class Item : BaseEntity
 {
     public Guid OrganizationId { get; set; }
-    public Guid ProviderId { get; set; }
+    public Guid ConsignorId { get; set; }
 
     // Identification
     [Required]
@@ -96,7 +96,7 @@ public class Item : BaseEntity
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
-    public Provider Provider { get; set; } = null!;
+    public Consignor Consignor { get; set; } = null!;
     public Transaction? Transaction { get; set; }
     public User? CreatedByUser { get; set; }
     public User? UpdatedByUser { get; set; }

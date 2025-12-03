@@ -27,14 +27,14 @@ public class SalesReportService : ISalesReportService
                 .GetAllAsync(t => t.OrganizationId == organizationId &&
                                 t.SaleDate >= filter.StartDate &&
                                 t.SaleDate <= filter.EndDate,
-                    includeProperties: "Item,Provider");
+                    includeProperties: "Item,Consignor");
 
             // Apply filters
             var transactions = transactionsQuery.AsQueryable();
 
-            if (filter.ProviderIds != null && filter.ProviderIds.Any())
+            if (filter.ConsignorIds != null && filter.ConsignorIds.Any())
             {
-                transactions = transactions.Where(t => filter.ProviderIds.Contains(t.ProviderId));
+                transactions = transactions.Where(t => filter.ConsignorIds.Contains(t.ConsignorId));
             }
 
             if (filter.Categories != null && filter.Categories.Any())
@@ -52,7 +52,7 @@ public class SalesReportService : ISalesReportService
             // Calculate metrics
             var totalSales = transactionList.Sum(t => t.SalePrice);
             var shopRevenue = transactionList.Sum(t => t.ShopAmount);
-            var providerPayable = transactionList.Sum(t => t.ProviderAmount);
+            var providerPayable = transactionList.Sum(t => t.ConsignorAmount);
             var transactionCount = transactionList.Count;
             var averageSale = transactionCount > 0 ? totalSales / transactionCount : 0;
 
@@ -64,7 +64,7 @@ public class SalesReportService : ISalesReportService
                     Date = g.Key,
                     GrossSales = g.Sum(t => t.SalePrice),
                     ShopRevenue = g.Sum(t => t.ShopAmount),
-                    ProviderPayable = g.Sum(t => t.ProviderAmount)
+                    ProviderPayable = g.Sum(t => t.ConsignorAmount)
                 })
                 .OrderBy(x => x.Date)
                 .ToList();
@@ -78,10 +78,10 @@ public class SalesReportService : ISalesReportService
                     Date = t.SaleDate,
                     ItemName = t.Item.Title,
                     Category = t.Item.Category ?? "",
-                    ProviderName = t.Provider.DisplayName,
+                    ConsignorName = t.Consignor.DisplayName,
                     SalePrice = t.SalePrice,
                     ShopCut = t.ShopAmount,
-                    ProviderCut = t.ProviderAmount,
+                    ProviderCut = t.ConsignorAmount,
                     PaymentMethod = t.PaymentMethod ?? ""
                 })
                 .ToList();

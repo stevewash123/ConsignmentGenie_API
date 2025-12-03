@@ -31,7 +31,7 @@ public class MobileController : ControllerBase
             if (string.IsNullOrEmpty(organizationId))
                 return BadRequest("Organization not found");
 
-            if (userRole == "Provider")
+            if (userRole == "Consignor")
             {
                 return await GetProviderMobileDashboard();
             }
@@ -60,7 +60,7 @@ public class MobileController : ControllerBase
             var recentItems = await _unitOfWork.Items
                 .GetAllAsync(i => i.OrganizationId == Guid.Parse(organizationId) &&
                                i.Status == ItemStatus.Available,
-                    includeProperties: "Provider");
+                    includeProperties: "Consignor");
 
             var quickSaleData = recentItems
                 .OrderByDescending(i => i.UpdatedAt)
@@ -70,7 +70,7 @@ public class MobileController : ControllerBase
                     id = item.Id,
                     name = item.Title,
                     price = item.Price,
-                    provider = item.Provider.DisplayName,
+                    provider = item.Consignor.DisplayName,
                     barcode = item.Sku
                 })
                 .ToList();
@@ -95,7 +95,7 @@ public class MobileController : ControllerBase
 
             var item = await _unitOfWork.Items
                 .GetAsync(i => i.Id == request.ItemId && i.OrganizationId == Guid.Parse(organizationId),
-                    includeProperties: "Provider");
+                    includeProperties: "Consignor");
 
             if (item == null || item.Status != ItemStatus.Available)
                 return BadRequest("Item not available for sale");
@@ -105,10 +105,10 @@ public class MobileController : ControllerBase
             {
                 OrganizationId = Guid.Parse(organizationId),
                 ItemId = item.Id,
-                ProviderId = item.ProviderId,
+                ConsignorId = item.ConsignorId,
                 SalePrice = item.Price,
-                ShopAmount = item.Price * ((100 - (item.Provider.DefaultSplitPercentage ?? item.Provider.CommissionRate)) / 100),
-                ProviderAmount = item.Price * ((item.Provider.DefaultSplitPercentage ?? item.Provider.CommissionRate) / 100),
+                ShopAmount = item.Price * ((100 - (item.Consignor.DefaultSplitPercentage ?? item.Consignor.CommissionRate)) / 100),
+                ConsignorAmount = item.Price * ((item.Consignor.DefaultSplitPercentage ?? item.Consignor.CommissionRate) / 100),
                 SaleDate = DateTime.UtcNow,
                 PaymentMethod = request.PaymentMethod ?? "Cash"
             };
@@ -130,7 +130,7 @@ public class MobileController : ControllerBase
                     transactionId = transaction.Id,
                     itemName = item.Title,
                     saleAmount = item.Price,
-                    providerAmount = transaction.ProviderAmount,
+                    providerAmount = transaction.ConsignorAmount,
                     shopOwnerAmount = transaction.ShopAmount
                 }
             });
@@ -155,7 +155,7 @@ public class MobileController : ControllerBase
                 .GetAsync(i => i.Sku == barcode &&
                              i.OrganizationId == Guid.Parse(organizationId) &&
                              i.Status == ItemStatus.Available,
-                    includeProperties: "Provider,Photos");
+                    includeProperties: "Consignor,Photos");
 
             if (item == null)
                 return NotFound("Item not found or not available");
@@ -168,9 +168,9 @@ public class MobileController : ControllerBase
                 description = item.Description,
                 provider = new
                 {
-                    id = item.Provider.Id,
-                    name = item.Provider.DisplayName,
-                    splitPercentage = item.Provider.DefaultSplitPercentage
+                    id = item.Consignor.Id,
+                    name = item.Consignor.DisplayName,
+                    splitPercentage = item.Consignor.DefaultSplitPercentage
                 },
                 photos = new List<string>(), // TODO: Parse Photos JSON
                 category = item.Category,
@@ -197,7 +197,7 @@ public class MobileController : ControllerBase
 
             var recentSales = await _unitOfWork.Transactions
                 .GetAllAsync(t => t.OrganizationId == Guid.Parse(organizationId),
-                    includeProperties: "Item,Provider");
+                    includeProperties: "Item,Consignor");
 
             var salesData = recentSales
                 .OrderByDescending(t => t.SaleDate)
@@ -206,7 +206,7 @@ public class MobileController : ControllerBase
                 {
                     id = sale.Id,
                     itemName = sale.Item.Title,
-                    provider = sale.Provider.DisplayName,
+                    provider = sale.Consignor.DisplayName,
                     amount = sale.SalePrice,
                     date = sale.SaleDate,
                     paymentMethod = sale.PaymentMethod
@@ -251,10 +251,10 @@ public class MobileController : ControllerBase
                     {
                         OrganizationId = Guid.Parse(organizationId),
                         ItemId = saleData.ItemId,
-                        ProviderId = item.ProviderId,
+                        ConsignorId = item.ConsignorId,
                         SalePrice = saleData.Amount,
                         ShopAmount = saleData.ShopAmount,
-                        ProviderAmount = saleData.ProviderAmount,
+                        ConsignorAmount = saleData.ConsignorAmount,
                         SaleDate = saleData.SaleDate,
                         PaymentMethod = saleData.PaymentMethod
                     };
@@ -308,7 +308,7 @@ public class MobileController : ControllerBase
         var activeItems = await _unitOfWork.Items
             .CountAsync(i => i.OrganizationId == organizationId && i.Status == ItemStatus.Available);
 
-        var lowStockProviders = await _unitOfWork.Providers
+        var lowStockProviders = await _unitOfWork.Consignors
             .GetAllAsync(p => p.OrganizationId == organizationId, includeProperties: "Items");
 
         var dashboard = new
@@ -333,15 +333,15 @@ public class MobileController : ControllerBase
 
     private async Task<IActionResult> GetProviderMobileDashboard()
     {
-        var providerId = User.FindFirst("ProviderId")?.Value;
+        var providerId = User.FindFirst("ConsignorId")?.Value;
         if (string.IsNullOrEmpty(providerId))
-            return BadRequest("Provider not found");
+            return BadRequest("Consignor not found");
 
-        var provider = await _unitOfWork.Providers
+        var provider = await _unitOfWork.Consignors
             .GetAsync(p => p.Id == Guid.Parse(providerId), includeProperties: "Items,Payouts");
 
         if (provider == null)
-            return NotFound("Provider not found");
+            return NotFound("Consignor not found");
 
         var activeItems = provider.Items.Count(i => i.Status == ItemStatus.Available);
         var soldThisMonth = provider.Items.Count(i => i.Status == ItemStatus.Sold &&
@@ -391,7 +391,7 @@ public class OfflineSaleData
     public Guid ItemId { get; set; }
     public decimal Amount { get; set; }
     public decimal ShopAmount { get; set; }
-    public decimal ProviderAmount { get; set; }
+    public decimal ConsignorAmount { get; set; }
     public DateTime SaleDate { get; set; }
     public string PaymentMethod { get; set; } = "Cash";
 }

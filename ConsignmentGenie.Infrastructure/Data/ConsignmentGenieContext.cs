@@ -14,7 +14,7 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<Organization> Organizations { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<UserRoleAssignment> UserRoleAssignments { get; set; }
-    public DbSet<Provider> Providers { get; set; }
+    public DbSet<Consignor> Consignors { get; set; }
     public DbSet<Item> Items { get; set; }
     public DbSet<ItemImage> ItemImages { get; set; }
     public DbSet<Category> Categories { get; set; }
@@ -89,22 +89,22 @@ public class ConsignmentGenieContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Provider configuration
-        modelBuilder.Entity<Provider>(entity =>
+        // Consignor configuration
+        modelBuilder.Entity<Consignor>(entity =>
         {
-            entity.HasIndex(p => new { p.OrganizationId, p.ProviderNumber }).IsUnique();
+            entity.HasIndex(p => new { p.OrganizationId, p.ConsignorNumber }).IsUnique();
             entity.HasIndex(p => new { p.OrganizationId, p.Email }).IsUnique();
             entity.HasIndex(p => new { p.OrganizationId, p.Status });
             entity.HasIndex(p => p.ApprovalStatus);
 
             entity.HasOne(p => p.Organization)
-                  .WithMany(o => o.Providers)
+                  .WithMany(o => o.Consignors)
                   .HasForeignKey(p => p.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(p => p.User)
-                  .WithOne(u => u.Provider)
-                  .HasForeignKey<Provider>(p => p.UserId)
+                  .WithOne(u => u.Consignor)
+                  .HasForeignKey<Consignor>(p => p.UserId)
                   .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(p => p.ApprovedByUser)
@@ -133,9 +133,9 @@ public class ConsignmentGenieContext : DbContext
                   .WithMany(o => o.Items)
                   .HasForeignKey(i => i.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(i => i.Provider)
+            entity.HasOne(i => i.Consignor)
                   .WithMany(p => p.Items)
-                  .HasForeignKey(i => i.ProviderId)
+                  .HasForeignKey(i => i.ConsignorId)
                   .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(i => i.CreatedByUser)
                   .WithMany()
@@ -160,9 +160,9 @@ public class ConsignmentGenieContext : DbContext
                   .WithOne(i => i.Transaction)
                   .HasForeignKey<Transaction>(t => t.ItemId)
                   .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(t => t.Provider)
+            entity.HasOne(t => t.Consignor)
                   .WithMany(p => p.Transactions)
-                  .HasForeignKey(t => t.ProviderId)
+                  .HasForeignKey(t => t.ConsignorId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -170,14 +170,14 @@ public class ConsignmentGenieContext : DbContext
         modelBuilder.Entity<Payout>(entity =>
         {
             entity.HasIndex(p => p.OrganizationId);
-            entity.HasIndex(p => new { p.ProviderId, p.PeriodStart, p.PeriodEnd });
+            entity.HasIndex(p => new { p.ConsignorId, p.PeriodStart, p.PeriodEnd });
             entity.HasOne(p => p.Organization)
                   .WithMany(o => o.Payouts)
                   .HasForeignKey(p => p.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(p => p.Provider)
+            entity.HasOne(p => p.Consignor)
                   .WithMany(pr => pr.Payouts)
-                  .HasForeignKey(p => p.ProviderId)
+                  .HasForeignKey(p => p.ConsignorId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -346,7 +346,7 @@ public class ConsignmentGenieContext : DbContext
         {
             entity.HasIndex(n => n.OrganizationId);
             entity.HasIndex(n => n.UserId);
-            entity.HasIndex(n => n.ProviderId);
+            entity.HasIndex(n => n.ConsignorId);
             entity.HasIndex(n => new { n.UserId, n.IsRead });
             entity.HasIndex(n => n.CreatedAt);
             entity.HasIndex(n => n.Type);
@@ -361,9 +361,9 @@ public class ConsignmentGenieContext : DbContext
                   .HasForeignKey(n => n.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(n => n.Provider)
+            entity.HasOne(n => n.Consignor)
                   .WithMany()
-                  .HasForeignKey(n => n.ProviderId)
+                  .HasForeignKey(n => n.ConsignorId)
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -411,18 +411,18 @@ public class ConsignmentGenieContext : DbContext
         modelBuilder.Entity<Statement>(entity =>
         {
             entity.HasIndex(s => s.OrganizationId);
-            entity.HasIndex(s => s.ProviderId);
-            entity.HasIndex(s => new { s.ProviderId, s.PeriodStart }).IsDescending();
-            entity.HasIndex(s => new { s.OrganizationId, s.ProviderId, s.PeriodStart }).IsUnique();
+            entity.HasIndex(s => s.ConsignorId);
+            entity.HasIndex(s => new { s.ConsignorId, s.PeriodStart }).IsDescending();
+            entity.HasIndex(s => new { s.OrganizationId, s.ConsignorId, s.PeriodStart }).IsUnique();
 
             entity.HasOne(s => s.Organization)
                   .WithMany()
                   .HasForeignKey(s => s.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(s => s.Provider)
+            entity.HasOne(s => s.Consignor)
                   .WithMany()
-                  .HasForeignKey(s => s.ProviderId)
+                  .HasForeignKey(s => s.ConsignorId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -530,7 +530,7 @@ public class ConsignmentGenieContext : DbContext
         {
             entity.HasIndex(oi => oi.OrderId);
             entity.HasIndex(oi => oi.ItemId);
-            entity.HasIndex(oi => oi.ProviderId);
+            entity.HasIndex(oi => oi.ConsignorId);
             entity.HasIndex(oi => new { oi.OrderId, oi.ItemId }).IsUnique();
 
             entity.HasOne(oi => oi.Order)
@@ -543,9 +543,9 @@ public class ConsignmentGenieContext : DbContext
                   .HasForeignKey(oi => oi.ItemId)
                   .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(oi => oi.Provider)
+            entity.HasOne(oi => oi.Consignor)
                   .WithMany()
-                  .HasForeignKey(oi => oi.ProviderId)
+                  .HasForeignKey(oi => oi.ConsignorId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -613,13 +613,13 @@ public class ConsignmentGenieContext : DbContext
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             },
-            // Provider (Provider role)
+            // Consignor (Consignor role)
             new User
             {
                 Id = providerUserId,
                 Email = "provider1@microsaasbuilders.com",
                 PasswordHash = hashedPassword,
-                Role = UserRole.Provider,
+                Role = UserRole.Consignor,
                 OrganizationId = orgId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -637,20 +637,20 @@ public class ConsignmentGenieContext : DbContext
             }
         );
 
-        // Seed Provider entity for the provider user
-        modelBuilder.Entity<Provider>().HasData(
-            new Provider
+        // Seed Consignor entity for the provider user
+        modelBuilder.Entity<Consignor>().HasData(
+            new Consignor
             {
                 Id = providerId,
                 OrganizationId = orgId,
                 UserId = providerUserId,
-                ProviderNumber = "PRV-00001",
+                ConsignorNumber = "PRV-00001",
                 FirstName = "Demo",
                 LastName = "Artist",
                 Email = "provider1@microsaasbuilders.com",
                 Phone = "(555) 123-4567",
                 CommissionRate = 0.6000m, // 60%
-                Status = ProviderStatus.Active,
+                Status = ConsignorStatus.Active,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }

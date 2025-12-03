@@ -50,7 +50,7 @@ public class RegistrationController : ControllerBase
 
     [HttpPost("register/provider")]
     [AllowAnonymous]
-    public async Task<ActionResult<RegistrationResultDto>> RegisterProvider([FromBody] RegisterProviderRequest request)
+    public async Task<ActionResult<RegistrationResultDto>> RegisterConsignor([FromBody] RegisterProviderRequest request)
     {
         var result = await _registrationService.RegisterProviderAsync(request);
 

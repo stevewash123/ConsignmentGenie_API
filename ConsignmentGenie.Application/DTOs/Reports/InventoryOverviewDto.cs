@@ -21,8 +21,8 @@ public class CategoryBreakdownDto
 
 public class ProviderBreakdownDto
 {
-    public Guid ProviderId { get; set; }
-    public string ProviderName { get; set; } = string.Empty;
+    public Guid ConsignorId { get; set; }
+    public string ConsignorName { get; set; } = string.Empty;
     public int ItemCount { get; set; }
     public int AvailableCount { get; set; }
     public int SoldCount { get; set; }

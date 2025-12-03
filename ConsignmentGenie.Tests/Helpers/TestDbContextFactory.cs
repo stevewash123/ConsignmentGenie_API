@@ -37,19 +37,19 @@ public static class TestDbContextFactory
             OrganizationId = organization.Id
         };
 
-        var provider = new ConsignmentGenie.Core.Entities.Provider
+        var provider = new ConsignmentGenie.Core.Entities.Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
-            DisplayName = "Test Provider",
+            DisplayName = "Test Consignor",
             Email = "provider@example.com",
             DefaultSplitPercentage = 50.00m,
-            Status = ConsignmentGenie.Core.Enums.ProviderStatus.Active
+            Status = ConsignmentGenie.Core.Enums.ConsignorStatus.Active
         };
 
         context.Organizations.Add(organization);
         context.Users.Add(user);
-        context.Providers.Add(provider);
+        context.Consignors.Add(provider);
 
         await context.SaveChangesAsync();
 

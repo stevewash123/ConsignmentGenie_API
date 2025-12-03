@@ -16,7 +16,7 @@ public interface IQuickBooksService
     Task<QuickBooksTokenResponse> ExchangeCodeForTokensAsync(string code, string realmId, string state);
     Task<bool> RefreshTokenAsync(string organizationId);
     Task SyncTransactionsAsync(string organizationId);
-    Task CreateCustomerAsync(string organizationId, Provider provider);
+    Task CreateCustomerAsync(string organizationId, Consignor provider);
     Task CreatePaymentAsync(string organizationId, Payout payout);
 }
 
@@ -189,7 +189,7 @@ public class QuickBooksService : IQuickBooksService
         }
     }
 
-    public async Task CreateCustomerAsync(string organizationId, Provider provider)
+    public async Task CreateCustomerAsync(string organizationId, Consignor provider)
     {
         try
         {
@@ -214,11 +214,11 @@ public class QuickBooksService : IQuickBooksService
 
             await SendQuickBooksApiRequestAsync(organization, "POST", $"v3/company/{organization.QuickBooksRealmId}/customer", customerData);
 
-            _logger.LogInformation("Created QuickBooks customer for provider {ProviderId}", provider.Id);
+            _logger.LogInformation("Created QuickBooks customer for provider {ConsignorId}", provider.Id);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating QuickBooks customer for provider {ProviderId}", provider.Id);
+            _logger.LogError(ex, "Error creating QuickBooks customer for provider {ConsignorId}", provider.Id);
         }
     }
 

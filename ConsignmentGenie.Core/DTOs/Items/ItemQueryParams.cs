@@ -4,7 +4,7 @@ public class ItemQueryParams
 {
     public string? Search { get; set; }           // Search title, SKU, description
     public string? Status { get; set; }           // Available, Sold, Removed, or null for all
-    public Guid? ProviderId { get; set; }
+    public Guid? ConsignorId { get; set; }
     public string? Category { get; set; }
     public string? Condition { get; set; }
     public decimal? MinPrice { get; set; }
