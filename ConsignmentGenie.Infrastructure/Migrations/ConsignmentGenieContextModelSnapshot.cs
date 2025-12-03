@@ -465,7 +465,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             Id = new Guid("66666666-6666-6666-6666-666666666666"),
                             CommissionRate = 0.6000m,
                             ConsignorNumber = "PRV-00001",
-                            CreatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1990),
+                            CreatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6287),
                             Email = "provider1@microsaasbuilders.com",
                             FirstName = "Demo",
                             LastName = "Artist",
@@ -473,7 +473,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             Phone = "(555) 123-4567",
                             PortalAccess = false,
                             Status = 1,
-                            UpdatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1991),
+                            UpdatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6288),
                             UserId = new Guid("44444444-4444-4444-4444-444444444444")
                         });
                 });
@@ -1635,6 +1635,10 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Consignor")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1654,17 +1658,13 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OrganizationId");
 
                     b.HasIndex("OrganizationId", "IsDefault");
 
-                    b.HasIndex("OrganizationId", "Provider", "IsActive");
+                    b.HasIndex("OrganizationId", "Consignor", "IsActive");
 
                     b.ToTable("PaymentGatewayConnections", (string)null);
                 });

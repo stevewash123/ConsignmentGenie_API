@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../buildMultiTargeting/ConsignmentGenie.API.props" />
-</Project>
