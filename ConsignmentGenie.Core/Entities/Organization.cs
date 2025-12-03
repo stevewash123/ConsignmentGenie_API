@@ -19,6 +19,10 @@ public class Organization : BaseEntity
 
     public string? Settings { get; set; }  // JSON: terminology mappings, defaults
 
+    public string? BusinessSettings { get; set; }  // JSON: comprehensive business configuration
+
+    public string? StorefrontSettings { get; set; }  // JSON: storefront and integration settings
+
     // Stripe (Phase 2 - include fields now)
     [MaxLength(100)]
     public string? StripeCustomerId { get; set; }
