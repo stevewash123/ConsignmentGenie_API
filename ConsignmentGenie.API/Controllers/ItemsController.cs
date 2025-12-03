@@ -540,6 +540,155 @@ public class ItemsController : ControllerBase
         }
     }
 
+    // BULK STATUS UPDATE - Update multiple items status at once
+    [HttpPost("bulk-status")]
+    public async Task<ActionResult<BulkUpdateResultDto>> BulkUpdateStatus([FromBody] BulkStatusUpdateRequest request)
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+            var userId = GetUserId();
+
+            // Validate request
+            if (request.ItemIds == null || !request.ItemIds.Any())
+            {
+                return BadRequest(ApiResponse<object>.ErrorResult("No items specified"));
+            }
+
+            if (request.ItemIds.Count > 100)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResult("Maximum 100 items allowed per bulk update"));
+            }
+
+            // Parse and validate status
+            if (!Enum.TryParse<ItemStatus>(request.Status, out var newStatus))
+            {
+                return BadRequest(ApiResponse<object>.ErrorResult("Invalid status"));
+            }
+
+            // Don't allow setting status to Sold via this endpoint
+            if (newStatus == ItemStatus.Sold)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResult("Items can only be marked as sold through transactions"));
+            }
+
+            var result = new BulkUpdateResultDto();
+            var now = DateTime.UtcNow;
+
+            // Get items that belong to this organization
+            var items = await _context.Items
+                .Where(i => request.ItemIds.Contains(i.Id) && i.OrganizationId == organizationId)
+                .ToListAsync();
+
+            foreach (var itemId in request.ItemIds)
+            {
+                var item = items.FirstOrDefault(i => i.Id == itemId);
+                if (item == null)
+                {
+                    result.FailedUpdates++;
+                    result.FailedItemIds.Add(itemId);
+                    result.ErrorMessages.Add($"Item {itemId} not found");
+                    continue;
+                }
+
+                try
+                {
+                    item.Status = newStatus;
+                    item.StatusChangedAt = now;
+                    item.StatusChangedReason = request.Reason;
+                    item.UpdatedAt = now;
+                    item.UpdatedBy = userId;
+
+                    result.SuccessfulUpdates++;
+                    result.UpdatedItemIds.Add(itemId);
+                }
+                catch (Exception ex)
+                {
+                    result.FailedUpdates++;
+                    result.FailedItemIds.Add(itemId);
+                    result.ErrorMessages.Add($"Failed to update item {itemId}: {ex.Message}");
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(ApiResponse<BulkUpdateResultDto>.SuccessResult(result,
+                $"Bulk update completed: {result.SuccessfulUpdates} successful, {result.FailedUpdates} failed"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error performing bulk status update");
+            return StatusCode(500, ApiResponse<object>.ErrorResult("Failed to perform bulk status update"));
+        }
+    }
+
+    // METRICS - Get inventory metrics for dashboard
+    [HttpGet("metrics")]
+    public async Task<ActionResult<InventoryMetricsDto>> GetMetrics()
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+            var now = DateTime.UtcNow;
+            var thisMonthStart = new DateTime(now.Year, now.Month, 1);
+
+            var items = await _context.Items
+                .Include(i => i.Consignor)
+                .Where(i => i.OrganizationId == organizationId)
+                .ToListAsync();
+
+            var metrics = new InventoryMetricsDto
+            {
+                TotalItems = items.Count,
+                AvailableItems = items.Count(i => i.Status == ItemStatus.Available),
+                SoldItems = items.Count(i => i.Status == ItemStatus.Sold),
+                RemovedItems = items.Count(i => i.Status == ItemStatus.Removed),
+                ItemsAddedThisMonth = items.Count(i => i.CreatedAt >= thisMonthStart),
+                ItemsSoldThisMonth = items.Count(i => i.Status == ItemStatus.Sold &&
+                                                    i.SoldDate.HasValue &&
+                                                    i.SoldDate.Value.ToDateTime(TimeOnly.MinValue) >= thisMonthStart)
+            };
+
+            var availableItems = items.Where(i => i.Status == ItemStatus.Available).ToList();
+
+            metrics.TotalValue = availableItems.Sum(i => i.Price);
+            metrics.AveragePrice = availableItems.Any() ? availableItems.Average(i => i.Price) : 0;
+
+            // Category breakdown
+            metrics.ByCategory = availableItems
+                .Where(i => !string.IsNullOrEmpty(i.Category))
+                .GroupBy(i => i.Category!)
+                .Select(g => new CategoryBreakdownDto
+                {
+                    Category = g.Key,
+                    Count = g.Count(),
+                    Value = g.Sum(i => i.Price)
+                })
+                .OrderByDescending(c => c.Count)
+                .ToList();
+
+            // Consignor breakdown
+            metrics.ByProvider = availableItems
+                .GroupBy(i => new { i.ConsignorId, i.Consignor.DisplayName })
+                .Select(g => new ProviderBreakdownDto
+                {
+                    ConsignorId = g.Key.ConsignorId,
+                    ConsignorName = g.Key.DisplayName,
+                    Count = g.Count(),
+                    Value = g.Sum(i => i.Price)
+                })
+                .OrderByDescending(c => c.Count)
+                .ToList();
+
+            return Ok(ApiResponse<InventoryMetricsDto>.SuccessResult(metrics));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting inventory metrics for organization {OrganizationId}", GetOrganizationId());
+            return StatusCode(500, ApiResponse<object>.ErrorResult("Failed to retrieve inventory metrics"));
+        }
+    }
+
     private Guid GetUserId()
     {
         var userIdClaim = User.FindFirst("userId")?.Value;
