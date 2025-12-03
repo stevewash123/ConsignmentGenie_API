@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ConsignmentGenie.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitialWithConsignor : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -51,6 +51,8 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     CurrentPeriodEnd = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     SetupCompletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     SetupStep = table.Column<int>(type: "integer", nullable: false),
+                    OnboardingDismissed = table.Column<bool>(type: "boolean", nullable: false),
+                    WelcomeGuideCompleted = table.Column<bool>(type: "boolean", nullable: false),
                     ShopName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     ShopDescription = table.Column<string>(type: "text", nullable: true),
                     ShopLogoUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
@@ -85,6 +87,36 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Organizations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ClerkPermissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ShowProviderNames = table.Column<bool>(type: "boolean", nullable: false),
+                    ShowItemCost = table.Column<bool>(type: "boolean", nullable: false),
+                    AllowReturns = table.Column<bool>(type: "boolean", nullable: false),
+                    MaxReturnAmountWithoutPin = table.Column<decimal>(type: "numeric", nullable: false),
+                    AllowDiscounts = table.Column<bool>(type: "boolean", nullable: false),
+                    MaxDiscountPercentWithoutPin = table.Column<int>(type: "integer", nullable: false),
+                    AllowVoid = table.Column<bool>(type: "boolean", nullable: false),
+                    AllowDrawerOpen = table.Column<bool>(type: "boolean", nullable: false),
+                    AllowEndOfDayCount = table.Column<bool>(type: "boolean", nullable: false),
+                    AllowPriceOverride = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClerkPermissions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ClerkPermissions_Organizations_OrganizationId",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -234,7 +266,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Consignor = table.Column<string>(type: "text", nullable: false),
+                    Provider = table.Column<string>(type: "text", nullable: false),
                     ConnectionName = table.Column<string>(type: "text", nullable: false),
                     EncryptedConfig = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
@@ -322,8 +354,14 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     ApprovedBy = table.Column<Guid>(type: "uuid", nullable: true),
                     ApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RejectedReason = table.Column<string>(type: "text", nullable: true),
+                    FirstName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    LastName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    ClerkPin = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    HiredDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -529,34 +567,38 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "NotificationPreferences",
+                name: "ClerkInvitations",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    EmailItemSold = table.Column<bool>(type: "boolean", nullable: false),
-                    EmailPayoutProcessed = table.Column<bool>(type: "boolean", nullable: false),
-                    EmailPayoutPending = table.Column<bool>(type: "boolean", nullable: false),
-                    EmailItemExpired = table.Column<bool>(type: "boolean", nullable: false),
-                    EmailStatementReady = table.Column<bool>(type: "boolean", nullable: false),
-                    EmailAccountUpdate = table.Column<bool>(type: "boolean", nullable: false),
-                    EmailEnabled = table.Column<bool>(type: "boolean", nullable: false),
-                    DigestMode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    DigestTime = table.Column<TimeSpan>(type: "interval", nullable: false),
-                    DigestDay = table.Column<int>(type: "integer", nullable: false),
-                    PayoutPendingThreshold = table.Column<decimal>(type: "numeric", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    InvitedById = table.Column<Guid>(type: "uuid", nullable: false),
+                    Email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    Token = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsUsed = table.Column<bool>(type: "boolean", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_NotificationPreferences", x => x.Id);
+                    table.PrimaryKey("PK_ClerkInvitations", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_NotificationPreferences_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK_ClerkInvitations_Organizations_OrganizationId",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ClerkInvitations_Users_InvitedById",
+                        column: x => x.InvitedById,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -605,34 +647,124 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Providers", x => x.Id);
+                    table.PrimaryKey("PK_Consignors", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Providers_Organizations_OrganizationId",
+                        name: "FK_Consignors_Organizations_OrganizationId",
                         column: x => x.OrganizationId,
                         principalTable: "Organizations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Providers_Users_ApprovedBy",
+                        name: "FK_Consignors_Users_ApprovedBy",
                         column: x => x.ApprovedBy,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "FK_Providers_Users_CreatedBy",
+                        name: "FK_Consignors_Users_CreatedBy",
                         column: x => x.CreatedBy,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "FK_Providers_Users_UpdatedBy",
+                        name: "FK_Consignors_Users_UpdatedBy",
                         column: x => x.UpdatedBy,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "FK_Providers_Users_UserId",
+                        name: "FK_Consignors_Users_UserId",
                         column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationPreferences",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmailItemSold = table.Column<bool>(type: "boolean", nullable: false),
+                    EmailPayoutProcessed = table.Column<bool>(type: "boolean", nullable: false),
+                    EmailPayoutPending = table.Column<bool>(type: "boolean", nullable: false),
+                    EmailItemExpired = table.Column<bool>(type: "boolean", nullable: false),
+                    EmailStatementReady = table.Column<bool>(type: "boolean", nullable: false),
+                    EmailAccountUpdate = table.Column<bool>(type: "boolean", nullable: false),
+                    EmailEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    DigestMode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    DigestTime = table.Column<TimeSpan>(type: "interval", nullable: false),
+                    DigestDay = table.Column<int>(type: "integer", nullable: false),
+                    PayoutPendingThreshold = table.Column<decimal>(type: "numeric", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationPreferences", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationPreferences_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OwnerInvitations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    InvitedById = table.Column<Guid>(type: "uuid", nullable: false),
+                    Email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Token = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OwnerInvitations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OwnerInvitations_Users_InvitedById",
+                        column: x => x.InvitedById,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProviderInvitations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    InvitedById = table.Column<Guid>(type: "uuid", nullable: false),
+                    Email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Token = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsUsed = table.Column<bool>(type: "boolean", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProviderInvitations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProviderInvitations_Organizations_OrganizationId",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProviderInvitations_Users_InvitedById",
+                        column: x => x.InvitedById,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
@@ -822,6 +954,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         principalTable: "Categories",
                         principalColumn: "Id");
                     table.ForeignKey(
+                        name: "FK_Items_Consignors_ConsignorId",
+                        column: x => x.ConsignorId,
+                        principalTable: "Consignors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_Items_ItemCategories_ItemCategoryId",
                         column: x => x.ItemCategoryId,
                         principalTable: "ItemCategories",
@@ -832,12 +970,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         principalTable: "Organizations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Items_Providers_ProviderId",
-                        column: x => x.ConsignorId,
-                        principalTable: "Consignors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Items_Users_CreatedBy",
                         column: x => x.CreatedBy,
@@ -879,17 +1011,17 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Notifications", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Notifications_Consignors_ConsignorId",
+                        column: x => x.ConsignorId,
+                        principalTable: "Consignors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
                         name: "FK_Notifications_Organizations_OrganizationId",
                         column: x => x.OrganizationId,
                         principalTable: "Organizations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Notifications_Providers_ProviderId",
-                        column: x => x.ConsignorId,
-                        principalTable: "Consignors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Notifications_Users_UserId",
                         column: x => x.UserId,
@@ -924,17 +1056,17 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Payouts", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Payouts_Consignors_ConsignorId",
+                        column: x => x.ConsignorId,
+                        principalTable: "Consignors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_Payouts_Organizations_OrganizationId",
                         column: x => x.OrganizationId,
                         principalTable: "Organizations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Payouts_Providers_ProviderId",
-                        column: x => x.ConsignorId,
-                        principalTable: "Consignors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -967,15 +1099,15 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Statements", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Statements_Organizations_OrganizationId",
-                        column: x => x.OrganizationId,
-                        principalTable: "Organizations",
+                        name: "FK_Statements_Consignors_ConsignorId",
+                        column: x => x.ConsignorId,
+                        principalTable: "Consignors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Statements_Providers_ProviderId",
-                        column: x => x.ConsignorId,
-                        principalTable: "Consignors",
+                        name: "FK_Statements_Organizations_OrganizationId",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1109,6 +1241,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_OrderItems", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_OrderItems_Consignors_ConsignorId",
+                        column: x => x.ConsignorId,
+                        principalTable: "Consignors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_OrderItems_Items_ItemId",
                         column: x => x.ItemId,
                         principalTable: "Items",
@@ -1120,12 +1258,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OrderItems_Providers_ProviderId",
-                        column: x => x.ConsignorId,
-                        principalTable: "Consignors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1164,12 +1296,20 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     PayoutId = table.Column<Guid>(type: "uuid", nullable: true),
                     PayoutStatus = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ProcessedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ProcessedByName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Transactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Transactions_Consignors_ConsignorId",
+                        column: x => x.ConsignorId,
+                        principalTable: "Consignors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Transactions_Items_ItemId",
                         column: x => x.ItemId,
@@ -1194,33 +1334,33 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         principalTable: "Payouts",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Transactions_Providers_ProviderId",
-                        column: x => x.ConsignorId,
-                        principalTable: "Consignors",
+                        name: "FK_Transactions_Users_ProcessedByUserId",
+                        column: x => x.ProcessedByUserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.InsertData(
                 table: "Organizations",
-                columns: new[] { "Id", "AutoApproveConsignors", "CloudinaryConnected", "CreatedAt", "Currency", "CurrentPeriodEnd", "DefaultSplitPercentage", "FounderTier", "IsFounderPricing", "Name", "OnlinePaymentEnabled", "PayOnPickupEnabled", "PickupEnabled", "PickupInstructions", "QuickBooksAccessToken", "QuickBooksCompanyId", "QuickBooksConnected", "QuickBooksLastSync", "QuickBooksRealmId", "QuickBooksRefreshToken", "QuickBooksTokenExpiry", "SendGridConnected", "Settings", "SetupCompletedAt", "SetupStep", "ShippingEnabled", "ShippingFlatRate", "ShopAddress1", "ShopAddress2", "ShopBannerUrl", "ShopCity", "ShopCountry", "ShopDescription", "ShopEmail", "ShopLogoUrl", "ShopName", "ShopPhone", "ShopState", "ShopTimezone", "ShopWebsite", "ShopZip", "Slug", "Status", "StoreCode", "StoreCodeEnabled", "StoreEnabled", "StripeConnected", "StripeCustomerId", "StripePriceId", "StripeSubscriptionId", "StripeSubscriptionStatus", "Subdomain", "SubscriptionEndDate", "SubscriptionPlan", "SubscriptionStartDate", "SubscriptionStartedAt", "SubscriptionStatus", "SubscriptionTier", "TaxRate", "TrialEndsAt", "TrialExtensionsUsed", "TrialStartedAt", "UpdatedAt", "VerticalType" },
-                values: new object[] { new Guid("11111111-1111-1111-1111-111111111111"), true, false, new DateTime(2025, 11, 25, 13, 20, 50, 5, DateTimeKind.Utc).AddTicks(4532), "USD", null, 60.00m, null, false, "Demo Consignment Shop", false, true, true, null, null, null, false, null, null, null, null, false, null, null, 0, false, 0m, null, null, null, null, "US", null, null, null, null, null, null, "America/New_York", null, null, null, "pending", null, true, false, false, null, null, null, null, "demo-shop", null, null, null, null, 2, 2, 0.0000m, null, 0, null, new DateTime(2025, 11, 25, 13, 20, 50, 5, DateTimeKind.Utc).AddTicks(4533), 1 });
+                columns: new[] { "Id", "AutoApproveConsignors", "CloudinaryConnected", "CreatedAt", "Currency", "CurrentPeriodEnd", "DefaultSplitPercentage", "FounderTier", "IsFounderPricing", "Name", "OnboardingDismissed", "OnlinePaymentEnabled", "PayOnPickupEnabled", "PickupEnabled", "PickupInstructions", "QuickBooksAccessToken", "QuickBooksCompanyId", "QuickBooksConnected", "QuickBooksLastSync", "QuickBooksRealmId", "QuickBooksRefreshToken", "QuickBooksTokenExpiry", "SendGridConnected", "Settings", "SetupCompletedAt", "SetupStep", "ShippingEnabled", "ShippingFlatRate", "ShopAddress1", "ShopAddress2", "ShopBannerUrl", "ShopCity", "ShopCountry", "ShopDescription", "ShopEmail", "ShopLogoUrl", "ShopName", "ShopPhone", "ShopState", "ShopTimezone", "ShopWebsite", "ShopZip", "Slug", "Status", "StoreCode", "StoreCodeEnabled", "StoreEnabled", "StripeConnected", "StripeCustomerId", "StripePriceId", "StripeSubscriptionId", "StripeSubscriptionStatus", "Subdomain", "SubscriptionEndDate", "SubscriptionPlan", "SubscriptionStartDate", "SubscriptionStartedAt", "SubscriptionStatus", "SubscriptionTier", "TaxRate", "TrialEndsAt", "TrialExtensionsUsed", "TrialStartedAt", "UpdatedAt", "VerticalType", "WelcomeGuideCompleted" },
+                values: new object[] { new Guid("11111111-1111-1111-1111-111111111111"), true, false, new DateTime(2025, 12, 3, 2, 34, 1, 497, DateTimeKind.Utc).AddTicks(8074), "USD", null, 60.00m, null, false, "Demo Consignment Shop", false, false, true, true, null, null, null, false, null, null, null, null, false, null, null, 0, false, 0m, null, null, null, null, "US", null, null, null, null, null, null, "America/New_York", null, null, null, "pending", null, true, false, false, null, null, null, null, "demo-shop", null, null, null, null, 2, 2, 0.0000m, null, 0, null, new DateTime(2025, 12, 3, 2, 34, 1, 497, DateTimeKind.Utc).AddTicks(8075), 1, false });
 
             migrationBuilder.InsertData(
                 table: "Users",
-                columns: new[] { "Id", "ApprovalStatus", "ApprovedAt", "ApprovedBy", "CreatedAt", "Email", "FullName", "OrganizationId", "PasswordHash", "Phone", "RejectedReason", "Role", "UpdatedAt" },
+                columns: new[] { "Id", "ApprovalStatus", "ApprovedAt", "ApprovedBy", "ClerkPin", "CreatedAt", "Email", "FirstName", "FullName", "HiredDate", "IsActive", "LastLoginAt", "LastName", "OrganizationId", "PasswordHash", "Phone", "RejectedReason", "Role", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { new Guid("22222222-2222-2222-2222-222222222222"), 1, null, null, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8167), "admin@microsaasbuilders.com", null, new Guid("11111111-1111-1111-1111-111111111111"), "$2a$11$Bv/bwjaoSJJqISqHYonksuovZ6zr/LooSpsgapazADQAweTuhfmbe", null, null, 1, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8202) },
-                    { new Guid("33333333-3333-3333-3333-333333333333"), 1, null, null, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8232), "owner1@microsaasbuilders.com", null, new Guid("11111111-1111-1111-1111-111111111111"), "$2a$11$Bv/bwjaoSJJqISqHYonksuovZ6zr/LooSpsgapazADQAweTuhfmbe", null, null, 1, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8233) },
-                    { new Guid("44444444-4444-4444-4444-444444444444"), 1, null, null, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8646), "provider1@microsaasbuilders.com", null, new Guid("11111111-1111-1111-1111-111111111111"), "$2a$11$Bv/bwjaoSJJqISqHYonksuovZ6zr/LooSpsgapazADQAweTuhfmbe", null, null, 2, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8646) },
-                    { new Guid("55555555-5555-5555-5555-555555555555"), 1, null, null, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8665), "customer1@microsaasbuilders.com", null, new Guid("11111111-1111-1111-1111-111111111111"), "$2a$11$Bv/bwjaoSJJqISqHYonksuovZ6zr/LooSpsgapazADQAweTuhfmbe", null, null, 3, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8665) }
+                    { new Guid("22222222-2222-2222-2222-222222222222"), 1, null, null, null, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1718), "admin@microsaasbuilders.com", null, null, null, true, null, null, new Guid("11111111-1111-1111-1111-111111111111"), "$2a$11$1JpmhzU/QWG./YJ.ZlIVaueakB9lslVzMO0drbnWly7YgOvXfUjkO", null, null, 1, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1755) },
+                    { new Guid("33333333-3333-3333-3333-333333333333"), 1, null, null, null, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1782), "owner1@microsaasbuilders.com", null, null, null, true, null, null, new Guid("11111111-1111-1111-1111-111111111111"), "$2a$11$1JpmhzU/QWG./YJ.ZlIVaueakB9lslVzMO0drbnWly7YgOvXfUjkO", null, null, 1, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1783) },
+                    { new Guid("44444444-4444-4444-4444-444444444444"), 1, null, null, null, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1797), "provider1@microsaasbuilders.com", null, null, null, true, null, null, new Guid("11111111-1111-1111-1111-111111111111"), "$2a$11$1JpmhzU/QWG./YJ.ZlIVaueakB9lslVzMO0drbnWly7YgOvXfUjkO", null, null, 2, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1798) },
+                    { new Guid("55555555-5555-5555-5555-555555555555"), 1, null, null, null, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1812), "customer1@microsaasbuilders.com", null, null, null, true, null, null, new Guid("11111111-1111-1111-1111-111111111111"), "$2a$11$1JpmhzU/QWG./YJ.ZlIVaueakB9lslVzMO0drbnWly7YgOvXfUjkO", null, null, 3, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1812) }
                 });
 
             migrationBuilder.InsertData(
                 table: "Consignors",
-                columns: new[] { "Id", "Address", "AddressLine1", "AddressLine2", "ApprovalStatus", "ApprovedAt", "ApprovedBy", "BusinessName", "City", "CommissionRate", "ContractEndDate", "ContractStartDate", "CreatedAt", "CreatedBy", "DefaultSplitPercentage", "DisplayName", "Email", "FirstName", "InviteCode", "InviteExpiry", "LastName", "Notes", "OrganizationId", "PaymentDetails", "PaymentMethod", "Phone", "PortalAccess", "PostalCode", "PreferredPaymentMethod", "ConsignorNumber", "RejectedReason", "State", "Status", "StatusChangedAt", "StatusChangedReason", "UpdatedAt", "UpdatedBy", "UserId", "ZipCode" },
-                values: new object[] { new Guid("66666666-6666-6666-6666-666666666666"), null, null, null, null, null, null, null, null, 0.6000m, null, null, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8869), null, null, null, "provider1@microsaasbuilders.com", "Demo", null, null, "Artist", null, new Guid("11111111-1111-1111-1111-111111111111"), null, null, "(555) 123-4567", false, null, null, "PRV-00001", null, null, 1, null, null, new DateTime(2025, 11, 25, 13, 20, 50, 582, DateTimeKind.Utc).AddTicks(8870), null, new Guid("44444444-4444-4444-4444-444444444444"), null });
+                columns: new[] { "Id", "Address", "AddressLine1", "AddressLine2", "ApprovalStatus", "ApprovedAt", "ApprovedBy", "BusinessName", "City", "CommissionRate", "ConsignorNumber", "ContractEndDate", "ContractStartDate", "CreatedAt", "CreatedBy", "DefaultSplitPercentage", "DisplayName", "Email", "FirstName", "InviteCode", "InviteExpiry", "LastName", "Notes", "OrganizationId", "PaymentDetails", "PaymentMethod", "Phone", "PortalAccess", "PostalCode", "PreferredPaymentMethod", "RejectedReason", "State", "Status", "StatusChangedAt", "StatusChangedReason", "UpdatedAt", "UpdatedBy", "UserId", "ZipCode" },
+                values: new object[] { new Guid("66666666-6666-6666-6666-666666666666"), null, null, null, null, null, null, null, null, 0.6000m, "PRV-00001", null, null, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1990), null, null, null, "provider1@microsaasbuilders.com", "Demo", null, null, "Artist", null, new Guid("11111111-1111-1111-1111-111111111111"), null, null, "(555) 123-4567", false, null, null, null, null, 1, null, null, new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1991), null, new Guid("44444444-4444-4444-4444-444444444444"), null });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_CreatedAt",
@@ -1273,6 +1413,86 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 name: "IX_Categories_UpdatedBy",
                 table: "Categories",
                 column: "UpdatedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClerkInvitations_ExpiresAt",
+                table: "ClerkInvitations",
+                column: "ExpiresAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClerkInvitations_InvitedById",
+                table: "ClerkInvitations",
+                column: "InvitedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClerkInvitations_OrganizationId",
+                table: "ClerkInvitations",
+                column: "OrganizationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClerkInvitations_OrganizationId_Email",
+                table: "ClerkInvitations",
+                columns: new[] { "OrganizationId", "Email" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClerkInvitations_Status",
+                table: "ClerkInvitations",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClerkInvitations_Token",
+                table: "ClerkInvitations",
+                column: "Token",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClerkPermissions_OrganizationId",
+                table: "ClerkPermissions",
+                column: "OrganizationId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consignors_ApprovalStatus",
+                table: "Consignors",
+                column: "ApprovalStatus");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consignors_ApprovedBy",
+                table: "Consignors",
+                column: "ApprovedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consignors_CreatedBy",
+                table: "Consignors",
+                column: "CreatedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consignors_OrganizationId_ConsignorNumber",
+                table: "Consignors",
+                columns: new[] { "OrganizationId", "ConsignorNumber" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consignors_OrganizationId_Email",
+                table: "Consignors",
+                columns: new[] { "OrganizationId", "Email" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consignors_OrganizationId_Status",
+                table: "Consignors",
+                columns: new[] { "OrganizationId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consignors_UpdatedBy",
+                table: "Consignors",
+                column: "UpdatedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Consignors_UserId",
+                table: "Consignors",
+                column: "UserId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Customers_OrganizationId",
@@ -1354,6 +1574,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 column: "CategoryId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Items_ConsignorId",
+                table: "Items",
+                column: "ConsignorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Items_CreatedBy",
                 table: "Items",
                 column: "CreatedBy");
@@ -1378,11 +1603,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 name: "IX_Items_OrganizationId_Status",
                 table: "Items",
                 columns: new[] { "OrganizationId", "Status" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Items_ProviderId",
-                table: "Items",
-                column: "ConsignorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Items_UpdatedBy",
@@ -1412,6 +1632,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notifications_ConsignorId",
+                table: "Notifications",
+                column: "ConsignorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Notifications_CreatedAt",
                 table: "Notifications",
                 column: "CreatedAt");
@@ -1420,11 +1645,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 name: "IX_Notifications_OrganizationId",
                 table: "Notifications",
                 column: "OrganizationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Notifications_ProviderId",
-                table: "Notifications",
-                column: "ConsignorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_Type",
@@ -1442,6 +1662,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 columns: new[] { "UserId", "IsRead" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_ConsignorId",
+                table: "OrderItems",
+                column: "ConsignorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_ItemId",
                 table: "OrderItems",
                 column: "ItemId");
@@ -1456,11 +1681,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 table: "OrderItems",
                 columns: new[] { "OrderId", "ItemId" },
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OrderItems_ProviderId",
-                table: "OrderItems",
-                column: "ConsignorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_CreatedAt",
@@ -1527,6 +1747,32 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_OwnerInvitations_Email",
+                table: "OwnerInvitations",
+                column: "Email");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OwnerInvitations_ExpiresAt",
+                table: "OwnerInvitations",
+                column: "ExpiresAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OwnerInvitations_InvitedById",
+                table: "OwnerInvitations",
+                column: "InvitedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OwnerInvitations_Status",
+                table: "OwnerInvitations",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OwnerInvitations_Token",
+                table: "OwnerInvitations",
+                column: "Token",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PaymentGatewayConnections_OrganizationId",
                 table: "PaymentGatewayConnections",
                 column: "OrganizationId");
@@ -1539,7 +1785,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentGatewayConnections_OrganizationId_Provider_IsActive",
                 table: "PaymentGatewayConnections",
-                columns: new[] { "OrganizationId", "Consignor", "IsActive" });
+                columns: new[] { "OrganizationId", "Provider", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payouts_ConsignorId_PeriodStart_PeriodEnd",
+                table: "Payouts",
+                columns: new[] { "ConsignorId", "PeriodStart", "PeriodEnd" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payouts_OrganizationId",
@@ -1547,51 +1798,34 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Payouts_ProviderId_PeriodStart_PeriodEnd",
-                table: "Payouts",
-                columns: new[] { "ConsignorId", "PeriodStart", "PeriodEnd" });
+                name: "IX_ProviderInvitations_ExpiresAt",
+                table: "ProviderInvitations",
+                column: "ExpiresAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Providers_ApprovalStatus",
-                table: "Consignors",
-                column: "ApprovalStatus");
+                name: "IX_ProviderInvitations_InvitedById",
+                table: "ProviderInvitations",
+                column: "InvitedById");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Providers_ApprovedBy",
-                table: "Consignors",
-                column: "ApprovedBy");
+                name: "IX_ProviderInvitations_OrganizationId",
+                table: "ProviderInvitations",
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Providers_CreatedBy",
-                table: "Consignors",
-                column: "CreatedBy");
+                name: "IX_ProviderInvitations_OrganizationId_Email",
+                table: "ProviderInvitations",
+                columns: new[] { "OrganizationId", "Email" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Providers_OrganizationId_Email",
-                table: "Consignors",
-                columns: new[] { "OrganizationId", "Email" },
-                unique: true);
+                name: "IX_ProviderInvitations_Status",
+                table: "ProviderInvitations",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Providers_OrganizationId_ProviderNumber",
-                table: "Consignors",
-                columns: new[] { "OrganizationId", "ConsignorNumber" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Providers_OrganizationId_Status",
-                table: "Consignors",
-                columns: new[] { "OrganizationId", "Status" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Providers_UpdatedBy",
-                table: "Consignors",
-                column: "UpdatedBy");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Providers_UserId",
-                table: "Consignors",
-                column: "UserId",
+                name: "IX_ProviderInvitations_Token",
+                table: "ProviderInvitations",
+                column: "Token",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1660,26 +1894,26 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 column: "SyncStarted");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Statements_ConsignorId",
+                table: "Statements",
+                column: "ConsignorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Statements_ConsignorId_PeriodStart",
+                table: "Statements",
+                columns: new[] { "ConsignorId", "PeriodStart" },
+                descending: new bool[0]);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Statements_OrganizationId",
                 table: "Statements",
                 column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Statements_OrganizationId_ProviderId_PeriodStart",
+                name: "IX_Statements_OrganizationId_ConsignorId_PeriodStart",
                 table: "Statements",
                 columns: new[] { "OrganizationId", "ConsignorId", "PeriodStart" },
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Statements_ProviderId",
-                table: "Statements",
-                column: "ConsignorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Statements_ProviderId_PeriodStart",
-                table: "Statements",
-                columns: new[] { "ConsignorId", "PeriodStart" },
-                descending: new bool[0]);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SubscriptionEvents_OrganizationId",
@@ -1718,6 +1952,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Transactions_ConsignorId",
+                table: "Transactions",
+                column: "ConsignorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Transactions_ItemId",
                 table: "Transactions",
                 column: "ItemId",
@@ -1739,9 +1978,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 column: "PayoutId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Transactions_ProviderId",
+                name: "IX_Transactions_ProcessedByUserId",
                 table: "Transactions",
-                column: "ConsignorId");
+                column: "ProcessedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Transactions_SaleDate",
@@ -1813,6 +2052,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 name: "CartItems");
 
             migrationBuilder.DropTable(
+                name: "ClerkInvitations");
+
+            migrationBuilder.DropTable(
+                name: "ClerkPermissions");
+
+            migrationBuilder.DropTable(
                 name: "CustomerWishlist");
 
             migrationBuilder.DropTable(
@@ -1837,7 +2082,13 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 name: "OrderItems");
 
             migrationBuilder.DropTable(
+                name: "OwnerInvitations");
+
+            migrationBuilder.DropTable(
                 name: "PaymentGatewayConnections");
+
+            migrationBuilder.DropTable(
+                name: "ProviderInvitations");
 
             migrationBuilder.DropTable(
                 name: "Shoppers");

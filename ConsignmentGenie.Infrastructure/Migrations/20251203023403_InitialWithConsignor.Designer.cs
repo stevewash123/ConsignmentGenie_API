@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ConsignmentGenie.Infrastructure.Migrations
 {
     [DbContext(typeof(ConsignmentGenieContext))]
-    [Migration("20251130134839_AddWelcomeGuideCompleted")]
-    partial class AddWelcomeGuideCompleted
+    [Migration("20251203023403_InitialWithConsignor")]
+    partial class InitialWithConsignor
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -294,6 +294,193 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.ToTable("ClerkPermissions");
                 });
 
+            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("AddressLine1")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("AddressLine2")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ApprovalStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BusinessName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("CommissionRate")
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<string>("ConsignorNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("ContractEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ContractStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("DefaultSplitPercentage")
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("InviteCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("InviteExpiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PaymentDetails")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("PortalAccess")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("PreferredPaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("RejectedReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Status")
+                        .HasMaxLength(20)
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StatusChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("StatusChangedReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ZipCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovalStatus");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasIndex("OrganizationId", "ConsignorNumber")
+                        .IsUnique();
+
+                    b.HasIndex("OrganizationId", "Email")
+                        .IsUnique();
+
+                    b.HasIndex("OrganizationId", "Status");
+
+                    b.ToTable("Consignors");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666666"),
+                            CommissionRate = 0.6000m,
+                            ConsignorNumber = "PRV-00001",
+                            CreatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1990),
+                            Email = "provider1@microsaasbuilders.com",
+                            FirstName = "Demo",
+                            LastName = "Artist",
+                            OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Phone = "(555) 123-4567",
+                            PortalAccess = false,
+                            Status = 1,
+                            UpdatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1991),
+                            UserId = new Guid("44444444-4444-4444-4444-444444444444")
+                        });
+                });
+
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -525,6 +712,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<int>("Condition")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("ConsignorId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -579,9 +769,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<Guid>("ConsignorId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateOnly>("ReceivedDate")
                         .HasColumnType("date");
 
@@ -622,11 +809,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("ConsignorId");
+
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("ItemCategoryId");
-
-                    b.HasIndex("ConsignorId");
 
                     b.HasIndex("UpdatedBy");
 
@@ -788,6 +975,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ConsignorId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -815,9 +1005,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ConsignorId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ReadAt")
@@ -848,11 +1035,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ConsignorId");
+
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("OrganizationId");
-
-                    b.HasIndex("ConsignorId");
 
                     b.HasIndex("Type");
 
@@ -1059,6 +1246,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<decimal>("CommissionAmount")
                         .HasColumnType("numeric");
 
+                    b.Property<Guid>("ConsignorId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1076,9 +1266,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ConsignorId")
-                        .HasColumnType("uuid");
-
                     b.Property<decimal>("SplitPercentage")
                         .HasColumnType("numeric");
 
@@ -1087,11 +1274,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ConsignorId");
+
                     b.HasIndex("ItemId");
 
                     b.HasIndex("OrderId");
-
-                    b.HasIndex("ConsignorId");
 
                     b.HasIndex("OrderId", "ItemId")
                         .IsUnique();
@@ -1358,7 +1545,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             AutoApproveConsignors = true,
                             CloudinaryConnected = false,
-                            CreatedAt = new DateTime(2025, 11, 30, 13, 48, 37, 852, DateTimeKind.Utc).AddTicks(1702),
+                            CreatedAt = new DateTime(2025, 12, 3, 2, 34, 1, 497, DateTimeKind.Utc).AddTicks(8074),
                             Currency = "USD",
                             DefaultSplitPercentage = 60.00m,
                             IsFounderPricing = false,
@@ -1383,7 +1570,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             SubscriptionTier = 2,
                             TaxRate = 0.0000m,
                             TrialExtensionsUsed = 0,
-                            UpdatedAt = new DateTime(2025, 11, 30, 13, 48, 37, 852, DateTimeKind.Utc).AddTicks(1704),
+                            UpdatedAt = new DateTime(2025, 12, 3, 2, 34, 1, 497, DateTimeKind.Utc).AddTicks(8075),
                             VerticalType = 1,
                             WelcomeGuideCompleted = false
                         });
@@ -1470,7 +1657,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Consignor")
+                    b.Property<string>("Provider")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -1480,7 +1667,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "IsDefault");
 
-                    b.HasIndex("OrganizationId", "Consignor", "IsActive");
+                    b.HasIndex("OrganizationId", "Provider", "IsActive");
 
                     b.ToTable("PaymentGatewayConnections");
                 });
@@ -1493,6 +1680,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
+
+                    b.Property<Guid>("ConsignorId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1529,9 +1719,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<DateTime>("PeriodStart")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ConsignorId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("QuickBooksBillId")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -1552,193 +1739,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("ConsignorId", "PeriodStart", "PeriodEnd");
 
                     b.ToTable("Payouts");
-                });
-
-            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("AddressLine1")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("AddressLine2")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("ApprovalStatus")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("BusinessName")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<decimal>("CommissionRate")
-                        .HasColumnType("decimal(5,4)");
-
-                    b.Property<DateTime?>("ContractEndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ContractStartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("DefaultSplitPercentage")
-                        .HasColumnType("decimal(5,4)");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("InviteCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime?>("InviteExpiry")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PaymentDetails")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<bool>("PortalAccess")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("PreferredPaymentMethod")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("ConsignorNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("RejectedReason")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("State")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("Status")
-                        .HasMaxLength(20)
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("StatusChangedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("StatusChangedReason")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ZipCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApprovalStatus");
-
-                    b.HasIndex("ApprovedBy");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UpdatedBy");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.HasIndex("OrganizationId", "Email")
-                        .IsUnique();
-
-                    b.HasIndex("OrganizationId", "ConsignorNumber")
-                        .IsUnique();
-
-                    b.HasIndex("OrganizationId", "Status");
-
-                    b.ToTable("Consignors");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("66666666-6666-6666-6666-666666666666"),
-                            CommissionRate = 0.6000m,
-                            CreatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6287),
-                            Email = "provider1@microsaasbuilders.com",
-                            FirstName = "Demo",
-                            LastName = "Artist",
-                            OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            Phone = "(555) 123-4567",
-                            PortalAccess = false,
-                            ConsignorNumber = "PRV-00001",
-                            Status = 1,
-                            UpdatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6288),
-                            UserId = new Guid("44444444-4444-4444-4444-444444444444")
-                        });
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ProviderInvitation", b =>
@@ -2037,6 +2037,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<decimal>("ClosingBalance")
                         .HasColumnType("numeric");
 
+                    b.Property<Guid>("ConsignorId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2071,9 +2074,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<DateOnly>("PeriodStart")
                         .HasColumnType("date");
 
-                    b.Property<Guid>("ConsignorId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("StatementNumber")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -2101,9 +2101,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrganizationId");
-
                     b.HasIndex("ConsignorId");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("ConsignorId", "PeriodStart")
                         .IsDescending();
@@ -2234,6 +2234,21 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("ConsignorAmount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<Guid>("ConsignorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("ConsignorPaidOut")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ConsignorPaidOutDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("ConsignorSplitPercentage")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2276,21 +2291,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.Property<Guid?>("ProcessedByUserId")
                         .HasColumnType("uuid");
-
-                    b.Property<decimal>("ConsignorAmount")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<Guid>("ConsignorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("ConsignorPaidOut")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("ConsignorPaidOutDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("ConsignorSplitPercentage")
-                        .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("QuickBooksSalesReceiptId")
                         .HasMaxLength(100)
@@ -2353,6 +2353,8 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ConsignorId");
+
                     b.HasIndex("ItemId")
                         .IsUnique();
 
@@ -2363,8 +2365,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("PayoutId");
 
                     b.HasIndex("ProcessedByUserId");
-
-                    b.HasIndex("ConsignorId");
 
                     b.HasIndex("SaleDate");
 
@@ -2457,49 +2457,49 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(5996),
+                            CreatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1718),
                             Email = "admin@microsaasbuilders.com",
                             IsActive = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$WLKp9sKXgZaWBhKTjCtVJetdu44MVnJ/pedeCoEO/8xtMznP4j9z.",
+                            PasswordHash = "$2a$11$1JpmhzU/QWG./YJ.ZlIVaueakB9lslVzMO0drbnWly7YgOvXfUjkO",
                             Role = 1,
-                            UpdatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6039)
+                            UpdatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1755)
                         },
                         new
                         {
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6068),
+                            CreatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1782),
                             Email = "owner1@microsaasbuilders.com",
                             IsActive = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$WLKp9sKXgZaWBhKTjCtVJetdu44MVnJ/pedeCoEO/8xtMznP4j9z.",
+                            PasswordHash = "$2a$11$1JpmhzU/QWG./YJ.ZlIVaueakB9lslVzMO0drbnWly7YgOvXfUjkO",
                             Role = 1,
-                            UpdatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6069)
+                            UpdatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1783)
                         },
                         new
                         {
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6086),
+                            CreatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1797),
                             Email = "provider1@microsaasbuilders.com",
                             IsActive = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$WLKp9sKXgZaWBhKTjCtVJetdu44MVnJ/pedeCoEO/8xtMznP4j9z.",
+                            PasswordHash = "$2a$11$1JpmhzU/QWG./YJ.ZlIVaueakB9lslVzMO0drbnWly7YgOvXfUjkO",
                             Role = 2,
-                            UpdatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6087)
+                            UpdatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1798)
                         },
                         new
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6104),
+                            CreatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1812),
                             Email = "customer1@microsaasbuilders.com",
                             IsActive = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$WLKp9sKXgZaWBhKTjCtVJetdu44MVnJ/pedeCoEO/8xtMznP4j9z.",
+                            PasswordHash = "$2a$11$1JpmhzU/QWG./YJ.ZlIVaueakB9lslVzMO0drbnWly7YgOvXfUjkO",
                             Role = 3,
-                            UpdatedAt = new DateTime(2025, 11, 30, 13, 48, 38, 415, DateTimeKind.Utc).AddTicks(6104)
+                            UpdatedAt = new DateTime(2025, 12, 3, 2, 34, 2, 45, DateTimeKind.Utc).AddTicks(1812)
                         });
                 });
 
@@ -2700,6 +2700,45 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Navigation("Organization");
                 });
 
+            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
+                {
+                    b.HasOne("ConsignmentGenie.Core.Entities.User", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ConsignmentGenie.Core.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ConsignmentGenie.Core.Entities.Organization", "Organization")
+                        .WithMany("Consignors")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ConsignmentGenie.Core.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ConsignmentGenie.Core.Entities.User", "User")
+                        .WithOne("Consignor")
+                        .HasForeignKey("ConsignmentGenie.Core.Entities.Consignor", "UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ApprovedByUser");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("UpdatedByUser");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Customer", b =>
                 {
                     b.HasOne("ConsignmentGenie.Core.Entities.Organization", "Organization")
@@ -2758,6 +2797,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .WithMany("Items")
                         .HasForeignKey("CategoryId");
 
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
+                        .WithMany("Items")
+                        .HasForeignKey("ConsignorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("ConsignmentGenie.Core.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
@@ -2773,22 +2818,16 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
-                        .WithMany("Items")
-                        .HasForeignKey("ConsignorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("ConsignmentGenie.Core.Entities.User", "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedBy")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.Navigation("Consignor");
+
                     b.Navigation("CreatedByUser");
 
                     b.Navigation("Organization");
-
-                    b.Navigation("Consignor");
 
                     b.Navigation("UpdatedByUser");
                 });
@@ -2861,16 +2900,16 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Notification", b =>
                 {
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
+                        .WithMany()
+                        .HasForeignKey("ConsignorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("ConsignmentGenie.Core.Entities.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
-                        .WithMany()
-                        .HasForeignKey("ConsignorId")
-                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ConsignmentGenie.Core.Entities.User", "User")
                         .WithMany()
@@ -2878,9 +2917,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Organization");
-
                     b.Navigation("Consignor");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("User");
                 });
@@ -2916,6 +2955,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.OrderItem", b =>
                 {
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
+                        .WithMany()
+                        .HasForeignKey("ConsignorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("ConsignmentGenie.Core.Entities.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
@@ -2928,17 +2973,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
-                        .WithMany()
-                        .HasForeignKey("ConsignorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Consignor");
 
                     b.Navigation("Item");
 
                     b.Navigation("Order");
-
-                    b.Navigation("Consignor");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.OwnerInvitation", b =>
@@ -2965,60 +3004,21 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Payout", b =>
                 {
-                    b.HasOne("ConsignmentGenie.Core.Entities.Organization", "Organization")
-                        .WithMany("Payouts")
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
                         .WithMany("Payouts")
                         .HasForeignKey("ConsignorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Organization");
-
-                    b.Navigation("Consignor");
-                });
-
-            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
-                {
-                    b.HasOne("ConsignmentGenie.Core.Entities.User", "ApprovedByUser")
-                        .WithMany()
-                        .HasForeignKey("ApprovedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ConsignmentGenie.Core.Entities.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("ConsignmentGenie.Core.Entities.Organization", "Organization")
-                        .WithMany("Consignors")
+                        .WithMany("Payouts")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.User", "UpdatedByUser")
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("ConsignmentGenie.Core.Entities.User", "User")
-                        .WithOne("Consignor")
-                        .HasForeignKey("ConsignmentGenie.Core.Entities.Consignor", "UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("ApprovedByUser");
-
-                    b.Navigation("CreatedByUser");
+                    b.Navigation("Consignor");
 
                     b.Navigation("Organization");
-
-                    b.Navigation("UpdatedByUser");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ProviderInvitation", b =>
@@ -3107,21 +3107,21 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Statement", b =>
                 {
-                    b.HasOne("ConsignmentGenie.Core.Entities.Organization", "Organization")
-                        .WithMany()
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
                         .WithMany()
                         .HasForeignKey("ConsignorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Organization");
+                    b.HasOne("ConsignmentGenie.Core.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Consignor");
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.SubscriptionEvent", b =>
@@ -3156,6 +3156,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Transaction", b =>
                 {
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
+                        .WithMany("Transactions")
+                        .HasForeignKey("ConsignorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("ConsignmentGenie.Core.Entities.Item", "Item")
                         .WithOne("Transaction")
                         .HasForeignKey("ConsignmentGenie.Core.Entities.Transaction", "ItemId")
@@ -3182,11 +3188,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasForeignKey("ProcessedByUserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
-                        .WithMany("Transactions")
-                        .HasForeignKey("ConsignorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Consignor");
 
                     b.Navigation("Item");
 
@@ -3197,8 +3199,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Navigation("Payout");
 
                     b.Navigation("ProcessedByUser");
-
-                    b.Navigation("Consignor");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.User", b =>
@@ -3246,6 +3246,15 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Payouts");
+
+                    b.Navigation("Transactions");
+                });
+
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Customer", b =>
                 {
                     b.Navigation("Orders");
@@ -3281,11 +3290,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Organization", b =>
                 {
+                    b.Navigation("Consignors");
+
                     b.Navigation("Items");
 
                     b.Navigation("Payouts");
-
-                    b.Navigation("Consignors");
 
                     b.Navigation("Transactions");
 
@@ -3294,15 +3303,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Payout", b =>
                 {
-                    b.Navigation("Transactions");
-                });
-
-            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
-                {
-                    b.Navigation("Items");
-
-                    b.Navigation("Payouts");
-
                     b.Navigation("Transactions");
                 });
 
