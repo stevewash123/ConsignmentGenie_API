@@ -13,27 +13,25 @@ using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Tests.Helpers;
 using ConsignmentGenie.Application.Services.Interfaces;
 
-using ConsignmentGenie.Application.DTOs;
-
 namespace ConsignmentGenie.Tests.Controllers
 {
 
-    public class ProvidersControllerTests : IDisposable
+    public class ConsignorsControllerTests : IDisposable
     {
         private readonly ConsignmentGenieContext _context;
-        private readonly Mock<ILogger<ProvidersController>> _mockLogger;
+        private readonly Mock<ILogger<ConsignorsController>> _mockLogger;
         private readonly Mock<IProviderInvitationService> _mockInvitationService;
-        private readonly ProvidersController _controller;
+        private readonly ConsignorsController _controller;
         private readonly Guid _organizationId = Guid.NewGuid();
         private readonly Guid _userId = Guid.NewGuid();
         private readonly Guid _providerId = Guid.NewGuid();
 
-        public ProvidersControllerTests()
+        public ConsignorsControllerTests()
         {
             _context = TestDbContextFactory.CreateInMemoryContext();
-            _mockLogger = new Mock<ILogger<ProvidersController>>();
+            _mockLogger = new Mock<ILogger<ConsignorsController>>();
             _mockInvitationService = new Mock<IProviderInvitationService>();
-            _controller = new ProvidersController(_context, _mockLogger.Object, _mockInvitationService.Object);
+            _controller = new ConsignorsController(_context, _mockLogger.Object, _mockInvitationService.Object);
 
             // Setup user claims
             var claims = new List<Claim>
@@ -151,7 +149,7 @@ namespace ConsignmentGenie.Tests.Controllers
         public void Constructor_WithValidDependencies_CreatesSuccessfully()
         {
             // Arrange & Act
-            var controller = new ProvidersController(_context, _mockLogger.Object, _mockInvitationService.Object);
+            var controller = new ConsignorsController(_context, _mockLogger.Object, _mockInvitationService.Object);
 
             // Assert
             Assert.NotNull(controller);
@@ -333,6 +331,170 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.False(apiResponse.Success);
             Assert.Contains("Contract end date must be after start date", apiResponse.Errors);
         }
+
+        #region Invitation Tests
+
+        [Fact]
+        public async Task GetPendingInvitations_ReturnsSuccessfully()
+        {
+            // Arrange
+            var invitations = new List<ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationDto>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "John Invited",
+                    Email = "john.invited@example.com",
+                    Status = ConsignmentGenie.Core.Entities.InvitationStatus.Pending,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7),
+                    CreatedAt = DateTime.UtcNow,
+                    InvitedByEmail = "owner@test.com"
+                }
+            };
+
+            _mockInvitationService.Setup(x => x.GetPendingInvitationsAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(invitations);
+
+            // Act
+            var result = await _controller.GetPendingInvitations();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedInvitations = Assert.IsType<List<ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationDto>>(okResult.Value);
+            Assert.Single(returnedInvitations);
+            Assert.Equal("John Invited", returnedInvitations[0].Name);
+            Assert.Equal("john.invited@example.com", returnedInvitations[0].Email);
+        }
+
+        [Fact]
+        public async Task CreateInvitation_WithValidData_ReturnsSuccessfully()
+        {
+            // Arrange
+            var request = new ConsignmentGenie.Application.DTOs.Consignor.CreateProviderInvitationDto
+            {
+                Name = "Jane Invited",
+                Email = "jane.invited@example.com"
+            };
+
+            var resultDto = new ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationResultDto
+            {
+                Success = true,
+                Message = "Invitation sent successfully"
+            };
+
+            _mockInvitationService.Setup(x => x.CreateInvitationAsync(
+                    It.IsAny<ConsignmentGenie.Application.DTOs.Consignor.CreateProviderInvitationDto>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<Guid>()))
+                .ReturnsAsync(resultDto);
+
+            // Act
+            var result = await _controller.CreateInvitation(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedResult = Assert.IsType<ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationResultDto>(okResult.Value);
+            Assert.True(returnedResult.Success);
+            Assert.Equal("Invitation sent successfully", returnedResult.Message);
+        }
+
+        [Fact]
+        public async Task CreateInvitation_WithInvalidData_ReturnsBadRequest()
+        {
+            // Arrange
+            var request = new ConsignmentGenie.Application.DTOs.Consignor.CreateProviderInvitationDto
+            {
+                Name = "Jane Invited",
+                Email = "jane.invited@example.com"
+            };
+
+            var resultDto = new ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationResultDto
+            {
+                Success = false,
+                Message = "A user with this email already exists in the system."
+            };
+
+            _mockInvitationService.Setup(x => x.CreateInvitationAsync(
+                    It.IsAny<ConsignmentGenie.Application.DTOs.Consignor.CreateProviderInvitationDto>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<Guid>()))
+                .ReturnsAsync(resultDto);
+
+            // Act
+            var result = await _controller.CreateInvitation(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            var returnedResult = Assert.IsType<ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationResultDto>(badRequestResult.Value);
+            Assert.False(returnedResult.Success);
+            Assert.Contains("A user with this email already exists", returnedResult.Message);
+        }
+
+        [Fact]
+        public async Task CancelInvitation_WithValidId_ReturnsNoContent()
+        {
+            // Arrange
+            var invitationId = Guid.NewGuid();
+            _mockInvitationService.Setup(x => x.CancelInvitationAsync(invitationId, It.IsAny<Guid>()))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.CancelInvitation(invitationId);
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task CancelInvitation_WithInvalidId_ReturnsNotFound()
+        {
+            // Arrange
+            var invitationId = Guid.NewGuid();
+            _mockInvitationService.Setup(x => x.CancelInvitationAsync(invitationId, It.IsAny<Guid>()))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.CancelInvitation(invitationId);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Invitation not found or cannot be cancelled.", notFoundResult.Value);
+        }
+
+        [Fact]
+        public async Task ResendInvitation_WithValidId_ReturnsOk()
+        {
+            // Arrange
+            var invitationId = Guid.NewGuid();
+            _mockInvitationService.Setup(x => x.ResendInvitationAsync(invitationId, It.IsAny<Guid>()))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.ResendInvitation(invitationId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var message = okResult.Value;
+            Assert.NotNull(message);
+        }
+
+        [Fact]
+        public async Task ResendInvitation_WithInvalidId_ReturnsNotFound()
+        {
+            // Arrange
+            var invitationId = Guid.NewGuid();
+            _mockInvitationService.Setup(x => x.ResendInvitationAsync(invitationId, It.IsAny<Guid>()))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.ResendInvitation(invitationId);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Invitation not found or cannot be resent.", notFoundResult.Value);
+        }
+
+        #endregion
 
         public void Dispose()
         {
