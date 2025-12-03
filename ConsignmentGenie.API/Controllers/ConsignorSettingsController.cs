@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
-[Route("api/providers")]
+[Route("api/consignors")]
 [Authorize(Roles = "Owner")]
 public class ProviderSettingsController : ControllerBase
 {

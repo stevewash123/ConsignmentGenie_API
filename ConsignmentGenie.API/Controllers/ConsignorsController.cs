@@ -13,15 +13,15 @@ using System.Security.Claims;
 namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/consignors")]
 [Authorize(Roles = "Owner")]
-public class ProvidersController : ControllerBase
+public class ConsignorsController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
-    private readonly ILogger<ProvidersController> _logger;
+    private readonly ILogger<ConsignorsController> _logger;
     private readonly IProviderInvitationService _invitationService;
 
-    public ProvidersController(ConsignmentGenieContext context, ILogger<ProvidersController> logger, IProviderInvitationService invitationService)
+    public ConsignorsController(ConsignmentGenieContext context, ILogger<ConsignorsController> logger, IProviderInvitationService invitationService)
     {
         _context = context;
         _logger = logger;
