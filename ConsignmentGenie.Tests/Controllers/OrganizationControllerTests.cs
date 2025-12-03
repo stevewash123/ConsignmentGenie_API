@@ -6,6 +6,7 @@ using ConsignmentGenie.API.Controllers;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Core.DTOs.Onboarding;
+using ConsignmentGenie.Core.DTOs.Settings;
 using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Tests.Helpers;
 using Microsoft.AspNetCore.Http;
@@ -287,6 +288,213 @@ namespace ConsignmentGenie.Tests.Controllers
             // Assert
             var updatedOrganization = await _context.Organizations.FindAsync(_organizationId);
             Assert.True(updatedOrganization!.UpdatedAt > initialTimestamp);
+        }
+
+        [Fact]
+        public async Task GetBusinessSettings_ReturnsDefaultSettings_WhenNoSettingsStored()
+        {
+            // Act
+            var result = await _controller.GetBusinessSettings();
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<BusinessSettingsDto>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var settings = Assert.IsType<BusinessSettingsDto>(okResult.Value);
+
+            Assert.NotNull(settings);
+            Assert.NotNull(settings.Commission);
+            Assert.NotNull(settings.Tax);
+            Assert.NotNull(settings.Payouts);
+            Assert.NotNull(settings.Items);
+
+            // Verify default values
+            Assert.Equal("60/40", settings.Commission.DefaultSplit);
+            Assert.False(settings.Commission.AllowCustomSplitsPerConsignor);
+            Assert.False(settings.Commission.AllowCustomSplitsPerItem);
+            Assert.Equal(0, settings.Tax.SalesTaxRate);
+            Assert.Equal("monthly", settings.Payouts.Schedule);
+            Assert.Equal(25.00m, settings.Payouts.MinimumAmount);
+            Assert.Equal(14, settings.Payouts.HoldPeriodDays);
+            Assert.Equal(90, settings.Items.DefaultConsignmentPeriodDays);
+        }
+
+        [Fact]
+        public async Task UpdateBusinessSettings_SavesSettingsSuccessfully()
+        {
+            // Arrange
+            var businessSettings = new BusinessSettingsDto
+            {
+                Commission = new CommissionDto
+                {
+                    DefaultSplit = "70/30",
+                    AllowCustomSplitsPerConsignor = true,
+                    AllowCustomSplitsPerItem = false
+                },
+                Tax = new TaxDto
+                {
+                    SalesTaxRate = 8.5m,
+                    TaxIncludedInPrices = true,
+                    ChargeTaxOnShipping = false
+                },
+                Payouts = new PayoutDto
+                {
+                    Schedule = "weekly",
+                    MinimumAmount = 50.00m,
+                    HoldPeriodDays = 7
+                },
+                Items = new ItemPolicyDto
+                {
+                    DefaultConsignmentPeriodDays = 60,
+                    EnableAutoMarkdowns = true,
+                    MarkdownSchedule = new MarkdownScheduleDto
+                    {
+                        After30Days = 10,
+                        After60Days = 20,
+                        After90DaysAction = "donate"
+                    }
+                }
+            };
+
+            // Act
+            var result = await _controller.UpdateBusinessSettings(businessSettings);
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+
+            var responseString = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+            var response = doc.RootElement;
+
+            Assert.True(response.GetProperty("success").GetBoolean());
+            Assert.Equal("Business settings updated successfully", response.GetProperty("message").GetString());
+
+            // Verify the database was updated
+            var organization = await _context.Organizations.FindAsync(_organizationId);
+            Assert.NotNull(organization!.BusinessSettings);
+            Assert.Equal(70m, organization.DefaultSplitPercentage); // Verify basic field sync
+            Assert.Equal(0.085m, organization.TaxRate); // Verify tax rate conversion
+        }
+
+        [Fact]
+        public async Task GetStorefrontSettings_ReturnsDefaultSettings_WhenNoSettingsStored()
+        {
+            // Act
+            var result = await _controller.GetStorefrontSettings();
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<StorefrontSettingsDto>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var settings = Assert.IsType<StorefrontSettingsDto>(okResult.Value);
+
+            Assert.NotNull(settings);
+            Assert.Equal("cg-storefront", settings.SelectedChannel);
+            Assert.NotNull(settings.Square);
+            Assert.NotNull(settings.Shopify);
+            Assert.NotNull(settings.CgStorefront);
+            Assert.NotNull(settings.InStore);
+
+            // Verify default values
+            Assert.False(settings.Square.Connected);
+            Assert.True(settings.Square.SyncInventory);
+            Assert.False(settings.Shopify.Connected);
+            Assert.True(settings.Shopify.PushInventory);
+            Assert.False(settings.CgStorefront.DnsVerified);
+            Assert.Equal("#2563eb", settings.CgStorefront.PrimaryColor);
+            Assert.True(settings.InStore.UseReceiptNumbers);
+            Assert.Equal(1, settings.InStore.NextReceiptNumber);
+        }
+
+        [Fact]
+        public async Task UpdateStorefrontSettings_SavesSettingsSuccessfully()
+        {
+            // Arrange
+            var storefrontSettings = new StorefrontSettingsDto
+            {
+                SelectedChannel = "shopify",
+                Square = new SquareSettingsDto
+                {
+                    Connected = true,
+                    BusinessName = "Test Business",
+                    SyncInventory = false,
+                    ImportSales = true
+                },
+                Shopify = new ShopifySettingsDto
+                {
+                    Connected = true,
+                    StoreName = "Test Shopify Store",
+                    PushInventory = false,
+                    ImportOrders = true
+                },
+                CgStorefront = new CgStorefrontSettingsDto
+                {
+                    StoreSlug = "test-store",
+                    CustomDomain = "test.example.com",
+                    DnsVerified = true,
+                    StripeConnected = true,
+                    PrimaryColor = "#ff0000",
+                    AccentColor = "#00ff00"
+                },
+                InStore = new InStoreSettingsDto
+                {
+                    UseReceiptNumbers = false,
+                    ReceiptPrefix = "CG",
+                    NextReceiptNumber = 100,
+                    RequireManagerApproval = true
+                }
+            };
+
+            // Act
+            var result = await _controller.UpdateStorefrontSettings(storefrontSettings);
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<object>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+
+            var responseString = System.Text.Json.JsonSerializer.Serialize(okResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(responseString);
+            var response = doc.RootElement;
+
+            Assert.True(response.GetProperty("success").GetBoolean());
+            Assert.Equal("Storefront settings updated successfully", response.GetProperty("message").GetString());
+
+            // Verify the database was updated
+            var organization = await _context.Organizations.FindAsync(_organizationId);
+            Assert.NotNull(organization!.StorefrontSettings);
+            Assert.Equal("test-store", organization.Slug); // Verify basic field sync
+            Assert.True(organization.StripeConnected); // Verify boolean field sync
+        }
+
+        [Fact]
+        public async Task GetBusinessSettings_ReturnsNotFound_WhenOrganizationNotExists()
+        {
+            // Arrange - Remove the organization
+            var organization = await _context.Organizations.FindAsync(_organizationId);
+            _context.Organizations.Remove(organization!);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _controller.GetBusinessSettings();
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<BusinessSettingsDto>>(result);
+            Assert.IsType<NotFoundObjectResult>(actionResult.Result);
+        }
+
+        [Fact]
+        public async Task GetStorefrontSettings_ReturnsNotFound_WhenOrganizationNotExists()
+        {
+            // Arrange - Remove the organization
+            var organization = await _context.Organizations.FindAsync(_organizationId);
+            _context.Organizations.Remove(organization!);
+            await _context.SaveChangesAsync();
+
+            // Act
+            var result = await _controller.GetStorefrontSettings();
+
+            // Assert
+            var actionResult = Assert.IsType<ActionResult<StorefrontSettingsDto>>(result);
+            Assert.IsType<NotFoundObjectResult>(actionResult.Result);
         }
 
         public void Dispose()
