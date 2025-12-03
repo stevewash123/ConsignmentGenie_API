@@ -131,12 +131,12 @@ public class InvitationsController : ControllerBase
 
             if (result.Success)
             {
-                _logger.LogInformation("[INVITATION] Provider registered successfully from invitation: {Token}, Email: {Email}",
+                _logger.LogInformation("[INVITATION] Consignor registered successfully from invitation: {Token}, Email: {Email}",
                     request.InvitationToken, request.Email);
             }
             else
             {
-                _logger.LogWarning("[INVITATION] Provider registration failed: {Token}, Error: {Error}",
+                _logger.LogWarning("[INVITATION] Consignor registration failed: {Token}, Error: {Error}",
                     request.InvitationToken, result.Message);
             }
 

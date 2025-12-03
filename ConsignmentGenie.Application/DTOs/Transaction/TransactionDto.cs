@@ -10,13 +10,13 @@ public class TransactionDto
     // Source removed for MVP - Phase 2+ feature
 
     // Commission split
-    public decimal ProviderSplitPercentage { get; set; }
-    public decimal ProviderAmount { get; set; }
+    public decimal ConsignorSplitPercentage { get; set; }
+    public decimal ConsignorAmount { get; set; }
     public decimal ShopAmount { get; set; }
 
     // Navigation data
     public ItemSummaryDto Item { get; set; } = new();
-    public ProviderSummaryDto Provider { get; set; } = new();
+    public ProviderSummaryDto Consignor { get; set; } = new();
     public string? Notes { get; set; }
 
     // Audit

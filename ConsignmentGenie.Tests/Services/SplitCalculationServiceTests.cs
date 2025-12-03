@@ -32,10 +32,10 @@ public class SplitCalculationServiceTests : IDisposable
         var result = _service.CalculateSplit(salePrice, splitPercentage);
 
         // Assert
-        Assert.Equal(expectedProviderAmount, result.ProviderAmount);
+        Assert.Equal(expectedProviderAmount, result.ConsignorAmount);
         Assert.Equal(expectedShopAmount, result.ShopAmount);
         Assert.Equal(splitPercentage, result.SplitPercentage);
-        Assert.Equal(salePrice, result.ProviderAmount + result.ShopAmount);
+        Assert.Equal(salePrice, result.ConsignorAmount + result.ShopAmount);
     }
 
     [Fact]
@@ -49,20 +49,20 @@ public class SplitCalculationServiceTests : IDisposable
         };
         _context.Organizations.Add(organization);
 
-        var provider = new Provider
+        var provider = new Consignor
         {
             OrganizationId = organization.Id,
             FirstName = "Test",
-            LastName = "Provider",
+            LastName = "Consignor",
             Email = "provider@test.com",
             DefaultSplitPercentage = 50.00m
         };
-        _context.Providers.Add(provider);
+        _context.Consignors.Add(provider);
 
         var item1 = new Item
         {
             OrganizationId = organization.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             Sku = "ITEM001",
             Title = "Test Item 1",
             Price = 100.00m
@@ -70,7 +70,7 @@ public class SplitCalculationServiceTests : IDisposable
         var item2 = new Item
         {
             OrganizationId = organization.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             Sku = "ITEM002",
             Title = "Test Item 2",
             Price = 75.00m
@@ -84,22 +84,22 @@ public class SplitCalculationServiceTests : IDisposable
         {
             OrganizationId = organization.Id,
             ItemId = item1.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             SalePrice = 100.00m,
             SaleDate = DateTime.UtcNow.AddDays(-15),
-            ProviderSplitPercentage = 50.00m,
-            ProviderAmount = 50.00m,
+            ConsignorSplitPercentage = 50.00m,
+            ConsignorAmount = 50.00m,
             ShopAmount = 50.00m
         };
         var transaction2 = new Transaction
         {
             OrganizationId = organization.Id,
             ItemId = item2.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             SalePrice = 75.00m,
             SaleDate = DateTime.UtcNow.AddDays(-10),
-            ProviderSplitPercentage = 60.00m,
-            ProviderAmount = 45.00m,
+            ConsignorSplitPercentage = 60.00m,
+            ConsignorAmount = 45.00m,
             ShopAmount = 30.00m
         };
         _context.Transactions.AddRange(transaction1, transaction2);
@@ -110,8 +110,8 @@ public class SplitCalculationServiceTests : IDisposable
         var result = await _service.CalculatePayoutsAsync(provider.Id, periodStart, periodEnd);
 
         // Assert
-        Assert.Equal(provider.Id, result.ProviderId);
-        Assert.Equal("Test Provider", result.ProviderName);
+        Assert.Equal(provider.Id, result.ConsignorId);
+        Assert.Equal("Test Consignor", result.ConsignorName);
         Assert.Equal(periodStart, result.PeriodStart);
         Assert.Equal(periodEnd, result.PeriodEnd);
         Assert.Equal(95.00m, result.TotalAmount); // 50.00 + 45.00
@@ -120,11 +120,11 @@ public class SplitCalculationServiceTests : IDisposable
 
         var firstTransaction = result.Transactions.First(t => t.ItemSku == "ITEM001");
         Assert.Equal(100.00m, firstTransaction.SalePrice);
-        Assert.Equal(50.00m, firstTransaction.ProviderAmount);
+        Assert.Equal(50.00m, firstTransaction.ConsignorAmount);
 
         var secondTransaction = result.Transactions.First(t => t.ItemSku == "ITEM002");
         Assert.Equal(75.00m, secondTransaction.SalePrice);
-        Assert.Equal(45.00m, secondTransaction.ProviderAmount);
+        Assert.Equal(45.00m, secondTransaction.ConsignorAmount);
     }
 
     [Fact]
@@ -138,15 +138,15 @@ public class SplitCalculationServiceTests : IDisposable
         };
         _context.Organizations.Add(organization);
 
-        var provider = new Provider
+        var provider = new Consignor
         {
             OrganizationId = organization.Id,
             FirstName = "Empty",
-            LastName = "Provider",
+            LastName = "Consignor",
             Email = "empty@test.com",
             DefaultSplitPercentage = 50.00m
         };
-        _context.Providers.Add(provider);
+        _context.Consignors.Add(provider);
 
         await _context.SaveChangesAsync();
 
@@ -157,8 +157,8 @@ public class SplitCalculationServiceTests : IDisposable
         var result = await _service.CalculatePayoutsAsync(provider.Id, periodStart, periodEnd);
 
         // Assert
-        Assert.Equal(provider.Id, result.ProviderId);
-        Assert.Equal("Empty Provider", result.ProviderName);
+        Assert.Equal(provider.Id, result.ConsignorId);
+        Assert.Equal("Empty Consignor", result.ConsignorName);
         Assert.Equal(0m, result.TotalAmount);
         Assert.Equal(0, result.TransactionCount);
         Assert.Empty(result.Transactions);
@@ -187,11 +187,11 @@ public class SplitCalculationServiceTests : IDisposable
             VerticalType = VerticalType.Consignment
         };
 
-        var provider = new Provider
+        var provider = new Consignor
         {
             Organization = organization,
             FirstName = "Test",
-            LastName = "Provider",
+            LastName = "Consignor",
             Email = "provider@test.com",
             DefaultSplitPercentage = 50.00m
         };
@@ -199,7 +199,7 @@ public class SplitCalculationServiceTests : IDisposable
         var item = new Item
         {
             Organization = organization,
-            Provider = provider,
+            Consignor = provider,
             Sku = "ITEM001",
             Title = "Test Item",
             Price = 100.00m
@@ -207,7 +207,7 @@ public class SplitCalculationServiceTests : IDisposable
 
         // Add all entities at once
         _context.Organizations.Add(organization);
-        _context.Providers.Add(provider);
+        _context.Consignors.Add(provider);
         _context.Items.Add(item);
 
         // Single save - EF handles all relationships together
@@ -224,12 +224,12 @@ public class SplitCalculationServiceTests : IDisposable
         {
             OrganizationId = organization.Id,
             ItemId = item.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             SalePrice = 100.00m,
             SaleDate = DateTime.UtcNow.AddDays(-20), // Inside period
-            ProviderAmount = 50.00m,
+            ConsignorAmount = 50.00m,
             ShopAmount = 50.00m,
-            ProviderSplitPercentage = 50.00m
+            ConsignorSplitPercentage = 50.00m
         });
 
         // Transaction outside period
@@ -237,12 +237,12 @@ public class SplitCalculationServiceTests : IDisposable
         {
             OrganizationId = organization.Id,
             ItemId = item.Id,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             SalePrice = 200.00m,
             SaleDate = DateTime.UtcNow.AddDays(-5), // Outside period (after periodEnd)
-            ProviderAmount = 100.00m,
+            ConsignorAmount = 100.00m,
             ShopAmount = 100.00m,
-            ProviderSplitPercentage = 50.00m
+            ConsignorSplitPercentage = 50.00m
         });
 
         await _context.SaveChangesAsync();

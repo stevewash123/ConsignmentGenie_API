@@ -75,11 +75,11 @@ public class CsvExportService : ICsvExportService
     private static string GenerateSalesReportCsv(SalesReportDto data)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Date,Item Name,Category,Provider Name,Sale Price,Shop Cut,Provider Cut,Payment Method");
+        csv.AppendLine("Date,Item Name,Category,Consignor Name,Sale Price,Shop Cut,Consignor Cut,Payment Method");
 
         foreach (var transaction in data.Transactions)
         {
-            csv.AppendLine($"{transaction.Date:yyyy-MM-dd},{EscapeCsv(transaction.ItemName)},{EscapeCsv(transaction.Category)},{EscapeCsv(transaction.ProviderName)},{transaction.SalePrice:F2},{transaction.ShopCut:F2},{transaction.ProviderCut:F2},{EscapeCsv(transaction.PaymentMethod)}");
+            csv.AppendLine($"{transaction.Date:yyyy-MM-dd},{EscapeCsv(transaction.ItemName)},{EscapeCsv(transaction.Category)},{EscapeCsv(transaction.ConsignorName)},{transaction.SalePrice:F2},{transaction.ShopCut:F2},{transaction.ProviderCut:F2},{EscapeCsv(transaction.PaymentMethod)}");
         }
 
         return csv.ToString();
@@ -88,11 +88,11 @@ public class CsvExportService : ICsvExportService
     private static string GenerateProviderPerformanceCsv(ProviderPerformanceReportDto data)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Provider Name,Items Consigned,Items Sold,Items Available,Total Sales,Sell-Through Rate %,Avg Days to Sell,Pending Payout");
+        csv.AppendLine("Consignor Name,Items Consigned,Items Sold,Items Available,Total Sales,Sell-Through Rate %,Avg Days to Sell,Pending Payout");
 
-        foreach (var provider in data.Providers)
+        foreach (var provider in data.Consignors)
         {
-            csv.AppendLine($"{EscapeCsv(provider.ProviderName)},{provider.ItemsConsigned},{provider.ItemsSold},{provider.ItemsAvailable},{provider.TotalSales:F2},{provider.SellThroughRate:F1},{provider.AvgDaysToSell:F0},{provider.PendingPayout:F2}");
+            csv.AppendLine($"{EscapeCsv(provider.ConsignorName)},{provider.ItemsConsigned},{provider.ItemsSold},{provider.ItemsAvailable},{provider.TotalSales:F2},{provider.SellThroughRate:F1},{provider.AvgDaysToSell:F0},{provider.PendingPayout:F2}");
         }
 
         return csv.ToString();
@@ -101,11 +101,11 @@ public class CsvExportService : ICsvExportService
     private static string GenerateInventoryAgingCsv(InventoryAgingReportDto data)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Item Name,SKU,Category,Provider Name,Price,Listed Date,Days Listed,Suggested Action");
+        csv.AppendLine("Item Name,SKU,Category,Consignor Name,Price,Listed Date,Days Listed,Suggested Action");
 
         foreach (var item in data.Items)
         {
-            csv.AppendLine($"{EscapeCsv(item.Name)},{EscapeCsv(item.SKU)},{EscapeCsv(item.Category)},{EscapeCsv(item.ProviderName)},{item.Price:F2},{item.ListedDate:yyyy-MM-dd},{item.DaysListed},{EscapeCsv(item.SuggestedAction)}");
+            csv.AppendLine($"{EscapeCsv(item.Name)},{EscapeCsv(item.SKU)},{EscapeCsv(item.Category)},{EscapeCsv(item.ConsignorName)},{item.Price:F2},{item.ListedDate:yyyy-MM-dd},{item.DaysListed},{EscapeCsv(item.SuggestedAction)}");
         }
 
         return csv.ToString();
@@ -114,12 +114,12 @@ public class CsvExportService : ICsvExportService
     private static string GeneratePayoutSummaryCsv(PayoutSummaryReportDto data)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("Provider Name,Total Sales,Provider Cut,Already Paid,Pending Balance,Last Payout Date");
+        csv.AppendLine("Consignor Name,Total Sales,Consignor Cut,Already Paid,Pending Balance,Last Payout Date");
 
-        foreach (var provider in data.Providers)
+        foreach (var provider in data.Consignors)
         {
             var lastPayoutDate = provider.LastPayoutDate?.ToString("yyyy-MM-dd") ?? "";
-            csv.AppendLine($"{EscapeCsv(provider.ProviderName)},{provider.TotalSales:F2},{provider.ProviderCut:F2},{provider.AlreadyPaid:F2},{provider.PendingBalance:F2},{lastPayoutDate}");
+            csv.AppendLine($"{EscapeCsv(provider.ConsignorName)},{provider.TotalSales:F2},{provider.ProviderCut:F2},{provider.AlreadyPaid:F2},{provider.PendingBalance:F2},{lastPayoutDate}");
         }
 
         return csv.ToString();

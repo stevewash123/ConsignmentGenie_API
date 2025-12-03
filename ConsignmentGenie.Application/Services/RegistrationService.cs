@@ -177,7 +177,7 @@ public class RegistrationService : IRegistrationService
     {
         _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration for email {Email} with store code {StoreCode}",
             request.Email, request.StoreCode);
-        _logger.LogDebug("[PROVIDER_INVITATION] Provider registration details: FullName={FullName}, Phone={Phone}, PreferredPayment={PreferredPaymentMethod}",
+        _logger.LogDebug("[PROVIDER_INVITATION] Consignor registration details: FullName={FullName}, Phone={Phone}, PreferredPayment={PreferredPaymentMethod}",
             request.FullName, request.Phone, request.PreferredPaymentMethod);
 
         try
@@ -231,20 +231,20 @@ public class RegistrationService : IRegistrationService
                 };
             }
 
-            _logger.LogInformation("[PROVIDER_INVITATION] Found organization {OrganizationName} (ID: {OrganizationId}) for store code {StoreCode}, AutoApprove: {AutoApproveProviders}",
-                organization.Name, organization.Id, request.StoreCode, organization.AutoApproveProviders);
+            _logger.LogInformation("[PROVIDER_INVITATION] Found organization {OrganizationName} (ID: {OrganizationId}) for store code {StoreCode}, AutoApprove: {AutoApproveConsignors}",
+                organization.Name, organization.Id, request.StoreCode, organization.AutoApproveConsignors);
 
             // Create user
-            _logger.LogInformation("[PROVIDER_INVITATION] Creating user account for {Email} with role Provider, approval status will be {ApprovalStatus}",
-                request.Email, organization.AutoApproveProviders ? "Approved" : "Pending");
+            _logger.LogInformation("[PROVIDER_INVITATION] Creating user account for {Email} with role Consignor, approval status will be {ApprovalStatus}",
+                request.Email, organization.AutoApproveConsignors ? "Approved" : "Pending");
             var user = new User
             {
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 FullName = request.FullName,
                 Phone = request.Phone,
-                Role = UserRole.Provider,
-                ApprovalStatus = organization.AutoApproveProviders ? ApprovalStatus.Approved : ApprovalStatus.Pending,
+                Role = UserRole.Consignor,
+                ApprovalStatus = organization.AutoApproveConsignors ? ApprovalStatus.Approved : ApprovalStatus.Pending,
                 OrganizationId = organization.Id
             };
 
@@ -252,11 +252,11 @@ public class RegistrationService : IRegistrationService
             await _context.SaveChangesAsync();
             _logger.LogInformation("[PROVIDER_INVITATION] User {Email} created successfully with ID {UserId}", request.Email, user.Id);
 
-            // If auto-approved, create Provider record immediately
-            if (organization.AutoApproveProviders)
+            // If auto-approved, create Consignor record immediately
+            if (organization.AutoApproveConsignors)
             {
-                _logger.LogInformation("[PROVIDER_INVITATION] Auto-approval enabled - creating Provider record for {Email}", request.Email);
-                var provider = new Provider
+                _logger.LogInformation("[PROVIDER_INVITATION] Auto-approval enabled - creating Consignor record for {Email}", request.Email);
+                var provider = new Consignor
                 {
                     OrganizationId = organization.Id,
                     UserId = user.Id,
@@ -266,18 +266,18 @@ public class RegistrationService : IRegistrationService
                     Phone = request.Phone,
                     PreferredPaymentMethod = request.PreferredPaymentMethod ?? "Check",
                     PaymentDetails = request.PaymentDetails,
-                    Status = ProviderStatus.Active,
+                    Status = ConsignorStatus.Active,
                     ApprovalStatus = "Approved",
                     ApprovedBy = null // Auto-approved
                 };
 
-                _context.Providers.Add(provider);
+                _context.Consignors.Add(provider);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("[PROVIDER_INVITATION] Provider record created for {Email} with ID {ProviderId}", request.Email, provider.Id);
+                _logger.LogInformation("[PROVIDER_INVITATION] Consignor record created for {Email} with ID {ConsignorId}", request.Email, provider.Id);
             }
             else
             {
-                _logger.LogInformation("[PROVIDER_INVITATION] Manual approval required - Provider record will be created after approval");
+                _logger.LogInformation("[PROVIDER_INVITATION] Manual approval required - Consignor record will be created after approval");
             }
 
             // Send confirmation email to provider
@@ -286,21 +286,21 @@ public class RegistrationService : IRegistrationService
                 <h2>Welcome to ConsignmentGenie</h2>
                 <p>Hi {request.FullName},</p>
                 <p>Thanks for registering with ConsignmentGenie!</p>
-                <p>Your request to join {validation.ShopName} is {(organization.AutoApproveProviders ? "approved" : "pending approval")}.</p>
-                {(organization.AutoApproveProviders
-                    ? "<p>You can now log in to your Provider Portal!</p>"
+                <p>Your request to join {validation.ShopName} is {(organization.AutoApproveConsignors ? "approved" : "pending approval")}.</p>
+                {(organization.AutoApproveConsignors
+                    ? "<p>You can now log in to your Consignor Portal!</p>"
                     : "<p>The shop owner will review your request and you'll receive an email when your account is ready.</p>")}
                 <p>Questions? Reply to this email.</p>
                 <p>- The ConsignmentGenie Team</p>";
 
             var emailResult = await _emailService.SendSimpleEmailAsync(
                 request.Email,
-                organization.AutoApproveProviders ? "Account Approved - You're In! 🎉" : "Welcome to ConsignmentGenie - Account Pending",
+                organization.AutoApproveConsignors ? "Account Approved - You're In! 🎉" : "Welcome to ConsignmentGenie - Account Pending",
                 providerEmailBody);
-            _logger.LogInformation("[PROVIDER_INVITATION] Provider confirmation email sent to {Email}: {EmailResult}", request.Email, emailResult);
+            _logger.LogInformation("[PROVIDER_INVITATION] Consignor confirmation email sent to {Email}: {EmailResult}", request.Email, emailResult);
 
             // Send notification to owner if not auto-approved
-            if (!organization.AutoApproveProviders)
+            if (!organization.AutoApproveConsignors)
             {
                 _logger.LogInformation("[PROVIDER_INVITATION] Manual approval required - sending notification to shop owners");
                 var ownerUsers = await _context.Users
@@ -315,7 +315,7 @@ public class RegistrationService : IRegistrationService
                     _logger.LogDebug("[PROVIDER_INVITATION] Sending owner notification to {OwnerEmail} for new provider request from {ProviderEmail}",
                         owner.Email, request.Email);
                     var ownerEmailBody = $@"
-                        <h2>New Provider Request</h2>
+                        <h2>New Consignor Request</h2>
                         <p>Hi {validation.ShopName},</p>
                         <p>{request.FullName} has requested to join your shop as a provider.</p>
                         <p><strong>Name:</strong> {request.FullName}</p>
@@ -327,27 +327,27 @@ public class RegistrationService : IRegistrationService
 
                     var ownerEmailResult = await _emailService.SendSimpleEmailAsync(
                         owner.Email,
-                        $"New Provider Request - {request.FullName}",
+                        $"New Consignor Request - {request.FullName}",
                         ownerEmailBody);
                     _logger.LogInformation("[PROVIDER_INVITATION] Owner notification sent to {OwnerEmail}: {EmailResult}",
                         owner.Email, ownerEmailResult);
                 }
             }
 
-            _logger.LogInformation("[PROVIDER_INVITATION] Provider registration completed successfully for {Email} - AutoApproved: {AutoApproved}",
-                request.Email, organization.AutoApproveProviders);
+            _logger.LogInformation("[PROVIDER_INVITATION] Consignor registration completed successfully for {Email} - AutoApproved: {AutoApproved}",
+                request.Email, organization.AutoApproveConsignors);
 
             return new RegistrationResultDto
             {
                 Success = true,
-                Message = organization.AutoApproveProviders
+                Message = organization.AutoApproveConsignors
                     ? "Account created and approved! You can now log in."
                     : "Account created successfully. You'll receive an email when approved."
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[PROVIDER_INVITATION] Provider registration failed for {Email}", request.Email);
+            _logger.LogError(ex, "[PROVIDER_INVITATION] Consignor registration failed for {Email}", request.Email);
             return new RegistrationResultDto
             {
                 Success = false,
@@ -361,7 +361,7 @@ public class RegistrationService : IRegistrationService
     {
         var pendingUsers = await _context.Users
             .Where(u => u.OrganizationId == organizationId
-                     && u.Role == UserRole.Provider
+                     && u.Role == UserRole.Consignor
                      && u.ApprovalStatus == ApprovalStatus.Pending)
             .Select(u => new PendingApprovalDto
             {
@@ -385,7 +385,7 @@ public class RegistrationService : IRegistrationService
     {
         return await _context.Users
             .CountAsync(u => u.OrganizationId == organizationId
-                          && u.Role == UserRole.Provider
+                          && u.Role == UserRole.Consignor
                           && u.ApprovalStatus == ApprovalStatus.Pending);
     }
 
@@ -429,11 +429,11 @@ public class RegistrationService : IRegistrationService
         user.ApprovedAt = DateTime.UtcNow;
 
         // 🏗️ AGGREGATE ROOT PATTERN: If provider, create provider record
-        if (user.Role == UserRole.Provider)
+        if (user.Role == UserRole.Consignor)
         {
-            _logger.LogInformation("[PROVIDER_INVITATION] Creating Provider record for approved user {Email}", user.Email);
+            _logger.LogInformation("[PROVIDER_INVITATION] Creating Consignor record for approved user {Email}", user.Email);
             var providerNumber = await GenerateProviderNumberAsync(user.OrganizationId);
-            var provider = new Provider
+            var provider = new Consignor
             {
                 OrganizationId = user.OrganizationId,
                 UserId = user.Id,
@@ -442,14 +442,14 @@ public class RegistrationService : IRegistrationService
                 Email = user.Email,
                 Phone = user.Phone,
                 PreferredPaymentMethod = "Check", // Default, can be updated later
-                Status = ProviderStatus.Active,
+                Status = ConsignorStatus.Active,
                 ApprovalStatus = "Approved",
                 ApprovedBy = approvedByUserId,
-                ProviderNumber = providerNumber
+                ConsignorNumber = providerNumber
             };
 
-            _context.Providers.Add(provider);
-            _logger.LogInformation("[PROVIDER_INVITATION] Provider record will be created with number {ProviderNumber} for {Email}",
+            _context.Consignors.Add(provider);
+            _logger.LogInformation("[PROVIDER_INVITATION] Consignor record will be created with number {ConsignorNumber} for {Email}",
                 providerNumber, user.Email);
         }
 
@@ -460,12 +460,12 @@ public class RegistrationService : IRegistrationService
         // Send approval email
         _logger.LogInformation("[PROVIDER_INVITATION] Sending approval notification email to {Email} for role {Role}",
             user.Email, user.Role);
-        var emailBody = user.Role == UserRole.Provider
+        var emailBody = user.Role == UserRole.Consignor
             ? $@"
                 <h2>Account Approved - You're In! 🎉</h2>
                 <p>Hi {user.FullName},</p>
                 <p>Great news! Your account has been approved by {user.Organization.ShopName}.</p>
-                <p>You can now log in to your Provider Portal to:</p>
+                <p>You can now log in to your Consignor Portal to:</p>
                 <ul>
                     <li>View your consigned items</li>
                     <li>Track sales</li>
@@ -484,7 +484,7 @@ public class RegistrationService : IRegistrationService
 
         var emailResult = await _emailService.SendSimpleEmailAsync(
             user.Email,
-            user.Role == UserRole.Provider ? "Account Approved - You're In! 🎉" : "Your Shop is Ready! 🎉",
+            user.Role == UserRole.Consignor ? "Account Approved - You're In! 🎉" : "Your Shop is Ready! 🎉",
             emailBody);
         _logger.LogInformation("[PROVIDER_INVITATION] Approval notification email sent to {Email}: {EmailResult}",
             user.Email, emailResult);
@@ -632,7 +632,7 @@ public class RegistrationService : IRegistrationService
 
     private async Task<string> GenerateProviderNumberAsync(Guid organizationId)
     {
-        var count = await _context.Providers
+        var count = await _context.Consignors
             .CountAsync(p => p.OrganizationId == organizationId);
         return $"PRV-{(count + 1):D5}";
     }
@@ -750,7 +750,7 @@ public class RegistrationService : IRegistrationService
                 PasswordHash = hashedPassword,
                 FullName = request.FullName,
                 Phone = request.Phone,
-                Role = UserRole.Provider,
+                Role = UserRole.Consignor,
                 OrganizationId = invitation.OrganizationId,
                 ApprovalStatus = ApprovalStatus.Approved, // Auto-approve invited providers
                 ApprovedBy = invitation.InvitedById,
@@ -762,9 +762,9 @@ public class RegistrationService : IRegistrationService
             _logger.LogInformation("[PROVIDER_INVITATION] User account created successfully for {Email} with ID {UserId}", request.Email, user.Id);
 
             // Create the provider record
-            _logger.LogInformation("[PROVIDER_INVITATION] Creating Provider record for {Email}", request.Email);
+            _logger.LogInformation("[PROVIDER_INVITATION] Creating Consignor record for {Email}", request.Email);
             var providerNumber = await GenerateProviderNumberAsync(invitation.OrganizationId);
-            var provider = new Provider
+            var provider = new Consignor
             {
                 OrganizationId = invitation.OrganizationId,
                 UserId = user.Id,
@@ -774,13 +774,13 @@ public class RegistrationService : IRegistrationService
                 Phone = request.Phone,
                 Address = request.Address,
                 PreferredPaymentMethod = "Check", // Default
-                Status = ProviderStatus.Active,
+                Status = ConsignorStatus.Active,
                 ApprovalStatus = "Approved",
                 ApprovedBy = invitation.InvitedById,
-                ProviderNumber = providerNumber
+                ConsignorNumber = providerNumber
             };
 
-            _context.Providers.Add(provider);
+            _context.Consignors.Add(provider);
 
             // Mark invitation as used
             _logger.LogDebug("[PROVIDER_INVITATION] Marking invitation as used for {Email}", request.Email);
@@ -788,7 +788,7 @@ public class RegistrationService : IRegistrationService
             invitation.UsedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("[PROVIDER_INVITATION] Provider record created successfully with number {ProviderNumber} for {Email}",
+            _logger.LogInformation("[PROVIDER_INVITATION] Consignor record created successfully with number {ConsignorNumber} for {Email}",
                 providerNumber, request.Email);
 
             // Send welcome email to provider
@@ -797,7 +797,7 @@ public class RegistrationService : IRegistrationService
                 <h2>Welcome to {validation.ShopName}! 🎉</h2>
                 <p>Hi {request.FullName},</p>
                 <p>Your provider account has been successfully created for {validation.ShopName}.</p>
-                <p>You can now log in to your Provider Portal to:</p>
+                <p>You can now log in to your Consignor Portal to:</p>
                 <ul>
                     <li>View your consigned items</li>
                     <li>Track sales and earnings</li>
@@ -824,10 +824,10 @@ public class RegistrationService : IRegistrationService
                 _logger.LogInformation("[PROVIDER_INVITATION] Sending shop owner notification to {OwnerEmail} about new provider {ProviderEmail}",
                     ownerUser.Email, request.Email);
                 var ownerEmailBody = $@"
-                    <h2>Provider Joined Your Shop</h2>
+                    <h2>Consignor Joined Your Shop</h2>
                     <p>Hi {validation.ShopName},</p>
                     <p>{request.FullName} has successfully completed their registration and joined your shop.</p>
-                    <p><strong>Provider Details:</strong></p>
+                    <p><strong>Consignor Details:</strong></p>
                     <ul>
                         <li>Name: {request.FullName}</li>
                         <li>Email: {request.Email}</li>
@@ -838,7 +838,7 @@ public class RegistrationService : IRegistrationService
 
                 var ownerEmailResult = await _emailService.SendSimpleEmailAsync(
                     ownerUser.Email,
-                    $"New Provider Joined - {request.FullName}",
+                    $"New Consignor Joined - {request.FullName}",
                     ownerEmailBody);
                 _logger.LogInformation("[PROVIDER_INVITATION] Shop owner notification sent to {OwnerEmail}: {EmailResult}",
                     ownerUser.Email, ownerEmailResult);
@@ -849,7 +849,7 @@ public class RegistrationService : IRegistrationService
                     invitation.InvitedById, request.Email);
             }
 
-            _logger.LogInformation("[PROVIDER_INVITATION] Provider registration from invitation completed successfully for {Email} - provider number {ProviderNumber}",
+            _logger.LogInformation("[PROVIDER_INVITATION] Consignor registration from invitation completed successfully for {Email} - provider number {ConsignorNumber}",
                 request.Email, providerNumber);
 
             return new RegistrationResultDto
@@ -860,7 +860,7 @@ public class RegistrationService : IRegistrationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[PROVIDER_INVITATION] Provider registration from invitation failed for {Email}", request.Email);
+            _logger.LogError(ex, "[PROVIDER_INVITATION] Consignor registration from invitation failed for {Email}", request.Email);
             return new RegistrationResultDto
             {
                 Success = false,

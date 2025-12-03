@@ -58,7 +58,7 @@ public class ReportsController : ControllerBase
             {
                 StartDate = startDate ?? DateTime.UtcNow.AddDays(-30),
                 EndDate = endDate ?? DateTime.UtcNow,
-                ProviderIds = providerIds,
+                ConsignorIds = providerIds,
                 Categories = categories,
                 PaymentMethods = paymentMethods
             };
@@ -100,7 +100,7 @@ public class ReportsController : ControllerBase
             {
                 StartDate = startDate ?? DateTime.UtcNow.AddDays(-30),
                 EndDate = endDate ?? DateTime.UtcNow,
-                ProviderIds = providerIds,
+                ConsignorIds = providerIds,
                 Categories = categories,
                 PaymentMethods = paymentMethods
             };
@@ -200,7 +200,7 @@ public class ReportsController : ControllerBase
             // Export based on format
             var result = format.ToLower() == "csv"
                 ? await _csvExportService.ExportProviderPerformanceReportAsync(reportResult.Data)
-                : await _pdfReportGenerator.GenerateProviderPerformanceReportPdfAsync(reportResult.Data, $"Provider Performance Report ({filter.StartDate:yyyy-MM-dd} to {filter.EndDate:yyyy-MM-dd})");
+                : await _pdfReportGenerator.GenerateProviderPerformanceReportPdfAsync(reportResult.Data, $"Consignor Performance Report ({filter.StartDate:yyyy-MM-dd} to {filter.EndDate:yyyy-MM-dd})");
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -236,7 +236,7 @@ public class ReportsController : ControllerBase
             {
                 AgeThreshold = ageThreshold,
                 Categories = categories,
-                ProviderIds = providerIds,
+                ConsignorIds = providerIds,
                 MinPrice = minPrice,
                 MaxPrice = maxPrice
             };
@@ -278,7 +278,7 @@ public class ReportsController : ControllerBase
             {
                 AgeThreshold = ageThreshold,
                 Categories = categories,
-                ProviderIds = providerIds,
+                ConsignorIds = providerIds,
                 MinPrice = minPrice,
                 MaxPrice = maxPrice
             };
@@ -326,7 +326,7 @@ public class ReportsController : ControllerBase
             {
                 StartDate = startDate ?? DateTime.UtcNow.AddDays(-30),
                 EndDate = endDate ?? DateTime.UtcNow,
-                ProviderIds = providerIds,
+                ConsignorIds = providerIds,
                 Status = status
             };
 
@@ -366,7 +366,7 @@ public class ReportsController : ControllerBase
             {
                 StartDate = startDate ?? DateTime.UtcNow.AddDays(-30),
                 EndDate = endDate ?? DateTime.UtcNow,
-                ProviderIds = providerIds,
+                ConsignorIds = providerIds,
                 Status = status
             };
 

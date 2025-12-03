@@ -62,7 +62,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    // Provider Registration endpoints
+    // Consignor Registration endpoints
     [HttpGet("validate-store-code/{code}")]
     public async Task<ActionResult<ApiResponse<StoreCodeValidationResponseDto>>> ValidateStoreCode(string code)
     {
@@ -91,7 +91,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("provider/register")]
-    public async Task<ActionResult<ApiResponse<ProviderRegistrationResponseDto>>> RegisterProvider([FromBody] RegisterProviderRequest request)
+    public async Task<ActionResult<ApiResponse<ProviderRegistrationResponseDto>>> RegisterConsignor([FromBody] RegisterProviderRequest request)
     {
         try
         {
@@ -105,27 +105,27 @@ public class AuthController : ControllerBase
             }
 
             // Check if provider already exists
-            var existingProvider = await _unitOfWork.Providers
+            var existingProvider = await _unitOfWork.Consignors
                 .GetAsync(p => p.Email == request.Email && p.OrganizationId == organization.Id);
 
             if (existingProvider != null)
             {
-                return BadRequest(ApiResponse<ProviderRegistrationResponseDto>.ErrorResult("Provider with this email already exists"));
+                return BadRequest(ApiResponse<ProviderRegistrationResponseDto>.ErrorResult("Consignor with this email already exists"));
             }
 
             // Create provider registration request (pending approval)
-            var provider = new ConsignmentGenie.Core.Entities.Provider
+            var provider = new ConsignmentGenie.Core.Entities.Consignor
             {
                 OrganizationId = organization.Id,
                 Email = request.Email,
                 DisplayName = request.FullName,
                 Phone = request.Phone,
                 CommissionRate = 50.00m, // Default rate, owner can change
-                Status = ConsignmentGenie.Core.Enums.ProviderStatus.Pending,
+                Status = ConsignmentGenie.Core.Enums.ConsignorStatus.Pending,
                 PortalAccess = false
             };
 
-            await _unitOfWork.Providers.AddAsync(provider);
+            await _unitOfWork.Consignors.AddAsync(provider);
             await _unitOfWork.SaveChangesAsync();
 
             // TODO: Send email notification to shop owner about pending approval
@@ -133,10 +133,10 @@ public class AuthController : ControllerBase
 
             var response = new ProviderRegistrationResponseDto
             {
-                ProviderId = provider.Id,
+                ConsignorId = provider.Id,
                 Message = "Registration submitted successfully. You will receive an email when approved."
             };
-            return Ok(ApiResponse<ProviderRegistrationResponseDto>.SuccessResult(response, "Provider registration submitted"));
+            return Ok(ApiResponse<ProviderRegistrationResponseDto>.SuccessResult(response, "Consignor registration submitted"));
         }
         catch (Exception ex)
         {
@@ -151,7 +151,7 @@ public class AuthController : ControllerBase
         try
         {
             // Find provider by email and invite code
-            var provider = await _unitOfWork.Providers
+            var provider = await _unitOfWork.Consignors
                 .GetAsync(p => p.Email == request.Email && p.InviteCode == request.InviteCode,
                     includeProperties: "Organization");
 
@@ -159,7 +159,7 @@ public class AuthController : ControllerBase
                 return BadRequest(ApiResponse<LoginResponse>.ErrorResult("Invalid email or invite code"));
 
             if (provider.UserId != null)
-                return BadRequest(ApiResponse<LoginResponse>.ErrorResult("Provider account already set up"));
+                return BadRequest(ApiResponse<LoginResponse>.ErrorResult("Consignor account already set up"));
 
             if (provider.InviteExpiry.HasValue && provider.InviteExpiry < DateTime.UtcNow)
                 return BadRequest(ApiResponse<LoginResponse>.ErrorResult("Invite code has expired"));
@@ -169,7 +169,7 @@ public class AuthController : ControllerBase
             {
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                Role = ConsignmentGenie.Core.Enums.UserRole.Provider,
+                Role = ConsignmentGenie.Core.Enums.UserRole.Consignor,
                 OrganizationId = provider.OrganizationId,
             };
 
@@ -181,9 +181,9 @@ public class AuthController : ControllerBase
             provider.PortalAccess = true;
             provider.InviteCode = null; // Clear invite code
             provider.InviteExpiry = null;
-            provider.Status = ConsignmentGenie.Core.Enums.ProviderStatus.Active;
+            provider.Status = ConsignmentGenie.Core.Enums.ConsignorStatus.Active;
 
-            await _unitOfWork.Providers.UpdateAsync(provider);
+            await _unitOfWork.Consignors.UpdateAsync(provider);
             await _unitOfWork.SaveChangesAsync();
 
             // Generate JWT token
@@ -199,7 +199,7 @@ public class AuthController : ControllerBase
                 OrganizationName = provider.Organization.Name
             };
 
-            return Ok(ApiResponse<LoginResponse>.SuccessResult(response, "Provider account setup successful"));
+            return Ok(ApiResponse<LoginResponse>.SuccessResult(response, "Consignor account setup successful"));
         }
         catch (Exception ex)
         {
@@ -214,7 +214,7 @@ public class AuthController : ControllerBase
         try
         {
             // Find provider by email
-            var provider = await _unitOfWork.Providers
+            var provider = await _unitOfWork.Consignors
                 .GetAsync(p => p.Email == request.Email,
                     includeProperties: "Organization,User");
 

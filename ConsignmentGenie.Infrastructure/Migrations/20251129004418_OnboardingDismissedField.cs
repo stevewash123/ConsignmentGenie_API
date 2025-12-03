@@ -26,7 +26,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 values: new object[] { new DateTime(2025, 11, 29, 0, 44, 15, 813, DateTimeKind.Utc).AddTicks(9594), false, new DateTime(2025, 11, 29, 0, 44, 15, 813, DateTimeKind.Utc).AddTicks(9595) });
 
             migrationBuilder.UpdateData(
-                table: "Providers",
+                table: "Consignors",
                 keyColumn: "Id",
                 keyValue: new Guid("66666666-6666-6666-6666-666666666666"),
                 columns: new[] { "CreatedAt", "UpdatedAt" },
@@ -76,7 +76,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                 values: new object[] { new DateTime(2025, 11, 25, 19, 56, 48, 723, DateTimeKind.Utc).AddTicks(3693), new DateTime(2025, 11, 25, 19, 56, 48, 723, DateTimeKind.Utc).AddTicks(3695) });
 
             migrationBuilder.UpdateData(
-                table: "Providers",
+                table: "Consignors",
                 keyColumn: "Id",
                 keyValue: new Guid("66666666-6666-6666-6666-666666666666"),
                 columns: new[] { "CreatedAt", "UpdatedAt" },

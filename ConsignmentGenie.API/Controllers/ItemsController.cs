@@ -32,7 +32,7 @@ public class ItemsController : ControllerBase
         {
             var organizationId = GetOrganizationId();
             var query = _context.Items
-                .Include(i => i.Provider)
+                .Include(i => i.Consignor)
                 .Where(i => i.OrganizationId == organizationId);
 
             // Apply filters
@@ -51,9 +51,9 @@ public class ItemsController : ControllerBase
                 }
             }
 
-            if (queryParams.ProviderId.HasValue)
+            if (queryParams.ConsignorId.HasValue)
             {
-                query = query.Where(i => i.ProviderId == queryParams.ProviderId.Value);
+                query = query.Where(i => i.ConsignorId == queryParams.ConsignorId.Value);
             }
 
             if (!string.IsNullOrEmpty(queryParams.Category))
@@ -116,9 +116,9 @@ public class ItemsController : ControllerBase
                     PrimaryImageUrl = i.PrimaryImageUrl,
                     ReceivedDate = i.ReceivedDate.ToDateTime(TimeOnly.MinValue),
                     SoldDate = i.SoldDate.HasValue ? i.SoldDate.Value.ToDateTime(TimeOnly.MinValue) : null,
-                    ProviderId = i.ProviderId,
-                    ProviderName = i.Provider.DisplayName,
-                    CommissionRate = i.Provider.CommissionRate
+                    ConsignorId = i.ConsignorId,
+                    ConsignorName = i.Consignor.DisplayName,
+                    CommissionRate = i.Consignor.CommissionRate
                 })
                 .ToListAsync();
 
@@ -146,7 +146,7 @@ public class ItemsController : ControllerBase
         {
             var organizationId = GetOrganizationId();
             var item = await _context.Items
-                .Include(i => i.Provider)
+                .Include(i => i.Consignor)
                 .Include(i => i.Images.OrderBy(img => img.DisplayOrder))
                 .Include(i => i.Transaction)
                 .FirstOrDefaultAsync(i => i.Id == id && i.OrganizationId == organizationId);
@@ -159,9 +159,9 @@ public class ItemsController : ControllerBase
             var dto = new ItemDetailDto
             {
                 ItemId = item.Id,
-                ProviderId = item.ProviderId,
-                ProviderName = item.Provider.DisplayName,
-                CommissionRate = item.Provider.CommissionRate,
+                ConsignorId = item.ConsignorId,
+                ConsignorName = item.Consignor.DisplayName,
+                CommissionRate = item.Consignor.CommissionRate,
                 Sku = item.Sku,
                 Barcode = item.Barcode,
                 Title = item.Title,
@@ -176,8 +176,8 @@ public class ItemsController : ControllerBase
                 Price = item.Price,
                 OriginalPrice = item.OriginalPrice,
                 MinimumPrice = item.MinimumPrice,
-                ShopAmount = item.Price * (1 - item.Provider.CommissionRate / 100),
-                ProviderAmount = item.Price * (item.Provider.CommissionRate / 100),
+                ShopAmount = item.Price * (1 - item.Consignor.CommissionRate / 100),
+                ConsignorAmount = item.Price * (item.Consignor.CommissionRate / 100),
                 Status = item.Status,
                 StatusChangedAt = item.StatusChangedAt,
                 StatusChangedReason = item.StatusChangedReason,
@@ -220,8 +220,8 @@ public class ItemsController : ControllerBase
             var userId = GetUserId();
 
             // Validate provider belongs to organization
-            var provider = await _context.Providers
-                .FirstOrDefaultAsync(p => p.Id == request.ProviderId && p.OrganizationId == organizationId);
+            var provider = await _context.Consignors
+                .FirstOrDefaultAsync(p => p.Id == request.ConsignorId && p.OrganizationId == organizationId);
 
             if (provider == null)
             {
@@ -244,7 +244,7 @@ public class ItemsController : ControllerBase
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = organizationId,
-                ProviderId = request.ProviderId,
+                ConsignorId = request.ConsignorId,
                 Sku = sku,
                 Barcode = request.Barcode,
                 Title = request.Title,
@@ -280,15 +280,15 @@ public class ItemsController : ControllerBase
 
             // Reload with provider info for response
             var savedItem = await _context.Items
-                .Include(i => i.Provider)
+                .Include(i => i.Consignor)
                 .FirstAsync(i => i.Id == item.Id);
 
             var dto = new ItemDetailDto
             {
                 ItemId = savedItem.Id,
-                ProviderId = savedItem.ProviderId,
-                ProviderName = savedItem.Provider.DisplayName,
-                CommissionRate = savedItem.Provider.CommissionRate,
+                ConsignorId = savedItem.ConsignorId,
+                ConsignorName = savedItem.Consignor.DisplayName,
+                CommissionRate = savedItem.Consignor.CommissionRate,
                 Sku = savedItem.Sku,
                 Barcode = savedItem.Barcode,
                 Title = savedItem.Title,
@@ -303,8 +303,8 @@ public class ItemsController : ControllerBase
                 Price = savedItem.Price,
                 OriginalPrice = savedItem.OriginalPrice,
                 MinimumPrice = savedItem.MinimumPrice,
-                ShopAmount = savedItem.Price * (1 - savedItem.Provider.CommissionRate / 100),
-                ProviderAmount = savedItem.Price * (savedItem.Provider.CommissionRate / 100),
+                ShopAmount = savedItem.Price * (1 - savedItem.Consignor.CommissionRate / 100),
+                ConsignorAmount = savedItem.Price * (savedItem.Consignor.CommissionRate / 100),
                 Status = savedItem.Status,
                 StatusChangedAt = savedItem.StatusChangedAt,
                 StatusChangedReason = savedItem.StatusChangedReason,
@@ -386,7 +386,7 @@ public class ItemsController : ControllerBase
             var userId = GetUserId();
 
             var item = await _context.Items
-                .Include(i => i.Provider)
+                .Include(i => i.Consignor)
                 .FirstOrDefaultAsync(i => i.Id == id && i.OrganizationId == organizationId);
 
             if (item == null)
@@ -395,8 +395,8 @@ public class ItemsController : ControllerBase
             }
 
             // Validate provider belongs to organization
-            var provider = await _context.Providers
-                .FirstOrDefaultAsync(p => p.Id == request.ProviderId && p.OrganizationId == organizationId);
+            var provider = await _context.Consignors
+                .FirstOrDefaultAsync(p => p.Id == request.ConsignorId && p.OrganizationId == organizationId);
 
             if (provider == null)
             {
@@ -416,7 +416,7 @@ public class ItemsController : ControllerBase
             }
 
             // Update item properties
-            item.ProviderId = request.ProviderId;
+            item.ConsignorId = request.ConsignorId;
             item.Sku = request.Sku ?? item.Sku;
             item.Barcode = request.Barcode;
             item.Title = request.Title;

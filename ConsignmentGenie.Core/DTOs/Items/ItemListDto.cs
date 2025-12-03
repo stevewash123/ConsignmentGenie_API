@@ -16,8 +16,8 @@ public class ItemListDto
     public DateTime ReceivedDate { get; set; }
     public DateTime? SoldDate { get; set; }
 
-    // Provider info (denormalized for display)
-    public Guid ProviderId { get; set; }
-    public string ProviderName { get; set; } = string.Empty;
+    // Consignor info (denormalized for display)
+    public Guid ConsignorId { get; set; }
+    public string ConsignorName { get; set; } = string.Empty;
     public decimal CommissionRate { get; set; }
 }

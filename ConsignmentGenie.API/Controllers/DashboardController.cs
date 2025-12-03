@@ -107,7 +107,7 @@ public class DashboardController : ControllerBase
 
         var settings = new
         {
-            autoApproveProviders = organization.AutoApproveProviders,
+            autoApproveProviders = organization.AutoApproveConsignors,
             storeCodeEnabled = organization.StoreCodeEnabled,
             storeCode = organization.StoreCode
         };
@@ -128,17 +128,17 @@ public class DashboardController : ControllerBase
             return NotFound("Organization not found");
         }
 
-        organization.AutoApproveProviders = request.AutoApproveProviders;
+        organization.AutoApproveConsignors = request.AutoApproveConsignors;
         organization.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
         return Ok(new {
             success = true,
-            message = request.AutoApproveProviders
-                ? "Provider auto-approval enabled. New providers will be automatically approved."
-                : "Provider auto-approval disabled. New providers will require manual approval.",
-            data = new { autoApproveProviders = organization.AutoApproveProviders }
+            message = request.AutoApproveConsignors
+                ? "Consignor auto-approval enabled. New providers will be automatically approved."
+                : "Consignor auto-approval disabled. New providers will require manual approval.",
+            data = new { autoApproveProviders = organization.AutoApproveConsignors }
         });
     }
 
@@ -151,7 +151,7 @@ public class DashboardController : ControllerBase
         try
         {
             var organization = await _context.Organizations
-                .Include(o => o.Providers)
+                .Include(o => o.Consignors)
                 .Include(o => o.Items)
                 .FirstOrDefaultAsync(o => o.Id == organizationId);
 
@@ -162,9 +162,9 @@ public class DashboardController : ControllerBase
             }
 
             _logger.LogDebug("[ONBOARDING] Organization {OrganizationId} found: Name={OrganizationName}, OnboardingDismissed={OnboardingDismissed}, ProviderCount={ProviderCount}, ItemCount={ItemCount}, StoreEnabled={StoreEnabled}, StripeConnected={StripeConnected}, QuickBooksConnected={QuickBooksConnected}",
-                organizationId, organization.Name, organization.OnboardingDismissed, organization.Providers?.Count ?? 0, organization.Items?.Count ?? 0, organization.StoreEnabled, organization.StripeConnected, organization.QuickBooksConnected);
+                organizationId, organization.Name, organization.OnboardingDismissed, organization.Consignors?.Count ?? 0, organization.Items?.Count ?? 0, organization.StoreEnabled, organization.StripeConnected, organization.QuickBooksConnected);
 
-            var hasProviders = organization.Providers.Any();
+            var hasProviders = organization.Consignors.Any();
             var storefrontConfigured = organization.StoreEnabled ||
                                       organization.StripeConnected ||
                                       !string.IsNullOrEmpty(organization.ShopName);
@@ -257,5 +257,5 @@ public class DashboardController : ControllerBase
 
 public class UpdateAutoApproveRequest
 {
-    public bool AutoApproveProviders { get; set; }
+    public bool AutoApproveConsignors { get; set; }
 }

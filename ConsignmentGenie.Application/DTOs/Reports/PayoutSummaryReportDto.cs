@@ -7,7 +7,7 @@ public class PayoutSummaryReportDto
     public int ProvidersWithPending { get; set; }
     public decimal AveragePayoutAmount { get; set; }
     public List<PayoutChartPointDto> ChartData { get; set; } = new();
-    public List<PayoutSummaryLineDto> Providers { get; set; } = new();
+    public List<PayoutSummaryLineDto> Consignors { get; set; } = new();
 }
 
 public class PayoutChartPointDto
@@ -18,8 +18,8 @@ public class PayoutChartPointDto
 
 public class PayoutSummaryLineDto
 {
-    public Guid ProviderId { get; set; }
-    public string ProviderName { get; set; } = string.Empty;
+    public Guid ConsignorId { get; set; }
+    public string ConsignorName { get; set; } = string.Empty;
     public decimal TotalSales { get; set; }
     public decimal ProviderCut { get; set; }
     public decimal AlreadyPaid { get; set; }

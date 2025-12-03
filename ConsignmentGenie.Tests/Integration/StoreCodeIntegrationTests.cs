@@ -214,7 +214,7 @@ namespace ConsignmentGenie.Tests.Integration
             var providerRequest = new RegisterProviderRequest
             {
                 StoreCode = organization.StoreCode,
-                FullName = "Test Provider",
+                FullName = "Test Consignor",
                 Email = "provider@example.com",
                 Password = "SecurePassword123!"
             };

@@ -117,7 +117,7 @@ public class PdfReportGenerator : IPdfReportGenerator
 
                             row.RelativeItem().Border(1).Padding(10).Column(col =>
                             {
-                                col.Item().Text("Provider Payable").FontSize(10);
+                                col.Item().Text("Consignor Payable").FontSize(10);
                                 col.Item().Text($"${data.ProviderPayable:F2}").FontSize(16).SemiBold();
                             });
                         });
@@ -140,7 +140,7 @@ public class PdfReportGenerator : IPdfReportGenerator
                             {
                                 header.Cell().Element(CellStyle).Text("Date");
                                 header.Cell().Element(CellStyle).Text("Item");
-                                header.Cell().Element(CellStyle).Text("Provider");
+                                header.Cell().Element(CellStyle).Text("Consignor");
                                 header.Cell().Element(CellStyle).Text("Amount");
                                 header.Cell().Element(CellStyle).Text("Payment");
 
@@ -154,7 +154,7 @@ public class PdfReportGenerator : IPdfReportGenerator
                             {
                                 table.Cell().Element(CellStyle).Text(transaction.Date.ToString("MM/dd/yyyy"));
                                 table.Cell().Element(CellStyle).Text(transaction.ItemName);
-                                table.Cell().Element(CellStyle).Text(transaction.ProviderName);
+                                table.Cell().Element(CellStyle).Text(transaction.ConsignorName);
                                 table.Cell().Element(CellStyle).Text($"${transaction.SalePrice:F2}");
                                 table.Cell().Element(CellStyle).Text(transaction.PaymentMethod);
 
@@ -189,7 +189,7 @@ public class PdfReportGenerator : IPdfReportGenerator
                 page.Margin(2, Unit.Centimetre);
 
                 page.Header()
-                    .Text("Provider Performance Report")
+                    .Text("Consignor Performance Report")
                     .SemiBold().FontSize(20).FontColor(Colors.Blue.Medium);
 
                 page.Content()
@@ -214,7 +214,7 @@ public class PdfReportGenerator : IPdfReportGenerator
 
                             table.Header(header =>
                             {
-                                header.Cell().Element(CellStyle).Text("Provider");
+                                header.Cell().Element(CellStyle).Text("Consignor");
                                 header.Cell().Element(CellStyle).Text("Consigned");
                                 header.Cell().Element(CellStyle).Text("Sold");
                                 header.Cell().Element(CellStyle).Text("Available");
@@ -228,9 +228,9 @@ public class PdfReportGenerator : IPdfReportGenerator
                                 }
                             });
 
-                            foreach (var provider in data.Providers)
+                            foreach (var provider in data.Consignors)
                             {
-                                table.Cell().Element(CellStyle).Text(provider.ProviderName);
+                                table.Cell().Element(CellStyle).Text(provider.ConsignorName);
                                 table.Cell().Element(CellStyle).Text(provider.ItemsConsigned.ToString());
                                 table.Cell().Element(CellStyle).Text(provider.ItemsSold.ToString());
                                 table.Cell().Element(CellStyle).Text(provider.ItemsAvailable.ToString());
@@ -287,7 +287,7 @@ public class PdfReportGenerator : IPdfReportGenerator
                             {
                                 header.Cell().Element(CellStyle).Text("Item");
                                 header.Cell().Element(CellStyle).Text("SKU");
-                                header.Cell().Element(CellStyle).Text("Provider");
+                                header.Cell().Element(CellStyle).Text("Consignor");
                                 header.Cell().Element(CellStyle).Text("Price");
                                 header.Cell().Element(CellStyle).Text("Listed");
                                 header.Cell().Element(CellStyle).Text("Days");
@@ -303,7 +303,7 @@ public class PdfReportGenerator : IPdfReportGenerator
                             {
                                 table.Cell().Element(CellStyle).Text(item.Name);
                                 table.Cell().Element(CellStyle).Text(item.SKU);
-                                table.Cell().Element(CellStyle).Text(item.ProviderName);
+                                table.Cell().Element(CellStyle).Text(item.ConsignorName);
                                 table.Cell().Element(CellStyle).Text($"${item.Price:F0}");
                                 table.Cell().Element(CellStyle).Text(item.ListedDate.ToString("MM/dd/yyyy"));
                                 table.Cell().Element(CellStyle).Text(item.DaysListed.ToString());
@@ -354,7 +354,7 @@ public class PdfReportGenerator : IPdfReportGenerator
 
                             table.Header(header =>
                             {
-                                header.Cell().Element(CellStyle).Text("Provider");
+                                header.Cell().Element(CellStyle).Text("Consignor");
                                 header.Cell().Element(CellStyle).Text("Sales");
                                 header.Cell().Element(CellStyle).Text("Cut");
                                 header.Cell().Element(CellStyle).Text("Paid");
@@ -366,9 +366,9 @@ public class PdfReportGenerator : IPdfReportGenerator
                                 }
                             });
 
-                            foreach (var provider in data.Providers)
+                            foreach (var provider in data.Consignors)
                             {
-                                table.Cell().Element(CellStyle).Text(provider.ProviderName);
+                                table.Cell().Element(CellStyle).Text(provider.ConsignorName);
                                 table.Cell().Element(CellStyle).Text($"${provider.TotalSales:F0}");
                                 table.Cell().Element(CellStyle).Text($"${provider.ProviderCut:F0}");
                                 table.Cell().Element(CellStyle).Text($"${provider.AlreadyPaid:F0}");

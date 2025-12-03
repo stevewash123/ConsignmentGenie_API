@@ -16,7 +16,7 @@ namespace ConsignmentGenie.Tests.Controllers
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<ILogger<MobileController>> _mockLogger;
         private readonly Mock<IRepository<Item>> _mockItemRepository;
-        private readonly Mock<IRepository<Provider>> _mockProviderRepository;
+        private readonly Mock<IRepository<Consignor>> _mockProviderRepository;
         private readonly Mock<IRepository<Transaction>> _mockTransactionRepository;
         private readonly MobileController _controller;
         private readonly Guid _organizationId = Guid.NewGuid();
@@ -28,11 +28,11 @@ namespace ConsignmentGenie.Tests.Controllers
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockLogger = new Mock<ILogger<MobileController>>();
             _mockItemRepository = new Mock<IRepository<Item>>();
-            _mockProviderRepository = new Mock<IRepository<Provider>>();
+            _mockProviderRepository = new Mock<IRepository<Consignor>>();
             _mockTransactionRepository = new Mock<IRepository<Transaction>>();
 
             _mockUnitOfWork.Setup(u => u.Items).Returns(_mockItemRepository.Object);
-            _mockUnitOfWork.Setup(u => u.Providers).Returns(_mockProviderRepository.Object);
+            _mockUnitOfWork.Setup(u => u.Consignors).Returns(_mockProviderRepository.Object);
             _mockUnitOfWork.Setup(u => u.Transactions).Returns(_mockTransactionRepository.Object);
 
             _controller = new MobileController(_mockUnitOfWork.Object, _mockLogger.Object);
@@ -52,7 +52,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             if (providerId.HasValue)
             {
-                claims.Add(new("ProviderId", providerId.Value.ToString()));
+                claims.Add(new("ConsignorId", providerId.Value.ToString()));
             }
 
             var identity = new ClaimsIdentity(claims, "test");
@@ -98,8 +98,8 @@ namespace ConsignmentGenie.Tests.Controllers
             _mockItemRepository.Setup(i => i.CountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>()))
                 .ReturnsAsync(25);
 
-            _mockProviderRepository.Setup(p => p.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Provider, bool>>>(), "Items"))
-                .ReturnsAsync(new List<Provider>());
+            _mockProviderRepository.Setup(p => p.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Consignor, bool>>>(), "Items"))
+                .ReturnsAsync(new List<Consignor>());
 
             // Act
             var result = await _controller.GetMobileDashboard();
@@ -123,12 +123,12 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task GetMobileDashboard_WithProviderRole_ReturnsProviderDashboard()
         {
             // Arrange
-            SetupUserClaims("Provider", _providerId);
+            SetupUserClaims("Consignor", _providerId);
 
-            var provider = new Provider
+            var provider = new Consignor
             {
                 Id = _providerId,
-                DisplayName = "Test Provider",
+                DisplayName = "Test Consignor",
                 DefaultSplitPercentage = 60.0m,
                 Items = new List<Item>
                 {
@@ -138,7 +138,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Payouts = new List<Payout>()
             };
 
-            _mockProviderRepository.Setup(p => p.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Provider, bool>>>(), "Items,Payouts"))
+            _mockProviderRepository.Setup(p => p.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Consignor, bool>>>(), "Items,Payouts"))
                 .ReturnsAsync(provider);
 
             // Act
@@ -188,7 +188,7 @@ namespace ConsignmentGenie.Tests.Controllers
                     Sku = "SKU001",
                     Status = ItemStatus.Available,
                     UpdatedAt = DateTime.UtcNow,
-                    Provider = new Provider { DisplayName = "Provider 1" }
+                    Consignor = new Consignor { DisplayName = "Consignor 1" }
                 },
                 new Item
                 {
@@ -198,13 +198,13 @@ namespace ConsignmentGenie.Tests.Controllers
                     Sku = "SKU002",
                     Status = ItemStatus.Available,
                     UpdatedAt = DateTime.UtcNow.AddHours(-1),
-                    Provider = new Provider { DisplayName = "Provider 2" }
+                    Consignor = new Consignor { DisplayName = "Consignor 2" }
                 }
             };
 
             _mockItemRepository.Setup(i => i.GetAllAsync(
                 It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>(),
-                "Provider"))
+                "Consignor"))
                 .ReturnsAsync(items);
 
             // Act
@@ -234,8 +234,8 @@ namespace ConsignmentGenie.Tests.Controllers
                 Title = "Test Item",
                 Price = 100.00m,
                 Status = ItemStatus.Available,
-                ProviderId = _providerId,
-                Provider = new Provider
+                ConsignorId = _providerId,
+                Consignor = new Consignor
                 {
                     Id = _providerId,
                     CommissionRate = 60.0m,
@@ -251,7 +251,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             _mockItemRepository.Setup(i => i.GetAsync(
                 It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>(),
-                "Provider"))
+                "Consignor"))
                 .ReturnsAsync(item);
 
             _mockTransactionRepository.Setup(t => t.AddAsync(It.IsAny<Transaction>()))
@@ -295,7 +295,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             _mockItemRepository.Setup(i => i.GetAsync(
                 It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>(),
-                "Provider"))
+                "Consignor"))
                 .ReturnsAsync(item);
 
             // Act
@@ -321,17 +321,17 @@ namespace ConsignmentGenie.Tests.Controllers
                 Status = ItemStatus.Available,
                 Category = "Electronics",
                 CreatedAt = DateTime.UtcNow,
-                Provider = new Provider
+                Consignor = new Consignor
                 {
                     Id = _providerId,
-                    DisplayName = "Test Provider",
+                    DisplayName = "Test Consignor",
                     DefaultSplitPercentage = 60.0m
                 }
             };
 
             _mockItemRepository.Setup(i => i.GetAsync(
                 It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>(),
-                "Provider,Photos"))
+                "Consignor,Photos"))
                 .ReturnsAsync(item);
 
             // Act
@@ -358,7 +358,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             _mockItemRepository.Setup(i => i.GetAsync(
                 It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>(),
-                "Provider,Photos"))
+                "Consignor,Photos"))
                 .ReturnsAsync((Item)null);
 
             // Act
@@ -382,7 +382,7 @@ namespace ConsignmentGenie.Tests.Controllers
                     SaleDate = DateTime.UtcNow,
                     PaymentMethod = "Cash",
                     Item = new Item { Title = "Test Item 1" },
-                    Provider = new Provider { DisplayName = "Provider 1" }
+                    Consignor = new Consignor { DisplayName = "Consignor 1" }
                 },
                 new Transaction
                 {
@@ -391,13 +391,13 @@ namespace ConsignmentGenie.Tests.Controllers
                     SaleDate = DateTime.UtcNow.AddHours(-1),
                     PaymentMethod = "Card",
                     Item = new Item { Title = "Test Item 2" },
-                    Provider = new Provider { DisplayName = "Provider 2" }
+                    Consignor = new Consignor { DisplayName = "Consignor 2" }
                 }
             };
 
             _mockTransactionRepository.Setup(t => t.GetAllAsync(
                 It.IsAny<System.Linq.Expressions.Expression<Func<Transaction, bool>>>(),
-                "Item,Provider"))
+                "Item,Consignor"))
                 .ReturnsAsync(transactions);
 
             // Act
@@ -425,7 +425,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = itemId,
                 Status = ItemStatus.Available,
-                ProviderId = _providerId
+                ConsignorId = _providerId
             };
 
             var request = new OfflineSyncRequest
@@ -437,7 +437,7 @@ namespace ConsignmentGenie.Tests.Controllers
                         ItemId = itemId,
                         Amount = 100.00m,
                         ShopAmount = 40.00m,
-                        ProviderAmount = 60.00m,
+                        ConsignorAmount = 60.00m,
                         SaleDate = DateTime.UtcNow,
                         PaymentMethod = "Cash"
                     }
@@ -488,7 +488,7 @@ namespace ConsignmentGenie.Tests.Controllers
                         ItemId = itemId,
                         Amount = 100.00m,
                         ShopAmount = 40.00m,
-                        ProviderAmount = 60.00m,
+                        ConsignorAmount = 60.00m,
                         SaleDate = DateTime.UtcNow,
                         PaymentMethod = "Cash"
                     }

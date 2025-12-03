@@ -67,17 +67,17 @@ namespace ConsignmentGenie.Tests.Controllers
             _context.Organizations.Add(organization);
 
             // Add provider
-            var provider = new Provider
+            var provider = new Consignor
             {
                 Id = _providerId,
                 OrganizationId = _organizationId,
-                DisplayName = "Test Provider",
+                DisplayName = "Test Consignor",
                 Email = "provider@test.com",
                 DefaultSplitPercentage = 60.0m,
-                Status = ProviderStatus.Active,
+                Status = ConsignorStatus.Active,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Providers.Add(provider);
+            _context.Consignors.Add(provider);
 
             // Add category
             var category = new Category
@@ -94,7 +94,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 Sku = "ITEM001",
                 Title = "Test Item 1",
                 Description = "A test item",
@@ -110,7 +110,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 Sku = "ITEM002",
                 Title = "Test Item 2",
                 Description = "Another test item",
@@ -197,7 +197,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var createRequest = new CreateItemRequest
             {
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 Title = "New Test Item",
                 Description = "A new test item",
                 Category = "Clothing",
@@ -230,8 +230,8 @@ namespace ConsignmentGenie.Tests.Controllers
             var invalidProviderId = Guid.NewGuid();
             var createRequest = new CreateItemRequest
             {
-                ProviderId = invalidProviderId,
-                Title = "Invalid Provider Item",
+                ConsignorId = invalidProviderId,
+                Title = "Invalid Consignor Item",
                 Description = "This should fail",
                 Category = "Clothing",
                 Condition = ItemCondition.Good,
@@ -281,7 +281,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 Sku = "TEST-00001",
                 Title = "Existing Test Item",
                 Price = 10.00m,

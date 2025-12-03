@@ -13,7 +13,7 @@ public class UnitOfWork : IUnitOfWork
         _context = context;
         Users = new Repository<User>(_context);
         Organizations = new Repository<Organization>(_context);
-        Providers = new Repository<Provider>(_context);
+        Consignors = new Repository<Consignor>(_context);
         Items = new Repository<Item>(_context);
         Transactions = new Repository<Transaction>(_context);
         Payouts = new Repository<Payout>(_context);
@@ -30,7 +30,7 @@ public class UnitOfWork : IUnitOfWork
 
     public IRepository<User> Users { get; private set; }
     public IRepository<Organization> Organizations { get; private set; }
-    public IRepository<Provider> Providers { get; private set; }
+    public IRepository<Consignor> Consignors { get; private set; }
     public IRepository<Item> Items { get; private set; }
     public IRepository<Transaction> Transactions { get; private set; }
     public IRepository<Payout> Payouts { get; private set; }

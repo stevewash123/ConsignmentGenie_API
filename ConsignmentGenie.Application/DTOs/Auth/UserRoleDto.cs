@@ -55,7 +55,7 @@ public class UserContextDto
     /// Get all organizations where user is a provider
     /// </summary>
     public List<Guid> GetProviderOrganizations() =>
-        Roles.Where(r => r.Role == UserRole.Provider && r.IsActive && r.OrganizationId.HasValue)
+        Roles.Where(r => r.Role == UserRole.Consignor && r.IsActive && r.OrganizationId.HasValue)
              .Select(r => r.OrganizationId!.Value)
              .ToList();
 }

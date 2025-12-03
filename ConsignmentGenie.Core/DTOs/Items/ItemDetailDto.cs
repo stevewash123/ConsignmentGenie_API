@@ -6,8 +6,8 @@ namespace ConsignmentGenie.Core.DTOs.Items;
 public class ItemDetailDto
 {
     public Guid ItemId { get; set; }
-    public Guid ProviderId { get; set; }
-    public string ProviderName { get; set; } = string.Empty;
+    public Guid ConsignorId { get; set; }
+    public string ConsignorName { get; set; } = string.Empty;
     public decimal CommissionRate { get; set; }
 
     // Identification
@@ -32,7 +32,7 @@ public class ItemDetailDto
 
     // Calculated
     public decimal ShopAmount { get; set; }      // Price * (1 - CommissionRate)
-    public decimal ProviderAmount { get; set; }  // Price * CommissionRate
+    public decimal ConsignorAmount { get; set; }  // Price * CommissionRate
 
     // Status
     public ItemStatus Status { get; set; }

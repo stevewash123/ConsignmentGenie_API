@@ -56,7 +56,7 @@ namespace ConsignmentGenie.Tests.Services
                 ShopName = "Test Shop",
                 StoreCode = "1234",
                 StoreCodeEnabled = true,
-                AutoApproveProviders = false,
+                AutoApproveConsignors = false,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -70,7 +70,7 @@ namespace ConsignmentGenie.Tests.Services
                 ShopName = "Auto Approve Shop",
                 StoreCode = "5678",
                 StoreCodeEnabled = true,
-                AutoApproveProviders = true,
+                AutoApproveConsignors = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -108,8 +108,8 @@ namespace ConsignmentGenie.Tests.Services
                 Id = new Guid("55555555-5555-5555-5555-555555555555"),
                 Email = "pending.provider@test.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
-                FullName = "Pending Provider",
-                Role = UserRole.Provider,
+                FullName = "Pending Consignor",
+                Role = UserRole.Consignor,
                 OrganizationId = _organizationId,
                 ApprovalStatus = ApprovalStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
@@ -262,7 +262,7 @@ namespace ConsignmentGenie.Tests.Services
             var request = new RegisterProviderRequest
             {
                 StoreCode = "1234",
-                FullName = "New Provider",
+                FullName = "New Consignor",
                 Email = "newprovider@test.com",
                 Password = "SecurePassword123!",
                 Phone = "555-987-6543",
@@ -280,8 +280,8 @@ namespace ConsignmentGenie.Tests.Services
             // Verify user was created
             var createdUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "newprovider@test.com");
             Assert.NotNull(createdUser);
-            Assert.Equal("New Provider", createdUser.FullName);
-            Assert.Equal(UserRole.Provider, createdUser.Role);
+            Assert.Equal("New Consignor", createdUser.FullName);
+            Assert.Equal(UserRole.Consignor, createdUser.Role);
             Assert.Equal(ApprovalStatus.Pending, createdUser.ApprovalStatus);
             Assert.Equal(_organizationId, createdUser.OrganizationId);
 
@@ -294,7 +294,7 @@ namespace ConsignmentGenie.Tests.Services
 
             _mockEmailService.Verify(e => e.SendSimpleEmailAsync(
                 "existing@test.com",
-                "New Provider Request - New Provider",
+                "New Consignor Request - New Consignor",
                 It.IsAny<string>(),
                 true), Times.Once);
         }
@@ -309,7 +309,7 @@ namespace ConsignmentGenie.Tests.Services
             var request = new RegisterProviderRequest
             {
                 StoreCode = "5678", // Auto-approve organization
-                FullName = "Auto Provider",
+                FullName = "Auto Consignor",
                 Email = "autoprovider@test.com",
                 Password = "SecurePassword123!",
                 PreferredPaymentMethod = "Check"
@@ -328,9 +328,9 @@ namespace ConsignmentGenie.Tests.Services
             Assert.Equal(ApprovalStatus.Approved, createdUser.ApprovalStatus);
 
             // Verify provider record was created
-            var createdProvider = await _context.Providers.FirstOrDefaultAsync(p => p.UserId == createdUser.Id);
+            var createdProvider = await _context.Consignors.FirstOrDefaultAsync(p => p.UserId == createdUser.Id);
             Assert.NotNull(createdProvider);
-            Assert.Equal(ProviderStatus.Active, createdProvider.Status);
+            Assert.Equal(ConsignorStatus.Active, createdProvider.Status);
             Assert.Equal("Approved", createdProvider.ApprovalStatus);
         }
 
@@ -341,7 +341,7 @@ namespace ConsignmentGenie.Tests.Services
             var request = new RegisterProviderRequest
             {
                 StoreCode = "INVALID",
-                FullName = "Provider Name",
+                FullName = "Consignor Name",
                 Email = "provider@test.com",
                 Password = "SecurePassword123!"
             };
@@ -362,7 +362,7 @@ namespace ConsignmentGenie.Tests.Services
 
             // Assert
             Assert.Single(result);
-            Assert.Equal("Pending Provider", result[0].FullName);
+            Assert.Equal("Pending Consignor", result[0].FullName);
             Assert.Equal("pending.provider@test.com", result[0].Email);
         }
 
@@ -397,9 +397,9 @@ namespace ConsignmentGenie.Tests.Services
             Assert.NotNull(approvedUser.ApprovedAt);
 
             // Verify provider record was created
-            var provider = await _context.Providers.FirstOrDefaultAsync(p => p.UserId == pendingUserId);
+            var provider = await _context.Consignors.FirstOrDefaultAsync(p => p.UserId == pendingUserId);
             Assert.NotNull(provider);
-            Assert.Equal(ProviderStatus.Active, provider.Status);
+            Assert.Equal(ConsignorStatus.Active, provider.Status);
             Assert.Equal("Approved", provider.ApprovalStatus);
 
             // Verify email was sent

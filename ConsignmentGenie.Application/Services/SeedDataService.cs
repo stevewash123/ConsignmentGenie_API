@@ -40,7 +40,7 @@ public class SeedDataService
         // Clear existing seed data if any
         await ClearExistingDemoData(orgId);
 
-        // Create Users and Providers
+        // Create Users and Consignors
         var providers = await CreateProvidersWithUsers(orgId);
 
         // Create Items
@@ -65,13 +65,13 @@ public class SeedDataService
         var existingItems = await _context.Items.Where(i => i.OrganizationId == orgId).ToListAsync();
         _context.Items.RemoveRange(existingItems);
 
-        var existingProviders = await _context.Providers.Where(p => p.OrganizationId == orgId).ToListAsync();
+        var existingProviders = await _context.Consignors.Where(p => p.OrganizationId == orgId).ToListAsync();
         var providerUserIds = existingProviders.Where(p => p.UserId.HasValue).Select(p => p.UserId.Value).ToList();
-        _context.Providers.RemoveRange(existingProviders);
+        _context.Consignors.RemoveRange(existingProviders);
 
         // Remove provider users (but not owners)
         var providerUsers = await _context.Users
-            .Where(u => providerUserIds.Contains(u.Id) && u.Role == UserRole.Provider)
+            .Where(u => providerUserIds.Contains(u.Id) && u.Role == UserRole.Consignor)
             .ToListAsync();
         _context.Users.RemoveRange(providerUsers);
 
@@ -79,9 +79,9 @@ public class SeedDataService
         _logger.LogInformation("Cleared existing demo data");
     }
 
-    private async Task<List<Provider>> CreateProvidersWithUsers(Guid orgId)
+    private async Task<List<Consignor>> CreateProvidersWithUsers(Guid orgId)
     {
-        var providers = new List<Provider>();
+        var providers = new List<Consignor>();
         var users = new List<User>();
 
         var providerData = new[]
@@ -108,7 +108,7 @@ public class SeedDataService
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("provider123"), // Demo password
                 FullName = $"{firstName} {lastName}",
                 Phone = phone,
-                Role = UserRole.Provider,
+                Role = UserRole.Consignor,
                 OrganizationId = orgId,
                 ApprovalStatus = ApprovalStatus.Approved,
                 ApprovedAt = DateTime.UtcNow.AddDays(-30 + i), // Approved at different times
@@ -117,13 +117,13 @@ public class SeedDataService
 
             users.Add(user);
 
-            // Create Provider record
-            var provider = new Provider
+            // Create Consignor record
+            var provider = new Consignor
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = orgId,
                 UserId = user.Id,
-                ProviderNumber = $"PRV-{(i + 1):D5}",
+                ConsignorNumber = $"PRV-{(i + 1):D5}",
                 FirstName = firstName,
                 LastName = lastName,
                 DisplayName = $"{firstName} {lastName}", // Compatibility field
@@ -140,7 +140,7 @@ public class SeedDataService
                 PaymentMethod = paymentMethod, // Compatibility field
                 PaymentDetails = paymentDetails,
                 BusinessName = !string.IsNullOrEmpty(businessName) ? businessName : null,
-                Status = isActive ? ProviderStatus.Active : ProviderStatus.Inactive,
+                Status = isActive ? ConsignorStatus.Active : ConsignorStatus.Inactive,
                 ApprovalStatus = "Approved",
                 ApprovedAt = DateTime.UtcNow.AddDays(-30 + i),
                 Notes = notes,
@@ -155,14 +155,14 @@ public class SeedDataService
         _context.Users.AddRange(users);
         await _context.SaveChangesAsync();
 
-        _context.Providers.AddRange(providers);
+        _context.Consignors.AddRange(providers);
         await _context.SaveChangesAsync();
 
         _logger.LogInformation($"Created {providers.Count} providers with user accounts");
         return providers;
     }
 
-    private async Task<List<Item>> CreateItems(Guid orgId, List<Provider> providers)
+    private async Task<List<Item>> CreateItems(Guid orgId, List<Consignor> providers)
     {
         var items = new List<Item>();
         var random = new Random(42); // Fixed seed for consistent data
@@ -226,7 +226,7 @@ public class SeedDataService
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = orgId,
-                ProviderId = provider.Id,
+                ConsignorId = provider.Id,
                 Sku = $"WA{1000 + i}",
                 Title = template.Item1,
                 Description = template.Item2,
@@ -257,7 +257,7 @@ public class SeedDataService
 
         foreach (var item in soldItems)
         {
-            var provider = await _context.Providers.FirstAsync(p => p.Id == item.ProviderId);
+            var provider = await _context.Consignors.FirstAsync(p => p.Id == item.ConsignorId);
 
             // Random sale date in last 60 days (weighted toward last 30)
             var daysAgo = random.NextDouble() < 0.65 ? random.Next(1, 31) : random.Next(31, 61);
@@ -275,17 +275,17 @@ public class SeedDataService
                 Id = Guid.NewGuid(),
                 OrganizationId = orgId,
                 ItemId = item.Id,
-                ProviderId = provider.Id,
+                ConsignorId = provider.Id,
                 SalePrice = salePrice,
                 SaleDate = saleDate,
                 PaymentMethod = paymentMethods[random.Next(paymentMethods.Length)],
-                ProviderSplitPercentage = provider.CommissionRate,
-                ProviderAmount = providerAmount,
+                ConsignorSplitPercentage = provider.CommissionRate,
+                ConsignorAmount = providerAmount,
                 ShopAmount = shopAmount,
                 SalesTaxAmount = salePrice * 0.0875m, // 8.75% sales tax
                 Notes = random.NextDouble() < 0.3 ? "Customer negotiated price" : null,
                 Source = "Manual", // MVP default
-                ProviderPaidOut = false // Will be set to true for some historical transactions
+                ConsignorPaidOut = false // Will be set to true for some historical transactions
             };
 
             transactions.Add(transaction);
@@ -298,14 +298,14 @@ public class SeedDataService
         return transactions;
     }
 
-    private async Task CreateHistoricalPayouts(Guid orgId, List<Provider> providers, List<Transaction> transactions)
+    private async Task CreateHistoricalPayouts(Guid orgId, List<Consignor> providers, List<Transaction> transactions)
     {
         var random = new Random(42);
 
         // Mark some older transactions as paid out (create payout history)
         var oldTransactions = transactions
             .Where(t => t.SaleDate < DateTime.UtcNow.AddDays(-35))
-            .GroupBy(t => t.ProviderId)
+            .GroupBy(t => t.ConsignorId)
             .Take(3) // Just a few providers
             .ToList();
 
@@ -316,8 +316,8 @@ public class SeedDataService
 
             foreach (var transaction in providerGroup)
             {
-                transaction.ProviderPaidOut = true;
-                transaction.ProviderPaidOutDate = payoutDate;
+                transaction.ConsignorPaidOut = true;
+                transaction.ConsignorPaidOutDate = payoutDate;
                 transaction.PayoutMethod = provider.PreferredPaymentMethod;
                 transaction.PayoutNotes = $"Monthly payout - {payoutDate:MMM yyyy}";
             }

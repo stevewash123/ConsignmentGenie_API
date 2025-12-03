@@ -44,7 +44,7 @@ public class StoreCodeValidationResponseDto
 
 public class ProviderRegistrationResponseDto
 {
-    public Guid ProviderId { get; set; }
+    public Guid ConsignorId { get; set; }
     public string Message { get; set; } = string.Empty;
 }
 

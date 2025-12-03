@@ -2,7 +2,7 @@ namespace ConsignmentGenie.Core.Enums;
 
 public enum NotificationType
 {
-    // Provider notifications
+    // Consignor notifications
     ProviderApproved,
     ProviderRejected,
     ItemSold,
@@ -41,7 +41,7 @@ public enum NotificationType
     System,
     Payment,
     Inventory,
-    Provider,
+    Consignor,
     Report
 }
 

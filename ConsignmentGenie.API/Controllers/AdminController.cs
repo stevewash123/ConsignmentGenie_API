@@ -84,7 +84,7 @@ public class AdminController : ControllerBase
             _context.Payouts.RemoveRange(_context.Payouts);
             _context.Items.RemoveRange(_context.Items);
             _context.ProviderInvitations.RemoveRange(_context.ProviderInvitations);
-            _context.Providers.RemoveRange(_context.Providers);
+            _context.Consignors.RemoveRange(_context.Consignors);
             _context.Users.RemoveRange(_context.Users);
             _context.Organizations.RemoveRange(_context.Organizations);
 
@@ -105,7 +105,7 @@ public class AdminController : ControllerBase
                 {
                     new TestAccountDto { Email = "admin@demoshop.com", Role = "Owner", Password = "password123", Store = "demo-shop" },
                     new TestAccountDto { Email = "owner@demoshop.com", Role = "Owner", Password = "password123", Store = "demo-shop" },
-                    new TestAccountDto { Email = "provider@demoshop.com", Role = "Provider", Password = "password123", Store = "demo-shop" },
+                    new TestAccountDto { Email = "provider@demoshop.com", Role = "Consignor", Password = "password123", Store = "demo-shop" },
                     new TestAccountDto { Email = "customer@demoshop.com", Role = "Customer", Password = "password123", Store = "demo-shop" }
                 },
                 CypressTestData = new
@@ -207,7 +207,7 @@ public class AdminController : ControllerBase
                 Id = providerUserId,
                 Email = "provider@demoshop.com",
                 PasswordHash = hashedPassword,
-                Role = ConsignmentGenie.Core.Enums.UserRole.Provider,
+                Role = ConsignmentGenie.Core.Enums.UserRole.Consignor,
                 OrganizationId = orgId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -256,30 +256,30 @@ public class AdminController : ControllerBase
         _context.Users.AddRange(users);
         _context.Users.AddRange(testUsers);
 
-        // Create Provider entity for the provider user
-        var provider = new ConsignmentGenie.Core.Entities.Provider
+        // Create Consignor entity for the provider user
+        var provider = new ConsignmentGenie.Core.Entities.Consignor
         {
             Id = providerId,
             UserId = providerUserId,
             OrganizationId = orgId,
-            DisplayName = "Demo Provider",
+            DisplayName = "Demo Consignor",
             Email = "provider@demoshop.com",
             Phone = "555-987-6543",
-            Address = "456 Provider Ave, Demo City, DC 12345",
+            Address = "456 Consignor Ave, Demo City, DC 12345",
             CommissionRate = 60.0m,
             PaymentMethod = "Check",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
-        // Create Test Provider for Cypress test items
+        // Create Test Consignor for Cypress test items
         var testProviderId = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc");
-        var testProvider = new ConsignmentGenie.Core.Entities.Provider
+        var testProvider = new ConsignmentGenie.Core.Entities.Consignor
         {
             Id = testProviderId,
             UserId = testUserId1, // Link to first test user
             OrganizationId = testOrgId,
-            DisplayName = "Cypress Test Provider",
+            DisplayName = "Cypress Test Consignor",
             Email = "cypress.shopper@example.com",
             Phone = "555-123-4567",
             Address = "123 Test St, Cypress City, CC 12345",
@@ -289,7 +289,7 @@ public class AdminController : ControllerBase
             UpdatedAt = DateTime.UtcNow
         };
 
-        _context.Providers.AddRange(provider, testProvider);
+        _context.Consignors.AddRange(provider, testProvider);
 
         // Create Test Items for Cypress tests
         var testItems = new[]
@@ -298,7 +298,7 @@ public class AdminController : ControllerBase
             {
                 Id = testItemId1,
                 OrganizationId = testOrgId,
-                ProviderId = testProviderId, // Use the test provider
+                ConsignorId = testProviderId, // Use the test provider
                 Sku = "CY-ELEC-001",
                 Title = "Cypress Test Electronics Item",
                 Description = "A test electronic item for Cypress tests",
@@ -318,7 +318,7 @@ public class AdminController : ControllerBase
             {
                 Id = testItemId2,
                 OrganizationId = testOrgId,
-                ProviderId = testProviderId, // Use the test provider
+                ConsignorId = testProviderId, // Use the test provider
                 Sku = "CY-CLOTH-001",
                 Title = "Cypress Test Clothing Item",
                 Description = "A test clothing item for Cypress tests",

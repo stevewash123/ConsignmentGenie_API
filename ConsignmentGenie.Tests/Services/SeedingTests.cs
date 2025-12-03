@@ -116,7 +116,7 @@ public class SeedingTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.Equal("provider1@microsaasbuilders.com", result.Email);
-        Assert.Equal(UserRole.Provider, result.Role);
+        Assert.Equal(UserRole.Consignor, result.Role);
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class SeedingTests : IDisposable
     public async Task SeedData_CreatesProviderEntity()
     {
         // Act
-        var provider = await _context.Providers
+        var provider = await _context.Consignors
             .Include(p => p.User)
             .FirstOrDefaultAsync();
 
@@ -152,9 +152,9 @@ public class SeedingTests : IDisposable
         Assert.Equal("Artist", provider.LastName);
         Assert.Equal("provider1@microsaasbuilders.com", provider.Email);
         Assert.Equal(0.6000m, provider.CommissionRate);
-        Assert.Equal(ProviderStatus.Active, provider.Status);
+        Assert.Equal(ConsignorStatus.Active, provider.Status);
         Assert.NotNull(provider.User);
-        Assert.Equal(UserRole.Provider, provider.User.Role);
+        Assert.Equal(UserRole.Consignor, provider.User.Role);
     }
 
     public void Dispose()

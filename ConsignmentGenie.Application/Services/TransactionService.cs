@@ -31,7 +31,7 @@ public class TransactionService : ITransactionService
     {
         var query = _context.Transactions
             .Include(t => t.Item)
-            .Include(t => t.Provider)
+            .Include(t => t.Consignor)
             .Where(t => t.OrganizationId == organizationId);
 
         // Apply filters
@@ -41,8 +41,8 @@ public class TransactionService : ITransactionService
         if (queryParams.EndDate.HasValue)
             query = query.Where(t => t.SaleDate <= queryParams.EndDate.Value);
 
-        if (queryParams.ProviderId.HasValue)
-            query = query.Where(t => t.ProviderId == queryParams.ProviderId.Value);
+        if (queryParams.ConsignorId.HasValue)
+            query = query.Where(t => t.ConsignorId == queryParams.ConsignorId.Value);
 
         if (!string.IsNullOrEmpty(queryParams.PaymentMethod))
             query = query.Where(t => t.PaymentMethod == queryParams.PaymentMethod);
@@ -56,8 +56,8 @@ public class TransactionService : ITransactionService
                 ? query.OrderBy(t => t.SalePrice)
                 : query.OrderByDescending(t => t.SalePrice),
             "provider" => queryParams.SortDirection?.ToLower() == "asc"
-                ? query.OrderBy(t => t.Provider.GetDisplayName())
-                : query.OrderByDescending(t => t.Provider.GetDisplayName()),
+                ? query.OrderBy(t => t.Consignor.GetDisplayName())
+                : query.OrderByDescending(t => t.Consignor.GetDisplayName()),
             "item" => queryParams.SortDirection?.ToLower() == "asc"
                 ? query.OrderBy(t => t.Item.Title)
                 : query.OrderByDescending(t => t.Item.Title),
@@ -79,8 +79,8 @@ public class TransactionService : ITransactionService
                 SalesTaxAmount = t.SalesTaxAmount,
                 PaymentMethod = t.PaymentMethod ?? string.Empty,
                 // Source removed for MVP - Phase 2+ feature
-                ProviderSplitPercentage = t.ProviderSplitPercentage,
-                ProviderAmount = t.ProviderAmount,
+                ConsignorSplitPercentage = t.ConsignorSplitPercentage,
+                ConsignorAmount = t.ConsignorAmount,
                 ShopAmount = t.ShopAmount,
                 Notes = t.Notes,
                 CreatedAt = t.CreatedAt,
@@ -92,11 +92,11 @@ public class TransactionService : ITransactionService
                     Description = t.Item.Description,
                     OriginalPrice = t.Item.Price
                 },
-                Provider = new ProviderSummaryDto
+                Consignor = new ProviderSummaryDto
                 {
-                    Id = t.Provider.Id,
-                    Name = t.Provider.GetDisplayName(),
-                    Email = t.Provider.Email
+                    Id = t.Consignor.Id,
+                    Name = t.Consignor.GetDisplayName(),
+                    Email = t.Consignor.Email
                 }
             })
             .ToListAsync(cancellationToken);
@@ -118,7 +118,7 @@ public class TransactionService : ITransactionService
     {
         var transaction = await _context.Transactions
             .Include(t => t.Item)
-            .Include(t => t.Provider)
+            .Include(t => t.Consignor)
             .FirstOrDefaultAsync(t => t.Id == transactionId && t.OrganizationId == organizationId, cancellationToken);
 
         if (transaction == null)
@@ -132,8 +132,8 @@ public class TransactionService : ITransactionService
             SalesTaxAmount = transaction.SalesTaxAmount,
             PaymentMethod = transaction.PaymentMethod ?? string.Empty,
             // Source removed for MVP - Phase 2+ feature
-            ProviderSplitPercentage = transaction.ProviderSplitPercentage,
-            ProviderAmount = transaction.ProviderAmount,
+            ConsignorSplitPercentage = transaction.ConsignorSplitPercentage,
+            ConsignorAmount = transaction.ConsignorAmount,
             ShopAmount = transaction.ShopAmount,
             Notes = transaction.Notes,
             CreatedAt = transaction.CreatedAt,
@@ -145,11 +145,11 @@ public class TransactionService : ITransactionService
                 Description = transaction.Item.Description,
                 OriginalPrice = transaction.Item.Price
             },
-            Provider = new ProviderSummaryDto
+            Consignor = new ProviderSummaryDto
             {
-                Id = transaction.Provider.Id,
-                Name = transaction.Provider.GetDisplayName(),
-                Email = transaction.Provider.Email
+                Id = transaction.Consignor.Id,
+                Name = transaction.Consignor.GetDisplayName(),
+                Email = transaction.Consignor.Email
             }
         };
     }
@@ -161,7 +161,7 @@ public class TransactionService : ITransactionService
     {
         // Validate item exists and is available
         var item = await _context.Items
-            .Include(i => i.Provider)
+            .Include(i => i.Consignor)
             .FirstOrDefaultAsync(i => i.Id == request.ItemId && i.OrganizationId == organizationId, cancellationToken);
 
         if (item == null)
@@ -171,9 +171,9 @@ public class TransactionService : ITransactionService
             throw new InvalidOperationException($"Item is not available for sale. Current status: {item.Status}");
 
         // Get provider's commission rate
-        var provider = item.Provider;
-        if (provider == null || provider.Status != ProviderStatus.Active)
-            throw new InvalidOperationException("Provider not found or inactive");
+        var provider = item.Consignor;
+        if (provider == null || provider.Status != ConsignorStatus.Active)
+            throw new InvalidOperationException("Consignor not found or inactive");
 
         // Calculate commission split
         var providerAmount = request.SalePrice * (provider.CommissionRate / 100);
@@ -185,14 +185,14 @@ public class TransactionService : ITransactionService
             Id = Guid.NewGuid(),
             OrganizationId = organizationId,
             ItemId = request.ItemId,
-            ProviderId = provider.Id,
+            ConsignorId = provider.Id,
             SalePrice = request.SalePrice,
             SaleDate = request.SaleDate ?? DateTime.UtcNow,
             // Source removed for MVP - defaults to "Manual"
             PaymentMethod = request.PaymentMethod,
             SalesTaxAmount = request.SalesTaxAmount,
-            ProviderSplitPercentage = provider.CommissionRate,
-            ProviderAmount = providerAmount,
+            ConsignorSplitPercentage = provider.CommissionRate,
+            ConsignorAmount = providerAmount,
             ShopAmount = shopAmount,
             Notes = request.Notes,
             CreatedAt = DateTime.UtcNow,
@@ -216,10 +216,10 @@ public class TransactionService : ITransactionService
                 {
                     OrganizationId = organizationId,
                     UserId = provider.UserId.Value,
-                ProviderId = provider.Id,
+                ConsignorId = provider.Id,
                 Type = NotificationType.ItemSold,
                 Title = "Item Sold! 🎉",
-                Message = $"Your item \"{item.Title}\" sold for {transaction.SalePrice:C}. Your cut: {transaction.ProviderAmount:C}",
+                Message = $"Your item \"{item.Title}\" sold for {transaction.SalePrice:C}. Your cut: {transaction.ConsignorAmount:C}",
                 RelatedEntityType = "Transaction",
                 RelatedEntityId = transaction.Id,
                 Metadata = new NotificationMetadata
@@ -227,7 +227,7 @@ public class TransactionService : ITransactionService
                     ItemTitle = item.Title,
                     ItemSku = item.Sku,
                     SalePrice = transaction.SalePrice,
-                    EarningsAmount = transaction.ProviderAmount
+                    EarningsAmount = transaction.ConsignorAmount
                 }
             });
             }
@@ -247,8 +247,8 @@ public class TransactionService : ITransactionService
             SalesTaxAmount = transaction.SalesTaxAmount,
             PaymentMethod = transaction.PaymentMethod ?? string.Empty,
             // Source removed for MVP - Phase 2+ feature
-            ProviderSplitPercentage = transaction.ProviderSplitPercentage,
-            ProviderAmount = transaction.ProviderAmount,
+            ConsignorSplitPercentage = transaction.ConsignorSplitPercentage,
+            ConsignorAmount = transaction.ConsignorAmount,
             ShopAmount = transaction.ShopAmount,
             Notes = transaction.Notes,
             CreatedAt = transaction.CreatedAt,
@@ -260,7 +260,7 @@ public class TransactionService : ITransactionService
                 Description = item.Description,
                 OriginalPrice = item.Price
             },
-            Provider = new ProviderSummaryDto
+            Consignor = new ProviderSummaryDto
             {
                 Id = provider.Id,
                 Name = provider.GetDisplayName(),
@@ -277,7 +277,7 @@ public class TransactionService : ITransactionService
     {
         var transaction = await _context.Transactions
             .Include(t => t.Item)
-            .Include(t => t.Provider)
+            .Include(t => t.Consignor)
             .FirstOrDefaultAsync(t => t.Id == transactionId && t.OrganizationId == organizationId, cancellationToken);
 
         if (transaction == null)
@@ -302,8 +302,8 @@ public class TransactionService : ITransactionService
             SalesTaxAmount = transaction.SalesTaxAmount,
             PaymentMethod = transaction.PaymentMethod ?? string.Empty,
             // Source removed for MVP - Phase 2+ feature
-            ProviderSplitPercentage = transaction.ProviderSplitPercentage,
-            ProviderAmount = transaction.ProviderAmount,
+            ConsignorSplitPercentage = transaction.ConsignorSplitPercentage,
+            ConsignorAmount = transaction.ConsignorAmount,
             ShopAmount = transaction.ShopAmount,
             Notes = transaction.Notes,
             CreatedAt = transaction.CreatedAt,
@@ -315,11 +315,11 @@ public class TransactionService : ITransactionService
                 Description = transaction.Item.Description,
                 OriginalPrice = transaction.Item.Price
             },
-            Provider = new ProviderSummaryDto
+            Consignor = new ProviderSummaryDto
             {
-                Id = transaction.Provider.Id,
-                Name = transaction.Provider.GetDisplayName(),
-                Email = transaction.Provider.Email
+                Id = transaction.Consignor.Id,
+                Name = transaction.Consignor.GetDisplayName(),
+                Email = transaction.Consignor.Email
             }
         };
     }
@@ -352,7 +352,7 @@ public class TransactionService : ITransactionService
         CancellationToken cancellationToken = default)
     {
         var query = _context.Transactions
-            .Include(t => t.Provider)
+            .Include(t => t.Consignor)
             .Where(t => t.OrganizationId == organizationId);
 
         // Apply filters
@@ -362,26 +362,26 @@ public class TransactionService : ITransactionService
         if (queryParams.EndDate.HasValue)
             query = query.Where(t => t.SaleDate <= queryParams.EndDate.Value);
 
-        if (queryParams.ProviderId.HasValue)
-            query = query.Where(t => t.ProviderId == queryParams.ProviderId.Value);
+        if (queryParams.ConsignorId.HasValue)
+            query = query.Where(t => t.ConsignorId == queryParams.ConsignorId.Value);
 
         var transactions = await query.ToListAsync(cancellationToken);
 
         var totalSales = transactions.Sum(t => t.SalePrice);
         var totalShopAmount = transactions.Sum(t => t.ShopAmount);
-        var totalProviderAmount = transactions.Sum(t => t.ProviderAmount);
+        var totalProviderAmount = transactions.Sum(t => t.ConsignorAmount);
         var totalTax = transactions.Sum(t => t.SalesTaxAmount ?? 0);
         var transactionCount = transactions.Count;
 
         var topProviders = transactions
-            .GroupBy(t => new { t.ProviderId, ProviderName = t.Provider.FirstName + " " + t.Provider.LastName })
+            .GroupBy(t => new { t.ConsignorId, ConsignorName = t.Consignor.FirstName + " " + t.Consignor.LastName })
             .Select(g => new ProviderSalesDto
             {
-                ProviderId = g.Key.ProviderId,
-                ProviderName = g.Key.ProviderName,
+                ConsignorId = g.Key.ConsignorId,
+                ConsignorName = g.Key.ConsignorName,
                 TransactionCount = g.Count(),
                 TotalSales = g.Sum(t => t.SalePrice),
-                TotalProviderAmount = g.Sum(t => t.ProviderAmount)
+                TotalProviderAmount = g.Sum(t => t.ConsignorAmount)
             })
             .OrderByDescending(p => p.TotalSales)
             .Take(10)

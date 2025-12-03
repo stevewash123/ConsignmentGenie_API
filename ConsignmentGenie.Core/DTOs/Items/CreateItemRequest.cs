@@ -6,7 +6,7 @@ namespace ConsignmentGenie.Core.DTOs.Items;
 public class CreateItemRequest
 {
     [Required]
-    public Guid ProviderId { get; set; }
+    public Guid ConsignorId { get; set; }
 
     public string? Sku { get; set; }              // Optional - auto-generate if empty
     public string? Barcode { get; set; }

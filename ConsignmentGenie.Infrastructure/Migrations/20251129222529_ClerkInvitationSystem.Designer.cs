@@ -579,7 +579,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<Guid>("ProviderId")
+                    b.Property<Guid>("ConsignorId")
                         .HasColumnType("uuid");
 
                     b.Property<DateOnly>("ReceivedDate")
@@ -626,7 +626,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("ItemCategoryId");
 
-                    b.HasIndex("ProviderId");
+                    b.HasIndex("ConsignorId");
 
                     b.HasIndex("UpdatedBy");
 
@@ -817,7 +817,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ProviderId")
+                    b.Property<Guid?>("ConsignorId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ReadAt")
@@ -852,7 +852,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.HasIndex("ProviderId");
+                    b.HasIndex("ConsignorId");
 
                     b.HasIndex("Type");
 
@@ -1076,7 +1076,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProviderId")
+                    b.Property<Guid>("ConsignorId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("SplitPercentage")
@@ -1091,7 +1091,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.HasIndex("ProviderId");
+                    b.HasIndex("ConsignorId");
 
                     b.HasIndex("OrderId", "ItemId")
                         .IsUnique();
@@ -1105,7 +1105,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("AutoApproveProviders")
+                    b.Property<bool>("AutoApproveConsignors")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("CloudinaryConnected")
@@ -1353,7 +1353,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            AutoApproveProviders = true,
+                            AutoApproveConsignors = true,
                             CloudinaryConnected = false,
                             CreatedAt = new DateTime(2025, 11, 29, 22, 25, 27, 505, DateTimeKind.Utc).AddTicks(7769),
                             Currency = "USD",
@@ -1466,7 +1466,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Provider")
+                    b.Property<string>("Consignor")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -1476,7 +1476,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "IsDefault");
 
-                    b.HasIndex("OrganizationId", "Provider", "IsActive");
+                    b.HasIndex("OrganizationId", "Consignor", "IsActive");
 
                     b.ToTable("PaymentGatewayConnections");
                 });
@@ -1525,7 +1525,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<DateTime>("PeriodStart")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ProviderId")
+                    b.Property<Guid>("ConsignorId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("QuickBooksBillId")
@@ -1545,12 +1545,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.HasIndex("ProviderId", "PeriodStart", "PeriodEnd");
+                    b.HasIndex("ConsignorId", "PeriodStart", "PeriodEnd");
 
                     b.ToTable("Payouts");
                 });
 
-            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Provider", b =>
+            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1658,7 +1658,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("ProviderNumber")
+                    b.Property<string>("ConsignorNumber")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
@@ -1711,12 +1711,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "Email")
                         .IsUnique();
 
-                    b.HasIndex("OrganizationId", "ProviderNumber")
+                    b.HasIndex("OrganizationId", "ConsignorNumber")
                         .IsUnique();
 
                     b.HasIndex("OrganizationId", "Status");
 
-                    b.ToTable("Providers");
+                    b.ToTable("Consignors");
 
                     b.HasData(
                         new
@@ -1730,7 +1730,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
                             Phone = "(555) 123-4567",
                             PortalAccess = false,
-                            ProviderNumber = "PRV-00001",
+                            ConsignorNumber = "PRV-00001",
                             Status = 1,
                             UpdatedAt = new DateTime(2025, 11, 29, 22, 25, 28, 42, DateTimeKind.Utc).AddTicks(9656),
                             UserId = new Guid("44444444-4444-4444-4444-444444444444")
@@ -2067,7 +2067,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<DateOnly>("PeriodStart")
                         .HasColumnType("date");
 
-                    b.Property<Guid>("ProviderId")
+                    b.Property<Guid>("ConsignorId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("StatementNumber")
@@ -2099,12 +2099,12 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.HasIndex("ProviderId");
+                    b.HasIndex("ConsignorId");
 
-                    b.HasIndex("ProviderId", "PeriodStart")
+                    b.HasIndex("ConsignorId", "PeriodStart")
                         .IsDescending();
 
-                    b.HasIndex("OrganizationId", "ProviderId", "PeriodStart")
+                    b.HasIndex("OrganizationId", "ConsignorId", "PeriodStart")
                         .IsUnique();
 
                     b.ToTable("Statements");
@@ -2273,19 +2273,19 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Property<Guid?>("ProcessedByUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<decimal>("ProviderAmount")
+                    b.Property<decimal>("ConsignorAmount")
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<Guid>("ProviderId")
+                    b.Property<Guid>("ConsignorId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("ProviderPaidOut")
+                    b.Property<bool>("ConsignorPaidOut")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("ProviderPaidOutDate")
+                    b.Property<DateTime?>("ConsignorPaidOutDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("ProviderSplitPercentage")
+                    b.Property<decimal>("ConsignorSplitPercentage")
                         .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("QuickBooksSalesReceiptId")
@@ -2360,7 +2360,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("ProcessedByUserId");
 
-                    b.HasIndex("ProviderId");
+                    b.HasIndex("ConsignorId");
 
                     b.HasIndex("SaleDate");
 
@@ -2769,9 +2769,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Provider", "Provider")
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
                         .WithMany("Items")
-                        .HasForeignKey("ProviderId")
+                        .HasForeignKey("ConsignorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2784,7 +2784,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.Navigation("Organization");
 
-                    b.Navigation("Provider");
+                    b.Navigation("Consignor");
 
                     b.Navigation("UpdatedByUser");
                 });
@@ -2863,9 +2863,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Provider", "Provider")
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
                         .WithMany()
-                        .HasForeignKey("ProviderId")
+                        .HasForeignKey("ConsignorId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ConsignmentGenie.Core.Entities.User", "User")
@@ -2876,7 +2876,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.Navigation("Organization");
 
-                    b.Navigation("Provider");
+                    b.Navigation("Consignor");
 
                     b.Navigation("User");
                 });
@@ -2924,9 +2924,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Provider", "Provider")
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
                         .WithMany()
-                        .HasForeignKey("ProviderId")
+                        .HasForeignKey("ConsignorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -2934,7 +2934,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.Navigation("Order");
 
-                    b.Navigation("Provider");
+                    b.Navigation("Consignor");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.OwnerInvitation", b =>
@@ -2967,18 +2967,18 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Provider", "Provider")
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
                         .WithMany("Payouts")
-                        .HasForeignKey("ProviderId")
+                        .HasForeignKey("ConsignorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Organization");
 
-                    b.Navigation("Provider");
+                    b.Navigation("Consignor");
                 });
 
-            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Provider", b =>
+            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
                 {
                     b.HasOne("ConsignmentGenie.Core.Entities.User", "ApprovedByUser")
                         .WithMany()
@@ -2991,7 +2991,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ConsignmentGenie.Core.Entities.Organization", "Organization")
-                        .WithMany("Providers")
+                        .WithMany("Consignors")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -3002,8 +3002,8 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ConsignmentGenie.Core.Entities.User", "User")
-                        .WithOne("Provider")
-                        .HasForeignKey("ConsignmentGenie.Core.Entities.Provider", "UserId")
+                        .WithOne("Consignor")
+                        .HasForeignKey("ConsignmentGenie.Core.Entities.Consignor", "UserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ApprovedByUser");
@@ -3109,15 +3109,15 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Provider", "Provider")
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
                         .WithMany()
-                        .HasForeignKey("ProviderId")
+                        .HasForeignKey("ConsignorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Organization");
 
-                    b.Navigation("Provider");
+                    b.Navigation("Consignor");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.SubscriptionEvent", b =>
@@ -3178,9 +3178,9 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasForeignKey("ProcessedByUserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("ConsignmentGenie.Core.Entities.Provider", "Provider")
+                    b.HasOne("ConsignmentGenie.Core.Entities.Consignor", "Consignor")
                         .WithMany("Transactions")
-                        .HasForeignKey("ProviderId")
+                        .HasForeignKey("ConsignorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -3194,7 +3194,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.Navigation("ProcessedByUser");
 
-                    b.Navigation("Provider");
+                    b.Navigation("Consignor");
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.User", b =>
@@ -3281,7 +3281,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.Navigation("Payouts");
 
-                    b.Navigation("Providers");
+                    b.Navigation("Consignors");
 
                     b.Navigation("Transactions");
 
@@ -3293,7 +3293,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Provider", b =>
+            modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
                 {
                     b.Navigation("Items");
 
@@ -3314,7 +3314,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.User", b =>
                 {
-                    b.Navigation("Provider");
+                    b.Navigation("Consignor");
 
                     b.Navigation("RoleAssignments");
                 });

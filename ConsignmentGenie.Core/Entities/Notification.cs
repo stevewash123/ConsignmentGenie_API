@@ -10,7 +10,7 @@ public class Notification : BaseEntity
     [Required]
     public Guid UserId { get; set; }
 
-    public Guid? ProviderId { get; set; }
+    public Guid? ConsignorId { get; set; }
 
     [Required]
     [MaxLength(200)]
@@ -47,5 +47,5 @@ public class Notification : BaseEntity
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public User User { get; set; } = null!;
-    public Provider? Provider { get; set; }
+    public Consignor? Consignor { get; set; }
 }

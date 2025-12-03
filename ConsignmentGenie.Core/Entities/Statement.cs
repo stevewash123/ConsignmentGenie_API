@@ -8,7 +8,7 @@ public class Statement : BaseEntity
     public Guid OrganizationId { get; set; }
 
     [Required]
-    public Guid ProviderId { get; set; }
+    public Guid ConsignorId { get; set; }
 
     // Period
     [Required]
@@ -24,7 +24,7 @@ public class Statement : BaseEntity
     // Summary Figures
     public decimal OpeningBalance { get; set; } = 0m; // Balance at period start
     public decimal TotalSales { get; set; } = 0m; // Gross sales amount
-    public decimal TotalEarnings { get; set; } = 0m; // Provider's cut
+    public decimal TotalEarnings { get; set; } = 0m; // Consignor's cut
     public decimal TotalPayouts { get; set; } = 0m; // Payouts during period
     public decimal ClosingBalance { get; set; } = 0m; // Balance at period end
 
@@ -49,5 +49,5 @@ public class Statement : BaseEntity
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
-    public Provider Provider { get; set; } = null!;
+    public Consignor Consignor { get; set; } = null!;
 }

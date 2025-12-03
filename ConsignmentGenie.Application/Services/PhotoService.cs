@@ -16,7 +16,7 @@ public class PhotoService : IPhotoService
         _logger = logger;
 
         // Determine which storage provider to use based on configuration
-        var photoStorageProvider = configuration["PhotoStorage:Provider"]?.ToLowerInvariant() ?? "cloudinary";
+        var photoStorageProvider = configuration["PhotoStorage:Consignor"]?.ToLowerInvariant() ?? "cloudinary";
 
         _implementation = photoStorageProvider switch
         {
@@ -25,7 +25,7 @@ public class PhotoService : IPhotoService
             _ => throw new InvalidOperationException($"Unsupported photo storage provider: {photoStorageProvider}")
         };
 
-        _logger.LogInformation("Photo service initialized with provider: {Provider}", photoStorageProvider);
+        _logger.LogInformation("Photo service initialized with provider: {Consignor}", photoStorageProvider);
     }
 
     public async Task<string> UploadPhotoAsync(Guid organizationId, Guid itemId, Stream fileStream, string fileName)

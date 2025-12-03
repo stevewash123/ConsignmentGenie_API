@@ -49,7 +49,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 new PendingApprovalDto
                 {
                     UserId = Guid.NewGuid(),
-                    FullName = "John Provider",
+                    FullName = "John Consignor",
                     Email = "john@provider.com",
                     Phone = "555-123-4567",
                     PreferredPaymentMethod = "Venmo",
@@ -70,7 +70,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var actualResult = Assert.IsAssignableFrom<List<PendingApprovalDto>>(okResult.Value);
 
             Assert.Single(actualResult);
-            Assert.Equal("John Provider", actualResult[0].FullName);
+            Assert.Equal("John Consignor", actualResult[0].FullName);
             Assert.Equal("john@provider.com", actualResult[0].Email);
 
             _mockRegistrationService.Verify(s => s.GetPendingProvidersAsync(_organizationId), Times.Once);

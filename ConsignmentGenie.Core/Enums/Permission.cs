@@ -20,7 +20,7 @@ public enum Permission
     DeleteTransactions = 23,
     ProcessRefunds = 24,
 
-    // Provider Management
+    // Consignor Management
     ViewProviders = 30,
     CreateProviders = 31,
     EditProviders = 32,

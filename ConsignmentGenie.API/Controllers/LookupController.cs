@@ -68,7 +68,7 @@ public class LookupController : ControllerBase
     [HttpGet("provider-statuses")]
     public ActionResult<List<LookupDto>> GetProviderStatuses()
     {
-        return Enum.GetValues<ProviderStatus>()
+        return Enum.GetValues<ConsignorStatus>()
             .Select(e => new LookupDto
             {
                 Value = e.ToString(),

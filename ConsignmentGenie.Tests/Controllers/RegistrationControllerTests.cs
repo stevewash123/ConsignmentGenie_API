@@ -160,7 +160,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var request = new RegisterProviderRequest
             {
                 StoreCode = "1234",
-                FullName = "Provider Name",
+                FullName = "Consignor Name",
                 Email = "provider@example.com",
                 Password = "SecurePassword123!",
                 Phone = "555-987-6543",
@@ -179,7 +179,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _controller.RegisterProvider(request);
+            var result = await _controller.RegisterConsignor(request);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -198,7 +198,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var request = new RegisterProviderRequest
             {
                 StoreCode = "INVALID",
-                FullName = "Provider Name",
+                FullName = "Consignor Name",
                 Email = "provider@example.com",
                 Password = "SecurePassword123!"
             };
@@ -215,7 +215,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _controller.RegisterProvider(request);
+            var result = await _controller.RegisterConsignor(request);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);

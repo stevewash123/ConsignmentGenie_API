@@ -38,14 +38,14 @@ public class PayoutsController : ControllerBase
         var organizationId = GetOrganizationId();
 
         var query = _context.Payouts
-            .Include(p => p.Provider)
+            .Include(p => p.Consignor)
             .Include(p => p.Transactions)
                 .ThenInclude(t => t.Item)
             .Where(p => p.OrganizationId == organizationId);
 
         // Apply filters
-        if (request.ProviderId.HasValue)
-            query = query.Where(p => p.ProviderId == request.ProviderId.Value);
+        if (request.ConsignorId.HasValue)
+            query = query.Where(p => p.ConsignorId == request.ConsignorId.Value);
 
         if (request.Status.HasValue)
             query = query.Where(p => p.Status == request.Status.Value);
@@ -72,8 +72,8 @@ public class PayoutsController : ControllerBase
                 ? query.OrderBy(p => p.Amount)
                 : query.OrderByDescending(p => p.Amount),
             "provider" => request.SortDirection?.ToLower() == "asc"
-                ? query.OrderBy(p => p.Provider.DisplayName)
-                : query.OrderByDescending(p => p.Provider.DisplayName),
+                ? query.OrderBy(p => p.Consignor.DisplayName)
+                : query.OrderByDescending(p => p.Consignor.DisplayName),
             "status" => request.SortDirection?.ToLower() == "asc"
                 ? query.OrderBy(p => p.Status)
                 : query.OrderByDescending(p => p.Status),
@@ -96,11 +96,11 @@ public class PayoutsController : ControllerBase
                 PeriodStart = p.PeriodStart,
                 PeriodEnd = p.PeriodEnd,
                 TransactionCount = p.TransactionCount,
-                Provider = new ProviderSummaryDto
+                Consignor = new ProviderSummaryDto
                 {
-                    Id = p.Provider.Id,
-                    Name = p.Provider.DisplayName,
-                    Email = p.Provider.Email
+                    Id = p.Consignor.Id,
+                    Name = p.Consignor.DisplayName,
+                    Email = p.Consignor.Email
                 }
             })
             .ToListAsync();
@@ -121,7 +121,7 @@ public class PayoutsController : ControllerBase
         var organizationId = GetOrganizationId();
 
         var payout = await _context.Payouts
-            .Include(p => p.Provider)
+            .Include(p => p.Consignor)
             .Include(p => p.Transactions)
                 .ThenInclude(t => t.Item)
             .Where(p => p.Id == id && p.OrganizationId == organizationId)
@@ -141,11 +141,11 @@ public class PayoutsController : ControllerBase
                 SyncedToQuickBooks = p.SyncedToQuickBooks,
                 QuickBooksBillId = p.QuickBooksBillId,
                 CreatedAt = p.CreatedAt,
-                Provider = new ProviderSummaryDto
+                Consignor = new ProviderSummaryDto
                 {
-                    Id = p.Provider.Id,
-                    Name = p.Provider.DisplayName,
-                    Email = p.Provider.Email
+                    Id = p.Consignor.Id,
+                    Name = p.Consignor.DisplayName,
+                    Email = p.Consignor.Email
                 },
                 Transactions = p.Transactions.Select(t => new PayoutTransactionDto
                 {
@@ -153,7 +153,7 @@ public class PayoutsController : ControllerBase
                     ItemName = t.Item.Title,
                     SaleDate = t.SaleDate,
                     SalePrice = t.SalePrice,
-                    ProviderAmount = t.ProviderAmount,
+                    ConsignorAmount = t.ConsignorAmount,
                     ShopAmount = t.ShopAmount
                 }).ToList()
             })
@@ -171,28 +171,28 @@ public class PayoutsController : ControllerBase
         var organizationId = GetOrganizationId();
 
         var query = _context.Transactions
-            .Include(t => t.Provider)
+            .Include(t => t.Consignor)
             .Include(t => t.Item)
             .Where(t => t.OrganizationId == organizationId &&
                        t.PayoutStatus == "Pending" &&
                        t.PayoutId == null);
 
         // Apply filters
-        if (request.ProviderId.HasValue)
-            query = query.Where(t => t.ProviderId == request.ProviderId.Value);
+        if (request.ConsignorId.HasValue)
+            query = query.Where(t => t.ConsignorId == request.ConsignorId.Value);
 
         if (request.PeriodEndBefore.HasValue)
             query = query.Where(t => t.SaleDate <= request.PeriodEndBefore.Value);
 
         // Group by provider and calculate pending amounts
         var pendingPayouts = await query
-            .GroupBy(t => new { t.ProviderId, t.Provider.DisplayName, t.Provider.Email })
+            .GroupBy(t => new { t.ConsignorId, t.Consignor.DisplayName, t.Consignor.Email })
             .Select(g => new
             {
-                ProviderId = g.Key.ProviderId,
-                ProviderName = g.Key.DisplayName,
+                ConsignorId = g.Key.ConsignorId,
+                ConsignorName = g.Key.DisplayName,
                 ProviderEmail = g.Key.Email,
-                PendingAmount = g.Sum(t => t.ProviderAmount),
+                PendingAmount = g.Sum(t => t.ConsignorAmount),
                 TransactionCount = g.Count(),
                 EarliestSale = g.Min(t => t.SaleDate),
                 LatestSale = g.Max(t => t.SaleDate),
@@ -202,7 +202,7 @@ public class PayoutsController : ControllerBase
                     ItemName = t.Item.Title,
                     SaleDate = t.SaleDate,
                     SalePrice = t.SalePrice,
-                    ProviderAmount = t.ProviderAmount,
+                    ConsignorAmount = t.ConsignorAmount,
                     ShopAmount = t.ShopAmount
                 }).ToList()
             })
@@ -225,17 +225,17 @@ public class PayoutsController : ControllerBase
         var organizationId = GetOrganizationId();
 
         // Validate provider exists
-        var provider = await _context.Providers
-            .FirstOrDefaultAsync(p => p.Id == request.ProviderId && p.OrganizationId == organizationId);
+        var provider = await _context.Consignors
+            .FirstOrDefaultAsync(p => p.Id == request.ConsignorId && p.OrganizationId == organizationId);
 
         if (provider == null)
-            return BadRequest("Provider not found");
+            return BadRequest("Consignor not found");
 
         // Validate transactions exist and are pending
         var transactions = await _context.Transactions
             .Where(t => request.TransactionIds.Contains(t.Id) &&
                        t.OrganizationId == organizationId &&
-                       t.ProviderId == request.ProviderId &&
+                       t.ConsignorId == request.ConsignorId &&
                        t.PayoutStatus == "Pending" &&
                        t.PayoutId == null)
             .ToListAsync();
@@ -244,7 +244,7 @@ public class PayoutsController : ControllerBase
             return BadRequest("Some transactions are invalid or already paid out");
 
         // Calculate total amount
-        var totalAmount = transactions.Sum(t => t.ProviderAmount);
+        var totalAmount = transactions.Sum(t => t.ConsignorAmount);
 
         // Generate payout number
         var payoutNumber = await GeneratePayoutNumber(organizationId);
@@ -254,7 +254,7 @@ public class PayoutsController : ControllerBase
         {
             Id = Guid.NewGuid(),
             OrganizationId = organizationId,
-            ProviderId = request.ProviderId,
+            ConsignorId = request.ConsignorId,
             PayoutNumber = payoutNumber,
             PayoutDate = request.PayoutDate,
             Amount = totalAmount,
@@ -275,8 +275,8 @@ public class PayoutsController : ControllerBase
         {
             transaction.PayoutId = payout.Id;
             transaction.PayoutStatus = "Paid";
-            transaction.ProviderPaidOut = true;
-            transaction.ProviderPaidOutDate = request.PayoutDate;
+            transaction.ConsignorPaidOut = true;
+            transaction.ConsignorPaidOutDate = request.PayoutDate;
             transaction.PayoutMethod = request.PaymentMethod;
         }
 
@@ -284,7 +284,7 @@ public class PayoutsController : ControllerBase
 
         // Return the created payout
         var createdPayout = await _context.Payouts
-            .Include(p => p.Provider)
+            .Include(p => p.Consignor)
             .Include(p => p.Transactions)
                 .ThenInclude(t => t.Item)
             .Where(p => p.Id == payout.Id)
@@ -302,11 +302,11 @@ public class PayoutsController : ControllerBase
                 TransactionCount = p.TransactionCount,
                 Notes = p.Notes,
                 CreatedAt = p.CreatedAt,
-                Provider = new ProviderSummaryDto
+                Consignor = new ProviderSummaryDto
                 {
-                    Id = p.Provider.Id,
-                    Name = p.Provider.DisplayName,
-                    Email = p.Provider.Email
+                    Id = p.Consignor.Id,
+                    Name = p.Consignor.DisplayName,
+                    Email = p.Consignor.Email
                 },
                 Transactions = p.Transactions.Select(t => new PayoutTransactionDto
                 {
@@ -314,7 +314,7 @@ public class PayoutsController : ControllerBase
                     ItemName = t.Item.Title,
                     SaleDate = t.SaleDate,
                     SalePrice = t.SalePrice,
-                    ProviderAmount = t.ProviderAmount,
+                    ConsignorAmount = t.ConsignorAmount,
                     ShopAmount = t.ShopAmount
                 }).ToList()
             })
@@ -372,8 +372,8 @@ public class PayoutsController : ControllerBase
         {
             transaction.PayoutId = null;
             transaction.PayoutStatus = "Pending";
-            transaction.ProviderPaidOut = false;
-            transaction.ProviderPaidOutDate = null;
+            transaction.ConsignorPaidOut = false;
+            transaction.ConsignorPaidOutDate = null;
             transaction.PayoutMethod = null;
         }
 
@@ -389,7 +389,7 @@ public class PayoutsController : ControllerBase
         var organizationId = GetOrganizationId();
 
         var payout = await _context.Payouts
-            .Include(p => p.Provider)
+            .Include(p => p.Consignor)
             .Include(p => p.Transactions)
                 .ThenInclude(t => t.Item)
             .FirstOrDefaultAsync(p => p.Id == id && p.OrganizationId == organizationId);
@@ -409,7 +409,7 @@ public class PayoutsController : ControllerBase
         var organizationId = GetOrganizationId();
 
         var payout = await _context.Payouts
-            .Include(p => p.Provider)
+            .Include(p => p.Consignor)
             .Include(p => p.Transactions)
                 .ThenInclude(t => t.Item)
             .FirstOrDefaultAsync(p => p.Id == id && p.OrganizationId == organizationId);
@@ -429,24 +429,24 @@ public class PayoutsController : ControllerBase
         {
             "Payout Information",
             $"Payout Number,{payout.PayoutNumber}",
-            $"Provider,{payout.Provider.DisplayName}",
+            $"Consignor,{payout.Consignor.DisplayName}",
             $"Payout Date,{payout.PayoutDate:yyyy-MM-dd}",
             $"Total Amount,${payout.Amount:F2}",
             $"Payment Method,{payout.PaymentMethod}",
             $"Period,{payout.PeriodStart:yyyy-MM-dd} to {payout.PeriodEnd:yyyy-MM-dd}",
             "",
             "Transactions",
-            "Item,Sale Date,Sale Price,Provider Amount,Shop Amount"
+            "Item,Sale Date,Sale Price,Consignor Amount,Shop Amount"
         };
 
         foreach (var transaction in payout.Transactions)
         {
-            lines.Add($"{transaction.Item.Title},{transaction.SaleDate:yyyy-MM-dd},${transaction.SalePrice:F2},${transaction.ProviderAmount:F2},${transaction.ShopAmount:F2}");
+            lines.Add($"{transaction.Item.Title},{transaction.SaleDate:yyyy-MM-dd},${transaction.SalePrice:F2},${transaction.ConsignorAmount:F2},${transaction.ShopAmount:F2}");
         }
 
         lines.Add("");
         lines.Add($"Total Transactions,{payout.Transactions.Count}");
-        lines.Add($"Total Provider Amount,${payout.Transactions.Sum(t => t.ProviderAmount):F2}");
+        lines.Add($"Total Consignor Amount,${payout.Transactions.Sum(t => t.ConsignorAmount):F2}");
 
         return string.Join("\n", lines);
     }
@@ -478,8 +478,8 @@ public class PayoutsController : ControllerBase
 
     <div class='info-grid'>
         <div>
-            <div class='info-item'><span class='label'>Provider:</span> {payout.Provider.DisplayName}</div>
-            <div class='info-item'><span class='label'>Email:</span> {payout.Provider.Email}</div>
+            <div class='info-item'><span class='label'>Consignor:</span> {payout.Consignor.DisplayName}</div>
+            <div class='info-item'><span class='label'>Email:</span> {payout.Consignor.Email}</div>
             <div class='info-item'><span class='label'>Payout Date:</span> {payout.PayoutDate:MMMM dd, yyyy}</div>
             <div class='info-item'><span class='label'>Payment Method:</span> {payout.PaymentMethod}</div>
         </div>
@@ -501,7 +501,7 @@ public class PayoutsController : ControllerBase
                 <th>Item</th>
                 <th>Sale Date</th>
                 <th class='amount'>Sale Price</th>
-                <th class='amount'>Provider Amount</th>
+                <th class='amount'>Consignor Amount</th>
                 <th class='amount'>Shop Amount</th>
             </tr>
         </thead>
@@ -511,14 +511,14 @@ public class PayoutsController : ControllerBase
                 <td>{t.Item.Title}</td>
                 <td>{t.SaleDate:MMM dd, yyyy}</td>
                 <td class='amount'>${t.SalePrice:F2}</td>
-                <td class='amount'>${t.ProviderAmount:F2}</td>
+                <td class='amount'>${t.ConsignorAmount:F2}</td>
                 <td class='amount'>${t.ShopAmount:F2}</td>
             </tr>"))}
         </tbody>
     </table>
 
     <div class='summary'>
-        <p>Total Provider Payout: ${payout.Transactions.Sum(t => t.ProviderAmount):F2}</p>
+        <p>Total Consignor Payout: ${payout.Transactions.Sum(t => t.ConsignorAmount):F2}</p>
         <p>Total Shop Revenue: ${payout.Transactions.Sum(t => t.ShopAmount):F2}</p>
         <p>Total Sales: ${payout.Transactions.Sum(t => t.SalePrice):F2}</p>
     </div>

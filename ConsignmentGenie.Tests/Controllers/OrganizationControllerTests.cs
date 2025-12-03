@@ -49,7 +49,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 Name = "Test Shop",
                 StoreCode = "TEST",
                 StoreCodeEnabled = true,
-                AutoApproveProviders = true,
+                AutoApproveConsignors = true,
                 OnboardingDismissed = false,
                 WelcomeGuideCompleted = false,
                 StoreEnabled = false,
@@ -102,17 +102,17 @@ namespace ConsignmentGenie.Tests.Controllers
             var organization = await _context.Organizations.FindAsync(_organizationId);
             organization!.StoreEnabled = true;
 
-            var provider = new Provider
+            var provider = new Consignor
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
                 FirstName = "Test",
-                LastName = "Provider",
+                LastName = "Consignor",
                 Email = "test@provider.com",
-                Status = ProviderStatus.Approved,
+                Status = ConsignorStatus.Approved,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Providers.Add(provider);
+            _context.Consignors.Add(provider);
             await _context.SaveChangesAsync();
 
             // Act
@@ -146,23 +146,23 @@ namespace ConsignmentGenie.Tests.Controllers
             organization!.StoreEnabled = true;
             organization.QuickBooksConnected = true;
 
-            var provider = new Provider
+            var provider = new Consignor
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
                 FirstName = "Test",
-                LastName = "Provider",
+                LastName = "Consignor",
                 Email = "test@provider.com",
-                Status = ProviderStatus.Approved,
+                Status = ConsignorStatus.Approved,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Providers.Add(provider);
+            _context.Consignors.Add(provider);
 
             var item = new Item
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = provider.Id,
+                ConsignorId = provider.Id,
                 Title = "Test Item",
                 Price = 100.00m,
                 CreatedAt = DateTime.UtcNow

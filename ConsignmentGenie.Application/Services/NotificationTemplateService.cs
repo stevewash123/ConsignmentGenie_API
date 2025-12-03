@@ -51,14 +51,14 @@ public class NotificationTemplateService : INotificationTemplateService
     {
         return new Dictionary<NotificationType, NotificationTemplate>
         {
-            // Provider Notifications
+            // Consignor Notifications
             [NotificationType.ProviderApproved] = new NotificationTemplate
             {
-                Subject = "Welcome to {ShopName} - Provider Application Approved!",
+                Subject = "Welcome to {ShopName} - Consignor Application Approved!",
                 Body = @"
                     <html>
                     <body>
-                        <h2>Congratulations, {ProviderName}!</h2>
+                        <h2>Congratulations, {ConsignorName}!</h2>
                         <p>Your application to become a provider for <strong>{ShopName}</strong> has been approved.</p>
                         <p>You can now start listing items for consignment. Here's what you need to know:</p>
                         <ul>
@@ -76,11 +76,11 @@ public class NotificationTemplateService : INotificationTemplateService
 
             [NotificationType.ProviderRejected] = new NotificationTemplate
             {
-                Subject = "Provider Application Update - {ShopName}",
+                Subject = "Consignor Application Update - {ShopName}",
                 Body = @"
                     <html>
                     <body>
-                        <h2>Provider Application Update</h2>
+                        <h2>Consignor Application Update</h2>
                         <p>Thank you for your interest in becoming a provider for <strong>{ShopName}</strong>.</p>
                         <p>After reviewing your application, we've decided not to move forward at this time.</p>
                         <p>Reason: {RejectionReason}</p>
@@ -99,13 +99,13 @@ public class NotificationTemplateService : INotificationTemplateService
                     <html>
                     <body>
                         <h2>Item Sold! 🎉</h2>
-                        <p>Hello {ProviderName},</p>
+                        <p>Hello {ConsignorName},</p>
                         <p>Congratulations! Your item <strong>{ItemName}</strong> has been sold.</p>
                         <div style=""background-color: #f0fdf4; padding: 15px; border-left: 4px solid #047857; margin: 10px 0;"">
                             <p><strong>Sale Details:</strong></p>
                             <ul>
                                 <li>Sale Price: {SalePrice}</li>
-                                <li>Your Share: {ProviderAmount}</li>
+                                <li>Your Share: {ConsignorAmount}</li>
                                 <li>Commission: {CommissionAmount}</li>
                                 <li>Sale Date: {SaleDate}</li>
                             </ul>
@@ -126,7 +126,7 @@ public class NotificationTemplateService : INotificationTemplateService
                     <html>
                     <body>
                         <h2>Payout Ready! 💰</h2>
-                        <p>Hello {ProviderName},</p>
+                        <p>Hello {ConsignorName},</p>
                         <p>Your payout is ready for processing!</p>
                         <div style=""background-color: #f0fdf4; padding: 15px; border-left: 4px solid #047857; margin: 10px 0;"">
                             <p><strong>Payout Details:</strong></p>
@@ -148,16 +148,16 @@ public class NotificationTemplateService : INotificationTemplateService
             // Owner Notifications
             [NotificationType.NewProviderRequest] = new NotificationTemplate
             {
-                Subject = "New Provider Application - {ProviderName}",
+                Subject = "New Consignor Application - {ConsignorName}",
                 Body = @"
                     <html>
                     <body>
-                        <h2>New Provider Application</h2>
+                        <h2>New Consignor Application</h2>
                         <p>You have a new provider application waiting for review:</p>
                         <div style=""background-color: #f9fafb; padding: 15px; border: 1px solid #e5e7eb; border-radius: 5px; margin: 10px 0;"">
-                            <p><strong>Provider Details:</strong></p>
+                            <p><strong>Consignor Details:</strong></p>
                             <ul>
-                                <li>Name: {ProviderName}</li>
+                                <li>Name: {ConsignorName}</li>
                                 <li>Email: {ProviderEmail}</li>
                                 <li>Phone: {ProviderPhone}</li>
                                 <li>Applied: {ApplicationDate}</li>

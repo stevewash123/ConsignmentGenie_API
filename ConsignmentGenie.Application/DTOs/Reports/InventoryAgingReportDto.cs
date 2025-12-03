@@ -24,7 +24,7 @@ public class AgingItemDto
     public string Name { get; set; } = string.Empty;
     public string SKU { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public string ProviderName { get; set; } = string.Empty;
+    public string ConsignorName { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public DateOnly ListedDate { get; set; }
     public int DaysListed { get; set; }

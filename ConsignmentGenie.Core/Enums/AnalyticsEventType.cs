@@ -23,7 +23,7 @@ public enum AnalyticsEventType
     OrderCancelled = 24,
     OrderRefunded = 25,
 
-    // Provider Events
+    // Consignor Events
     ProviderRegistered = 30,
     ProviderLogin = 31,
     ItemUploaded = 32,

@@ -93,7 +93,7 @@ public class PaymentGatewayFactory : IPaymentGatewayFactory
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to test connection for provider {Provider}", provider);
+            _logger.LogError(ex, "Failed to test connection for provider {Consignor}", provider);
             return false;
         }
     }

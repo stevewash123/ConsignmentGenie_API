@@ -18,7 +18,7 @@ public class UserRoleAssignment : BaseEntity
     /// <summary>
     /// The organization/shop context for this role.
     /// For Customer roles, this can be null if they shop across multiple shops.
-    /// For Provider/Owner roles, this specifies which shop they're associated with.
+    /// For Consignor/Owner roles, this specifies which shop they're associated with.
     /// </summary>
     public Guid? OrganizationId { get; set; }
 

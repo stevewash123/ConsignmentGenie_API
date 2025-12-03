@@ -59,24 +59,24 @@ namespace ConsignmentGenie.Tests.Controllers
             _context.Organizations.Add(organization);
 
             // Add provider
-            var provider = new Provider
+            var provider = new Consignor
             {
                 Id = _providerId,
                 OrganizationId = _organizationId,
-                DisplayName = "Test Provider",
+                DisplayName = "Test Consignor",
                 Email = "provider@test.com",
                 DefaultSplitPercentage = 60.0m,
-                Status = ProviderStatus.Active,
+                Status = ConsignorStatus.Active,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Providers.Add(provider);
+            _context.Consignors.Add(provider);
 
             // Add items
             var item1 = new Item
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 Sku = "ITEM001",
                 Title = "Test Item 1",
                 Price = 100.00m,
@@ -89,7 +89,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 Sku = "ITEM002",
                 Title = "Test Item 2",
                 Price = 80.00m,
@@ -105,15 +105,15 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 ItemId = item1.Id,
                 Item = item1,
                 SaleDate = DateTime.UtcNow.AddDays(-10),
                 SalePrice = 100.00m,
-                ProviderAmount = 60.00m,
+                ConsignorAmount = 60.00m,
                 ShopAmount = 40.00m,
                 PayoutStatus = "Pending",
-                ProviderPaidOut = false,
+                ConsignorPaidOut = false,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -121,15 +121,15 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 ItemId = item2.Id,
                 Item = item2,
                 SaleDate = DateTime.UtcNow.AddDays(-8),
                 SalePrice = 80.00m,
-                ProviderAmount = 48.00m,
+                ConsignorAmount = 48.00m,
                 ShopAmount = 32.00m,
                 PayoutStatus = "Pending",
-                ProviderPaidOut = false,
+                ConsignorPaidOut = false,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -140,7 +140,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = _payoutId,
                 OrganizationId = _organizationId,
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 PayoutNumber = "PAY-001",
                 PayoutDate = DateTime.UtcNow.AddDays(-5),
                 Amount = 108.00m,
@@ -194,7 +194,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Page = 1,
                 PageSize = 10,
-                ProviderId = _providerId
+                ConsignorId = _providerId
             };
 
             // Act
@@ -273,7 +273,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var request = new PendingPayoutsRequestDto
             {
-                ProviderId = _providerId
+                ConsignorId = _providerId
             };
 
             // Act
@@ -298,7 +298,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var request = new PendingPayoutsRequestDto
             {
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 MinimumAmount = 50.00m
             };
 
@@ -325,7 +325,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             var request = new CreatePayoutRequestDto
             {
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 TransactionIds = pendingTransactions.Select(t => t.Id).ToList(),
                 PayoutDate = DateTime.UtcNow,
                 PaymentMethod = "Direct Deposit",
@@ -358,7 +358,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.All(updatedTransactions, t =>
             {
                 Assert.Equal("Paid", t.PayoutStatus);
-                Assert.True(t.ProviderPaidOut);
+                Assert.True(t.ConsignorPaidOut);
                 Assert.NotNull(t.PayoutId);
             });
         }
@@ -369,7 +369,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var request = new CreatePayoutRequestDto
             {
-                ProviderId = Guid.NewGuid(), // Invalid provider
+                ConsignorId = Guid.NewGuid(), // Invalid provider
                 TransactionIds = new List<Guid> { Guid.NewGuid() },
                 PayoutDate = DateTime.UtcNow,
                 PaymentMethod = "Check",
@@ -382,7 +382,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Provider not found", badRequestResult.Value);
+            Assert.Equal("Consignor not found", badRequestResult.Value);
         }
 
         [Fact]
@@ -391,7 +391,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var request = new CreatePayoutRequestDto
             {
-                ProviderId = _providerId,
+                ConsignorId = _providerId,
                 TransactionIds = new List<Guid> { Guid.NewGuid() }, // Invalid transaction
                 PayoutDate = DateTime.UtcNow,
                 PaymentMethod = "Check",

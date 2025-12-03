@@ -27,7 +27,7 @@ public class ProviderStatementsControllerTests
         // Setup the controller's HttpContext with provider claim
         var claims = new List<Claim>
         {
-            new Claim("ProviderId", _testProviderId.ToString()),
+            new Claim("ConsignorId", _testProviderId.ToString()),
             new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
         };
         var identity = new ClaimsIdentity(claims, "test");
@@ -86,7 +86,7 @@ public class ProviderStatementsControllerTests
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
-            // No ProviderId claim
+            // No ConsignorId claim
         };
         var identity = new ClaimsIdentity(claims, "test");
         var principal = new ClaimsPrincipal(identity);
@@ -101,7 +101,7 @@ public class ProviderStatementsControllerTests
         var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
         var response = Assert.IsType<ApiResponse<List<StatementListDto>>>(unauthorizedResult.Value);
         Assert.False(response.Success);
-        Assert.Contains("Provider context required", response.Errors);
+        Assert.Contains("Consignor context required", response.Errors);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class ProviderStatementsControllerTests
             PeriodStart = new DateOnly(2023, 11, 1),
             PeriodEnd = new DateOnly(2023, 11, 30),
             PeriodLabel = "November 2023",
-            ProviderName = "Test Provider",
+            ConsignorName = "Test Consignor",
             ShopName = "Test Shop",
             TotalSales = 500.00m,
             TotalEarnings = 300.00m,
@@ -148,7 +148,7 @@ public class ProviderStatementsControllerTests
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
         Assert.Equal(statementId, response.Data.Id);
-        Assert.Equal("Test Provider", response.Data.ProviderName);
+        Assert.Equal("Test Consignor", response.Data.ConsignorName);
         Assert.Equal(300.00m, response.Data.TotalEarnings);
 
         // Verify that MarkAsViewed was called

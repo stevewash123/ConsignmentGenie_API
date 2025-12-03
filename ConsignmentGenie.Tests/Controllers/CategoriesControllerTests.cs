@@ -102,7 +102,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = Guid.NewGuid(),
+                ConsignorId = Guid.NewGuid(),
                 Sku = "TEST001",
                 Title = "Test Item 1",
                 Category = "Clothing",
@@ -117,7 +117,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ProviderId = Guid.NewGuid(),
+                ConsignorId = Guid.NewGuid(),
                 Sku = "TEST002",
                 Title = "Test Item 2",
                 Category = "Clothing",

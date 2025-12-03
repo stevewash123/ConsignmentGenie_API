@@ -59,7 +59,7 @@ public class User : BaseEntity
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
-    public Provider? Provider { get; set; }  // For Provider role users
+    public Consignor? Consignor { get; set; }  // For Consignor role users
 
     /// <summary>
     /// Multi-role assignments for this user across different organizations/contexts

@@ -4,7 +4,7 @@ namespace ConsignmentGenie.Application.Services.Interfaces;
 
 public interface IPaymentGatewayService
 {
-    string ProviderName { get; }
+    string ConsignorName { get; }
 
     // Payment processing
     Task<PaymentResult> ProcessPaymentAsync(PaymentRequest request);

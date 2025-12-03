@@ -15,7 +15,7 @@ public class StripePaymentGatewayService : IPaymentGatewayService
     private readonly CustomerService _customerService;
     private readonly RefundService _refundService;
 
-    public string ProviderName => "Stripe";
+    public string ConsignorName => "Stripe";
 
     public StripePaymentGatewayService(IConfiguration configuration, ILogger<StripePaymentGatewayService> logger)
     {

@@ -11,7 +11,7 @@ public class OrderItem : BaseEntity
     public Guid ItemId { get; set; }
 
     [Required]
-    public Guid ProviderId { get; set; }
+    public Guid ConsignorId { get; set; }
 
     // Snapshot at time of order (prices can change)
     [Required]
@@ -21,7 +21,7 @@ public class OrderItem : BaseEntity
     [Required]
     public decimal ItemPrice { get; set; }
 
-    // Provider split (for transaction creation)
+    // Consignor split (for transaction creation)
     [Required]
     [Range(0, 100)]
     public decimal SplitPercentage { get; set; }
@@ -32,9 +32,9 @@ public class OrderItem : BaseEntity
     // Navigation properties
     public Order Order { get; set; } = null!;
     public Item Item { get; set; } = null!;
-    public Provider Provider { get; set; } = null!;
+    public Consignor Consignor { get; set; } = null!;
 
     // Computed properties - no quantity for consignment
     public decimal LineTotal => ItemPrice;
-    public decimal ProviderAmount => LineTotal - CommissionAmount;
+    public decimal ConsignorAmount => LineTotal - CommissionAmount;
 }

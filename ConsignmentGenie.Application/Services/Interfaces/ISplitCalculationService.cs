@@ -8,15 +8,15 @@ public interface ISplitCalculationService
 
 public class SplitResult
 {
-    public decimal ProviderAmount { get; set; }
+    public decimal ConsignorAmount { get; set; }
     public decimal ShopAmount { get; set; }
     public decimal SplitPercentage { get; set; }
 }
 
 public class PayoutSummary
 {
-    public Guid ProviderId { get; set; }
-    public string ProviderName { get; set; } = string.Empty;
+    public Guid ConsignorId { get; set; }
+    public string ConsignorName { get; set; } = string.Empty;
     public DateTime PeriodStart { get; set; }
     public DateTime PeriodEnd { get; set; }
     public decimal TotalAmount { get; set; }
@@ -30,6 +30,6 @@ public class PayoutTransaction
     public string ItemSku { get; set; } = string.Empty;
     public string ItemTitle { get; set; } = string.Empty;
     public decimal SalePrice { get; set; }
-    public decimal ProviderAmount { get; set; }
+    public decimal ConsignorAmount { get; set; }
     public DateTime SaleDate { get; set; }
 }
