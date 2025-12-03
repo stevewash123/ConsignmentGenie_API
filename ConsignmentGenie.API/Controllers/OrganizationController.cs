@@ -4,6 +4,8 @@ using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using ConsignmentGenie.Core.DTOs.Onboarding;
 using ConsignmentGenie.Core.DTOs.Organization;
+using ConsignmentGenie.Core.DTOs.Settings;
+using System.Text.Json;
 
 namespace ConsignmentGenie.API.Controllers;
 
@@ -221,6 +223,265 @@ public class OrganizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "[PROFILE] Error updating shop profile for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpGet("business-settings")]
+    public async Task<ActionResult<BusinessSettingsDto>> GetBusinessSettings()
+    {
+        var organizationId = GetOrganizationId();
+        _logger.LogInformation("[BUSINESS_SETTINGS] Getting business settings for organization {OrganizationId}", organizationId);
+
+        try
+        {
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[BUSINESS_SETTINGS] Organization {OrganizationId} not found", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            // Parse JSON settings or create defaults
+            BusinessSettingsDto? businessSettings = null;
+            if (!string.IsNullOrEmpty(organization.BusinessSettings))
+            {
+                try
+                {
+                    businessSettings = JsonSerializer.Deserialize<BusinessSettingsDto>(organization.BusinessSettings);
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "[BUSINESS_SETTINGS] Failed to parse business settings JSON for organization {OrganizationId}", organizationId);
+                }
+            }
+
+            // Create defaults if parsing failed or no settings exist
+            businessSettings ??= new BusinessSettingsDto
+            {
+                Commission = new CommissionDto
+                {
+                    DefaultSplit = organization.DefaultSplitPercentage == 60 ? "60/40" : "70/30",
+                    AllowCustomSplitsPerConsignor = false,
+                    AllowCustomSplitsPerItem = false
+                },
+                Tax = new TaxDto
+                {
+                    SalesTaxRate = organization.TaxRate * 100, // Convert from decimal to percentage
+                    TaxIncludedInPrices = false,
+                    ChargeTaxOnShipping = false
+                },
+                Payouts = new PayoutDto
+                {
+                    Schedule = "monthly",
+                    MinimumAmount = 25.00m,
+                    HoldPeriodDays = 14
+                },
+                Items = new ItemPolicyDto
+                {
+                    DefaultConsignmentPeriodDays = 90,
+                    EnableAutoMarkdowns = false,
+                    MarkdownSchedule = new MarkdownScheduleDto
+                    {
+                        After30Days = 0,
+                        After60Days = 0,
+                        After90DaysAction = "return"
+                    }
+                }
+            };
+
+            _logger.LogDebug("[BUSINESS_SETTINGS] Business settings retrieved for organization {OrganizationId}", organizationId);
+            return Ok(businessSettings);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[BUSINESS_SETTINGS] Error getting business settings for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpPut("business-settings")]
+    public async Task<ActionResult<object>> UpdateBusinessSettings([FromBody] BusinessSettingsDto businessSettingsDto)
+    {
+        var organizationId = GetOrganizationId();
+        _logger.LogInformation("[BUSINESS_SETTINGS] Updating business settings for organization {OrganizationId}", organizationId);
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[BUSINESS_SETTINGS] Organization {OrganizationId} not found during update", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            // Update basic fields that exist in Organization entity
+            var splitParts = businessSettingsDto.Commission.DefaultSplit.Split('/');
+            if (splitParts.Length == 2 && decimal.TryParse(splitParts[0], out var consignorPercentage))
+            {
+                organization.DefaultSplitPercentage = consignorPercentage;
+            }
+
+            organization.TaxRate = businessSettingsDto.Tax.SalesTaxRate / 100; // Convert from percentage to decimal
+
+            // Store full settings as JSON
+            organization.BusinessSettings = JsonSerializer.Serialize(businessSettingsDto);
+            organization.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("[BUSINESS_SETTINGS] Business settings updated for organization {OrganizationId}", organizationId);
+
+            return Ok(new {
+                success = true,
+                message = "Business settings updated successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[BUSINESS_SETTINGS] Error updating business settings for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpGet("storefront-settings")]
+    public async Task<ActionResult<StorefrontSettingsDto>> GetStorefrontSettings()
+    {
+        var organizationId = GetOrganizationId();
+        _logger.LogInformation("[STOREFRONT_SETTINGS] Getting storefront settings for organization {OrganizationId}", organizationId);
+
+        try
+        {
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[STOREFRONT_SETTINGS] Organization {OrganizationId} not found", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            // Parse JSON settings or create defaults
+            StorefrontSettingsDto? storefrontSettings = null;
+            if (!string.IsNullOrEmpty(organization.StorefrontSettings))
+            {
+                try
+                {
+                    storefrontSettings = JsonSerializer.Deserialize<StorefrontSettingsDto>(organization.StorefrontSettings);
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "[STOREFRONT_SETTINGS] Failed to parse storefront settings JSON for organization {OrganizationId}", organizationId);
+                }
+            }
+
+            // Create defaults based on existing Organization fields
+            storefrontSettings ??= new StorefrontSettingsDto
+            {
+                SelectedChannel = "cg-storefront",
+                Square = new SquareSettingsDto
+                {
+                    Connected = false,
+                    SyncInventory = true,
+                    ImportSales = true,
+                    SyncCustomers = false,
+                    SyncFrequency = "daily",
+                    CategoryMappings = new List<CategoryMappingDto>()
+                },
+                Shopify = new ShopifySettingsDto
+                {
+                    Connected = false,
+                    PushInventory = true,
+                    ImportOrders = true,
+                    SyncImages = true,
+                    AutoMarkSold = true,
+                    CollectionMappings = new List<CollectionMappingDto>()
+                },
+                CgStorefront = new CgStorefrontSettingsDto
+                {
+                    StoreSlug = organization.Slug ?? "",
+                    DnsVerified = false,
+                    StripeConnected = organization.StripeConnected,
+                    BannerImageUrl = organization.ShopBannerUrl,
+                    PrimaryColor = "#2563eb",
+                    AccentColor = "#1d4ed8",
+                    MetaTitle = organization.ShopName,
+                    MetaDescription = organization.ShopDescription
+                },
+                InStore = new InStoreSettingsDto
+                {
+                    UseReceiptNumbers = true,
+                    NextReceiptNumber = 1,
+                    RequireManagerApproval = false,
+                    AllowLayaway = false
+                }
+            };
+
+            _logger.LogDebug("[STOREFRONT_SETTINGS] Storefront settings retrieved for organization {OrganizationId}", organizationId);
+            return Ok(storefrontSettings);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[STOREFRONT_SETTINGS] Error getting storefront settings for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpPut("storefront-settings")]
+    public async Task<ActionResult<object>> UpdateStorefrontSettings([FromBody] StorefrontSettingsDto storefrontSettingsDto)
+    {
+        var organizationId = GetOrganizationId();
+        _logger.LogInformation("[STOREFRONT_SETTINGS] Updating storefront settings for organization {OrganizationId}", organizationId);
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[STOREFRONT_SETTINGS] Organization {OrganizationId} not found during update", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            // Update basic fields that exist in Organization entity
+            if (storefrontSettingsDto.CgStorefront != null)
+            {
+                organization.Slug = storefrontSettingsDto.CgStorefront.StoreSlug;
+                organization.ShopBannerUrl = storefrontSettingsDto.CgStorefront.BannerImageUrl;
+                organization.StripeConnected = storefrontSettingsDto.CgStorefront.StripeConnected;
+            }
+
+            // Store full settings as JSON
+            organization.StorefrontSettings = JsonSerializer.Serialize(storefrontSettingsDto);
+            organization.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("[STOREFRONT_SETTINGS] Storefront settings updated for organization {OrganizationId}", organizationId);
+
+            return Ok(new {
+                success = true,
+                message = "Storefront settings updated successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[STOREFRONT_SETTINGS] Error updating storefront settings for organization {OrganizationId}", organizationId);
             return StatusCode(500, "Internal server error");
         }
     }

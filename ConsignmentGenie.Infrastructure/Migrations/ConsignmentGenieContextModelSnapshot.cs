@@ -91,7 +91,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("EntityType", "EntityId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.CartItem", b =>
@@ -124,7 +124,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("CartId", "ItemId")
                         .IsUnique();
 
-                    b.ToTable("CartItems");
+                    b.ToTable("CartItems", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Category", b =>
@@ -168,7 +168,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "Name")
                         .IsUnique();
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ClerkInvitation", b =>
@@ -235,7 +235,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "Email");
 
-                    b.ToTable("ClerkInvitations");
+                    b.ToTable("ClerkInvitations", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ClerkPermissions", b =>
@@ -288,7 +288,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId")
                         .IsUnique();
 
-                    b.ToTable("ClerkPermissions");
+                    b.ToTable("ClerkPermissions", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Consignor", b =>
@@ -457,7 +457,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "Status");
 
-                    b.ToTable("Consignors");
+                    b.ToTable("Consignors", (string)null);
 
                     b.HasData(
                         new
@@ -547,7 +547,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "Email")
                         .IsUnique();
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.CustomerWishlist", b =>
@@ -577,7 +577,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("CustomerWishlist");
+                    b.ToTable("CustomerWishlist", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.GuestCheckout", b =>
@@ -626,7 +626,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("SessionToken")
                         .IsUnique();
 
-                    b.ToTable("GuestCheckouts");
+                    b.ToTable("GuestCheckouts", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.IntegrationCredentials", b =>
@@ -678,7 +678,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "IntegrationType")
                         .IsUnique();
 
-                    b.ToTable("IntegrationCredentials");
+                    b.ToTable("IntegrationCredentials", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Item", b =>
@@ -821,7 +821,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "Status");
 
-                    b.ToTable("Items");
+                    b.ToTable("Items", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ItemCategory", b =>
@@ -873,7 +873,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "Name")
                         .IsUnique();
 
-                    b.ToTable("ItemCategories");
+                    b.ToTable("ItemCategories", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ItemImage", b =>
@@ -911,7 +911,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("ItemImages");
+                    b.ToTable("ItemImages", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ItemTag", b =>
@@ -948,7 +948,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "Name")
                         .IsUnique();
 
-                    b.ToTable("ItemTags");
+                    b.ToTable("ItemTags", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ItemTagAssignment", b =>
@@ -963,7 +963,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("ItemTagId");
 
-                    b.ToTable("ItemTagAssignments");
+                    b.ToTable("ItemTagAssignments", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Notification", b =>
@@ -1044,7 +1044,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("UserId", "IsRead");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.NotificationPreferences", b =>
@@ -1102,7 +1102,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("NotificationPreferences");
+                    b.ToTable("NotificationPreferences", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Order", b =>
@@ -1231,7 +1231,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "OrderNumber")
                         .IsUnique();
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.OrderItem", b =>
@@ -1280,7 +1280,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrderId", "ItemId")
                         .IsUnique();
 
-                    b.ToTable("OrderItems");
+                    b.ToTable("OrderItems", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Organization", b =>
@@ -1534,7 +1534,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("Subdomain")
                         .IsUnique();
 
-                    b.ToTable("Organizations");
+                    b.ToTable("Organizations", (string)null);
 
                     b.HasData(
                         new
@@ -1622,7 +1622,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.ToTable("OwnerInvitations");
+                    b.ToTable("OwnerInvitations", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.PaymentGatewayConnection", b =>
@@ -1666,7 +1666,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "Provider", "IsActive");
 
-                    b.ToTable("PaymentGatewayConnections");
+                    b.ToTable("PaymentGatewayConnections", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Payout", b =>
@@ -1735,7 +1735,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("ConsignorId", "PeriodStart", "PeriodEnd");
 
-                    b.ToTable("Payouts");
+                    b.ToTable("Payouts", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ProviderInvitation", b =>
@@ -1798,7 +1798,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "Email");
 
-                    b.ToTable("ProviderInvitations");
+                    b.ToTable("ProviderInvitations", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Shopper", b =>
@@ -1869,7 +1869,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "Email")
                         .IsUnique();
 
-                    b.ToTable("Shoppers");
+                    b.ToTable("Shoppers", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.ShoppingCart", b =>
@@ -1916,7 +1916,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "SessionId")
                         .IsUnique();
 
-                    b.ToTable("ShoppingCarts");
+                    b.ToTable("ShoppingCarts", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.SquareConnection", b =>
@@ -1974,7 +1974,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId")
                         .IsUnique();
 
-                    b.ToTable("SquareConnections");
+                    b.ToTable("SquareConnections", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.SquareSyncLog", b =>
@@ -2022,7 +2022,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("SyncStarted");
 
-                    b.ToTable("SquareSyncLogs");
+                    b.ToTable("SquareSyncLogs", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Statement", b =>
@@ -2108,7 +2108,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "ConsignorId", "PeriodStart")
                         .IsUnique();
 
-                    b.ToTable("Statements");
+                    b.ToTable("Statements", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.SubscriptionEvent", b =>
@@ -2156,7 +2156,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("StripeEventId")
                         .IsUnique();
 
-                    b.ToTable("SubscriptionEvents");
+                    b.ToTable("SubscriptionEvents", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Suggestion", b =>
@@ -2222,7 +2222,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Suggestions");
+                    b.ToTable("Suggestions", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.Transaction", b =>
@@ -2368,7 +2368,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("SquarePaymentId")
                         .IsUnique();
 
-                    b.ToTable("Transactions");
+                    b.ToTable("Transactions", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.User", b =>
@@ -2447,7 +2447,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
 
                     b.HasData(
                         new
@@ -2554,7 +2554,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("UserId", "NotificationType")
                         .IsUnique();
 
-                    b.ToTable("UserNotificationPreferences");
+                    b.ToTable("UserNotificationPreferences", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.UserRoleAssignment", b =>
@@ -2602,7 +2602,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                     b.HasIndex("UserId", "Role", "OrganizationId")
                         .IsUnique();
 
-                    b.ToTable("UserRoleAssignments");
+                    b.ToTable("UserRoleAssignments", (string)null);
                 });
 
             modelBuilder.Entity("ConsignmentGenie.Core.Entities.AuditLog", b =>
