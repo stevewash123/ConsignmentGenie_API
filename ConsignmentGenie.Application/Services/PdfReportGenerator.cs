@@ -28,11 +28,11 @@ public class PdfReportGenerator : IPdfReportGenerator
         }
     }
 
-    public async Task<ServiceResult<byte[]>> GenerateProviderPerformanceReportPdfAsync(ProviderPerformanceReportDto data, string title)
+    public async Task<ServiceResult<byte[]>> GenerateConsignorPerformanceReportPdfAsync(ConsignorPerformanceReportDto data, string title)
     {
         try
         {
-            var pdf = GenerateProviderPerformancePdf(data, title);
+            var pdf = GenerateConsignorPerformancePdf(data, title);
             return ServiceResult<byte[]>.SuccessResult(pdf);
         }
         catch (Exception ex)
@@ -118,7 +118,7 @@ public class PdfReportGenerator : IPdfReportGenerator
                             row.RelativeItem().Border(1).Padding(10).Column(col =>
                             {
                                 col.Item().Text("Consignor Payable").FontSize(10);
-                                col.Item().Text($"${data.ProviderPayable:F2}").FontSize(16).SemiBold();
+                                col.Item().Text($"${data.ConsignorPayable:F2}").FontSize(16).SemiBold();
                             });
                         });
 
@@ -179,7 +179,7 @@ public class PdfReportGenerator : IPdfReportGenerator
         .GeneratePdf();
     }
 
-    private static byte[] GenerateProviderPerformancePdf(ProviderPerformanceReportDto data, string title)
+    private static byte[] GenerateConsignorPerformancePdf(ConsignorPerformanceReportDto data, string title)
     {
         return Document.Create(container =>
         {
@@ -370,7 +370,7 @@ public class PdfReportGenerator : IPdfReportGenerator
                             {
                                 table.Cell().Element(CellStyle).Text(provider.ConsignorName);
                                 table.Cell().Element(CellStyle).Text($"${provider.TotalSales:F0}");
-                                table.Cell().Element(CellStyle).Text($"${provider.ProviderCut:F0}");
+                                table.Cell().Element(CellStyle).Text($"${provider.ConsignorCut:F0}");
                                 table.Cell().Element(CellStyle).Text($"${provider.AlreadyPaid:F0}");
                                 table.Cell().Element(CellStyle).Text($"${provider.PendingBalance:F0}");
 

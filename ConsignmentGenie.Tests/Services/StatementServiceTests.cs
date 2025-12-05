@@ -256,11 +256,11 @@ public class StatementServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetStatementAsync_WithWrongProviderId_ReturnsNull()
+    public async Task GetStatementAsync_WithWrongConsignorId_ReturnsNull()
     {
         // Arrange
         var testData = await CreateTestDataAsync();
-        var wrongProviderId = Guid.NewGuid();
+        var wrongConsignorId = Guid.NewGuid();
 
         var statement = new Statement
         {
@@ -278,7 +278,7 @@ public class StatementServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _service.GetStatementAsync(statement.Id, wrongProviderId);
+        var result = await _service.GetStatementAsync(statement.Id, wrongConsignorId);
 
         // Assert
         Assert.Null(result);
@@ -373,13 +373,13 @@ public class StatementServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GenerateStatementsForMonthAsync_WithMultipleProviders_CreatesAllStatements()
+    public async Task GenerateStatementsForMonthAsync_WithMultipleConsignors_CreatesAllStatements()
     {
         // Arrange
         var testData = await CreateTestDataAsync();
 
-        // Create a second provider
-        var provider2 = new Consignor
+        // Create a second consignor
+        var consignor2 = new Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = testData.Organization.Id,
@@ -387,12 +387,12 @@ public class StatementServiceTests : IDisposable
             ConsignorNumber = "PRV-002",
             FirstName = "Second",
             LastName = "Consignor",
-            Email = "provider2@test.com",
+            Email = "consignor2@test.com",
             CommissionRate = 50.00m,
             Status = ConsignorStatus.Approved
         };
 
-        _context.Consignors.Add(provider2);
+        _context.Consignors.Add(consignor2);
         await _context.SaveChangesAsync();
 
         // Act
@@ -402,7 +402,7 @@ public class StatementServiceTests : IDisposable
         var statements = await _context.Statements.ToListAsync();
         Assert.Equal(2, statements.Count);
         Assert.Contains(statements, s => s.ConsignorId == testData.Consignor.Id);
-        Assert.Contains(statements, s => s.ConsignorId == provider2.Id);
+        Assert.Contains(statements, s => s.ConsignorId == consignor2.Id);
     }
 
     private async Task<TestData> CreateTestDataAsync()
@@ -419,13 +419,13 @@ public class StatementServiceTests : IDisposable
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = "provider@test.com",
+            Email = "consignor@test.com",
             PasswordHash = "hashedpassword",
             Role = UserRole.Consignor,
             OrganizationId = organization.Id
         };
 
-        var provider = new Consignor
+        var consignor = new Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
@@ -433,7 +433,7 @@ public class StatementServiceTests : IDisposable
             ConsignorNumber = "PRV-001",
             FirstName = "Test",
             LastName = "Consignor",
-            Email = "provider@test.com",
+            Email = "consignor@test.com",
             CommissionRate = 60.00m,
             Status = ConsignorStatus.Approved
         };
@@ -442,7 +442,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
-            ConsignorId = provider.Id,
+            ConsignorId = consignor.Id,
             Title = "Test Item 1",
             Description = "Test description 1",
             Price = 100.00m,
@@ -454,7 +454,7 @@ public class StatementServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
-            ConsignorId = provider.Id,
+            ConsignorId = consignor.Id,
             Title = "Test Item 2",
             Description = "Test description 2",
             Price = 50.00m,
@@ -464,7 +464,7 @@ public class StatementServiceTests : IDisposable
 
         _context.Organizations.Add(organization);
         _context.Users.Add(user);
-        _context.Consignors.Add(provider);
+        _context.Consignors.Add(consignor);
         _context.Items.AddRange(item1, item2);
         await _context.SaveChangesAsync();
 
@@ -472,7 +472,7 @@ public class StatementServiceTests : IDisposable
         {
             Organization = organization,
             User = user,
-            Consignor = provider,
+            Consignor = consignor,
             Item1 = item1,
             Item2 = item2
         };

@@ -16,7 +16,7 @@ public class TransactionDto
 
     // Navigation data
     public ItemSummaryDto Item { get; set; } = new();
-    public ProviderSummaryDto Consignor { get; set; } = new();
+    public ConsignorSummaryDto Consignor { get; set; } = new();
     public string? Notes { get; set; }
 
     // Audit
@@ -32,7 +32,7 @@ public class ItemSummaryDto
     public decimal OriginalPrice { get; set; }
 }
 
-public class ProviderSummaryDto
+public class ConsignorSummaryDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

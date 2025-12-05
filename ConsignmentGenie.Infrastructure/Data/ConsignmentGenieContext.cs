@@ -43,7 +43,7 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<IntegrationCredentials> IntegrationCredentials { get; set; }
-    public DbSet<ProviderInvitation> ProviderInvitations { get; set; }
+    public DbSet<ConsignorInvitation> ConsignorInvitations { get; set; }
     public DbSet<OwnerInvitation> OwnerInvitations { get; set; }
     public DbSet<ClerkInvitation> ClerkInvitations { get; set; }
     public DbSet<ClerkPermissions> ClerkPermissions { get; set; }
@@ -676,9 +676,10 @@ public class ConsignmentGenieContext : DbContext
             entity.HasIndex(o => o.SetupStep);
         });
 
-        // ProviderInvitation configuration
-        modelBuilder.Entity<ProviderInvitation>(entity =>
+        // ConsignorInvitation configuration
+        modelBuilder.Entity<ConsignorInvitation>(entity =>
         {
+            entity.ToTable("ConsignorInvitations");
             entity.HasIndex(pi => pi.OrganizationId);
             entity.HasIndex(pi => pi.Token).IsUnique();
             entity.HasIndex(pi => new { pi.OrganizationId, pi.Email });

@@ -16,11 +16,11 @@ namespace ConsignmentGenie.Tests.Controllers
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<ILogger<MobileController>> _mockLogger;
         private readonly Mock<IRepository<Item>> _mockItemRepository;
-        private readonly Mock<IRepository<Consignor>> _mockProviderRepository;
+        private readonly Mock<IRepository<Consignor>> _mockConsignorRepository;
         private readonly Mock<IRepository<Transaction>> _mockTransactionRepository;
         private readonly MobileController _controller;
         private readonly Guid _organizationId = Guid.NewGuid();
-        private readonly Guid _providerId = Guid.NewGuid();
+        private readonly Guid _consignorId = Guid.NewGuid();
         private readonly Guid _userId = Guid.NewGuid();
 
         public MobileControllerTests()
@@ -28,11 +28,11 @@ namespace ConsignmentGenie.Tests.Controllers
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockLogger = new Mock<ILogger<MobileController>>();
             _mockItemRepository = new Mock<IRepository<Item>>();
-            _mockProviderRepository = new Mock<IRepository<Consignor>>();
+            _mockConsignorRepository = new Mock<IRepository<Consignor>>();
             _mockTransactionRepository = new Mock<IRepository<Transaction>>();
 
             _mockUnitOfWork.Setup(u => u.Items).Returns(_mockItemRepository.Object);
-            _mockUnitOfWork.Setup(u => u.Consignors).Returns(_mockProviderRepository.Object);
+            _mockUnitOfWork.Setup(u => u.Consignors).Returns(_mockConsignorRepository.Object);
             _mockUnitOfWork.Setup(u => u.Transactions).Returns(_mockTransactionRepository.Object);
 
             _controller = new MobileController(_mockUnitOfWork.Object, _mockLogger.Object);
@@ -41,7 +41,7 @@ namespace ConsignmentGenie.Tests.Controllers
             SetupUserClaims("Owner");
         }
 
-        private void SetupUserClaims(string role, Guid? providerId = null)
+        private void SetupUserClaims(string role, Guid? consignorId = null)
         {
             var claims = new List<Claim>
             {
@@ -50,9 +50,9 @@ namespace ConsignmentGenie.Tests.Controllers
                 new(ClaimTypes.Role, role)
             };
 
-            if (providerId.HasValue)
+            if (consignorId.HasValue)
             {
-                claims.Add(new("ConsignorId", providerId.Value.ToString()));
+                claims.Add(new("ConsignorId", consignorId.Value.ToString()));
             }
 
             var identity = new ClaimsIdentity(claims, "test");
@@ -98,7 +98,7 @@ namespace ConsignmentGenie.Tests.Controllers
             _mockItemRepository.Setup(i => i.CountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>()))
                 .ReturnsAsync(25);
 
-            _mockProviderRepository.Setup(p => p.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Consignor, bool>>>(), "Items"))
+            _mockConsignorRepository.Setup(p => p.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Consignor, bool>>>(), "Items"))
                 .ReturnsAsync(new List<Consignor>());
 
             // Act
@@ -120,14 +120,14 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetMobileDashboard_WithProviderRole_ReturnsProviderDashboard()
+        public async Task GetMobileDashboard_WithConsignorRole_ReturnsConsignorDashboard()
         {
             // Arrange
-            SetupUserClaims("Consignor", _providerId);
+            SetupUserClaims("Consignor", _consignorId);
 
-            var provider = new Consignor
+            var consignor = new Consignor
             {
-                Id = _providerId,
+                Id = _consignorId,
                 DisplayName = "Test Consignor",
                 DefaultSplitPercentage = 60.0m,
                 Items = new List<Item>
@@ -138,8 +138,8 @@ namespace ConsignmentGenie.Tests.Controllers
                 Payouts = new List<Payout>()
             };
 
-            _mockProviderRepository.Setup(p => p.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Consignor, bool>>>(), "Items,Payouts"))
-                .ReturnsAsync(provider);
+            _mockConsignorRepository.Setup(p => p.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Consignor, bool>>>(), "Items,Payouts"))
+                .ReturnsAsync(consignor);
 
             // Act
             var result = await _controller.GetMobileDashboard();
@@ -234,10 +234,10 @@ namespace ConsignmentGenie.Tests.Controllers
                 Title = "Test Item",
                 Price = 100.00m,
                 Status = ItemStatus.Available,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Consignor = new Consignor
                 {
-                    Id = _providerId,
+                    Id = _consignorId,
                     CommissionRate = 60.0m,
                     DefaultSplitPercentage = 60.0m
                 }
@@ -323,7 +323,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 CreatedAt = DateTime.UtcNow,
                 Consignor = new Consignor
                 {
-                    Id = _providerId,
+                    Id = _consignorId,
                     DisplayName = "Test Consignor",
                     DefaultSplitPercentage = 60.0m
                 }
@@ -425,7 +425,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = itemId,
                 Status = ItemStatus.Available,
-                ConsignorId = _providerId
+                ConsignorId = _consignorId
             };
 
             var request = new OfflineSyncRequest

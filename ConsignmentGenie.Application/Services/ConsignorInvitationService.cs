@@ -11,14 +11,14 @@ using ConsignmentGenie.Core.Enums;
 
 namespace ConsignmentGenie.Application.Services;
 
-public class ProviderInvitationService : IProviderInvitationService
+public class ConsignorInvitationService : IConsignorInvitationService
 {
     private readonly ConsignmentGenieContext _context;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
-    private readonly ILogger<ProviderInvitationService> _logger;
+    private readonly ILogger<ConsignorInvitationService> _logger;
 
-    public ProviderInvitationService(ConsignmentGenieContext context, IEmailService emailService, IConfiguration configuration, ILogger<ProviderInvitationService> logger)
+    public ConsignorInvitationService(ConsignmentGenieContext context, IEmailService emailService, IConfiguration configuration, ILogger<ConsignorInvitationService> logger)
     {
         _context = context;
         _emailService = emailService;
@@ -26,7 +26,7 @@ public class ProviderInvitationService : IProviderInvitationService
         _logger = logger;
     }
 
-    public async Task<ProviderInvitationResultDto> CreateInvitationAsync(CreateProviderInvitationDto request, Guid organizationId, Guid invitedById)
+    public async Task<ConsignorInvitationResultDto> CreateInvitationAsync(CreateConsignorInvitationDto request, Guid organizationId, Guid invitedById)
     {
         try
         {
@@ -36,7 +36,7 @@ public class ProviderInvitationService : IProviderInvitationService
 
             if (existingUser != null)
             {
-                return new ProviderInvitationResultDto
+                return new ConsignorInvitationResultDto
                 {
                     Success = false,
                     Message = "A user with this email already exists in the system."
@@ -44,14 +44,14 @@ public class ProviderInvitationService : IProviderInvitationService
             }
 
             // Check if there's already a pending invitation
-            var existingInvitation = await _context.ProviderInvitations
+            var existingInvitation = await _context.ConsignorInvitations
                 .FirstOrDefaultAsync(pi => pi.Email.ToLower() == request.Email.ToLower()
                                           && pi.OrganizationId == organizationId
                                           && pi.Status == InvitationStatus.Pending);
 
             if (existingInvitation != null)
             {
-                return new ProviderInvitationResultDto
+                return new ConsignorInvitationResultDto
                 {
                     Success = false,
                     Message = "A pending invitation already exists for this email address."
@@ -59,7 +59,7 @@ public class ProviderInvitationService : IProviderInvitationService
             }
 
             // Create new invitation
-            var invitation = new ProviderInvitation
+            var invitation = new ConsignorInvitation
             {
                 OrganizationId = organizationId,
                 InvitedById = invitedById,
@@ -70,7 +70,7 @@ public class ProviderInvitationService : IProviderInvitationService
                 ExpiresAt = DateTime.UtcNow.AddDays(7) // 7-day expiration
             };
 
-            _context.ProviderInvitations.Add(invitation);
+            _context.ConsignorInvitations.Add(invitation);
             await _context.SaveChangesAsync();
 
             // Get organization and inviter details for email
@@ -98,7 +98,7 @@ public class ProviderInvitationService : IProviderInvitationService
 
             var result = await GetInvitationDtoAsync(invitation.Id);
 
-            return new ProviderInvitationResultDto
+            return new ConsignorInvitationResultDto
             {
                 Success = true,
                 Message = "Invitation sent successfully.",
@@ -107,7 +107,7 @@ public class ProviderInvitationService : IProviderInvitationService
         }
         catch (Exception ex)
         {
-            return new ProviderInvitationResultDto
+            return new ConsignorInvitationResultDto
             {
                 Success = false,
                 Message = $"Failed to create invitation: {ex.Message}"
@@ -115,12 +115,12 @@ public class ProviderInvitationService : IProviderInvitationService
         }
     }
 
-    public async Task<IEnumerable<ProviderInvitationDto>> GetPendingInvitationsAsync(Guid organizationId)
+    public async Task<IEnumerable<ConsignorInvitationDto>> GetPendingInvitationsAsync(Guid organizationId)
     {
-        return await _context.ProviderInvitations
+        return await _context.ConsignorInvitations
             .Where(pi => pi.OrganizationId == organizationId && pi.Status == InvitationStatus.Pending)
             .Include(pi => pi.InvitedBy)
-            .Select(pi => new ProviderInvitationDto
+            .Select(pi => new ConsignorInvitationDto
             {
                 Id = pi.Id,
                 Name = pi.Name,
@@ -134,9 +134,9 @@ public class ProviderInvitationService : IProviderInvitationService
             .ToListAsync();
     }
 
-    public async Task<ProviderInvitationDto?> GetInvitationByTokenAsync(string token)
+    public async Task<ConsignorInvitationDto?> GetInvitationByTokenAsync(string token)
     {
-        var invitation = await _context.ProviderInvitations
+        var invitation = await _context.ConsignorInvitations
             .Include(pi => pi.InvitedBy)
             .Include(pi => pi.Organization)
             .FirstOrDefaultAsync(pi => pi.Token == token);
@@ -144,7 +144,7 @@ public class ProviderInvitationService : IProviderInvitationService
         if (invitation == null)
             return null;
 
-        return new ProviderInvitationDto
+        return new ConsignorInvitationDto
         {
             Id = invitation.Id,
             Name = invitation.Name,
@@ -158,7 +158,7 @@ public class ProviderInvitationService : IProviderInvitationService
 
     public async Task<bool> CancelInvitationAsync(Guid invitationId, Guid organizationId)
     {
-        var invitation = await _context.ProviderInvitations
+        var invitation = await _context.ConsignorInvitations
             .FirstOrDefaultAsync(pi => pi.Id == invitationId && pi.OrganizationId == organizationId);
 
         if (invitation == null || invitation.Status != InvitationStatus.Pending)
@@ -173,7 +173,7 @@ public class ProviderInvitationService : IProviderInvitationService
 
     public async Task<bool> ResendInvitationAsync(Guid invitationId, Guid organizationId)
     {
-        var invitation = await _context.ProviderInvitations
+        var invitation = await _context.ConsignorInvitations
             .Include(pi => pi.Organization)
             .Include(pi => pi.InvitedBy)
             .FirstOrDefaultAsync(pi => pi.Id == invitationId && pi.OrganizationId == organizationId);
@@ -208,14 +208,14 @@ public class ProviderInvitationService : IProviderInvitationService
         return true;
     }
 
-    public async Task<RegisterProviderFromInvitationResponse> RegisterFromInvitationAsync(RegisterProviderFromInvitationRequest request)
+    public async Task<RegisterConsignorFromInvitationResponse> RegisterFromInvitationAsync(RegisterConsignorFromInvitationRequest request)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
             // Validate invitation
-            var invitation = await _context.ProviderInvitations
+            var invitation = await _context.ConsignorInvitations
                 .Include(i => i.Organization)
                 .FirstOrDefaultAsync(i => i.Token == request.InvitationToken &&
                                          i.Status == InvitationStatus.Pending &&
@@ -223,7 +223,7 @@ public class ProviderInvitationService : IProviderInvitationService
 
             if (invitation == null)
             {
-                return new RegisterProviderFromInvitationResponse
+                return new RegisterConsignorFromInvitationResponse
                 {
                     Success = false,
                     Message = "Invalid or expired invitation"
@@ -233,7 +233,7 @@ public class ProviderInvitationService : IProviderInvitationService
             // Check if email matches invitation
             if (!string.Equals(invitation.Email, request.Email, StringComparison.OrdinalIgnoreCase))
             {
-                return new RegisterProviderFromInvitationResponse
+                return new RegisterConsignorFromInvitationResponse
                 {
                     Success = false,
                     Message = "Email address does not match invitation"
@@ -246,15 +246,15 @@ public class ProviderInvitationService : IProviderInvitationService
 
             if (existingUser != null)
             {
-                return new RegisterProviderFromInvitationResponse
+                return new RegisterConsignorFromInvitationResponse
                 {
                     Success = false,
                     Message = "A user with this email already exists"
                 };
             }
 
-            // Generate provider number
-            var providerNumber = await GenerateProviderNumberAsync(invitation.OrganizationId);
+            // Generate consignor number
+            var consignorNumber = await GenerateProviderNumberAsync(invitation.OrganizationId);
 
             // Create user account
             var user = new User
@@ -274,13 +274,13 @@ public class ProviderInvitationService : IProviderInvitationService
             var firstName = nameParts[0];
             var lastName = nameParts.Length > 1 ? nameParts[1] : "";
 
-            // Create provider record
-            var provider = new Consignor
+            // Create consignor record
+            var consignor = new Consignor
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = invitation.OrganizationId,
                 UserId = user.Id,
-                ConsignorNumber = providerNumber,
+                ConsignorNumber = consignorNumber,
                 FirstName = firstName,
                 LastName = lastName,
                 Email = request.Email,
@@ -296,13 +296,13 @@ public class ProviderInvitationService : IProviderInvitationService
                 CreatedBy = user.Id
             };
 
-            if (provider.Status == ConsignorStatus.Active)
+            if (consignor.Status == ConsignorStatus.Active)
             {
-                provider.ApprovedAt = DateTime.UtcNow;
-                provider.ApprovedBy = user.Id; // Self-approved via auto-approval
+                consignor.ApprovedAt = DateTime.UtcNow;
+                consignor.ApprovedBy = user.Id; // Self-approved via auto-approval
             }
 
-            _context.Consignors.Add(provider);
+            _context.Consignors.Add(consignor);
 
             // Mark invitation as accepted
             invitation.Status = InvitationStatus.Accepted;
@@ -312,14 +312,14 @@ public class ProviderInvitationService : IProviderInvitationService
             await transaction.CommitAsync();
 
             _logger.LogInformation("[INVITATION] Consignor registered successfully: {Email}, ConsignorNumber: {ConsignorNumber}",
-                request.Email, providerNumber);
+                request.Email, consignorNumber);
 
-            return new RegisterProviderFromInvitationResponse
+            return new RegisterConsignorFromInvitationResponse
             {
                 Success = true,
                 Message = "Registration completed successfully",
-                ConsignorId = provider.Id,
-                ConsignorNumber = providerNumber
+                ConsignorId = consignor.Id,
+                ConsignorNumber = consignorNumber
             };
         }
         catch (Exception ex)
@@ -327,7 +327,7 @@ public class ProviderInvitationService : IProviderInvitationService
             await transaction.RollbackAsync();
             _logger.LogError(ex, "[INVITATION] Failed to register provider from invitation: {Email}", request.Email);
 
-            return new RegisterProviderFromInvitationResponse
+            return new RegisterConsignorFromInvitationResponse
             {
                 Success = false,
                 Message = "Registration failed. Please try again."
@@ -356,12 +356,12 @@ public class ProviderInvitationService : IProviderInvitationService
         return $"PRV-{nextNumber:D5}";
     }
 
-    private async Task<ProviderInvitationDto?> GetInvitationDtoAsync(Guid invitationId)
+    private async Task<ConsignorInvitationDto?> GetInvitationDtoAsync(Guid invitationId)
     {
-        return await _context.ProviderInvitations
+        return await _context.ConsignorInvitations
             .Where(pi => pi.Id == invitationId)
             .Include(pi => pi.InvitedBy)
-            .Select(pi => new ProviderInvitationDto
+            .Select(pi => new ConsignorInvitationDto
             {
                 Id = pi.Id,
                 Name = pi.Name,

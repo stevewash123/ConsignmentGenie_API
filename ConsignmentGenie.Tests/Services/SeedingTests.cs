@@ -101,12 +101,12 @@ public class SeedingTests : IDisposable
     }
 
     [Fact]
-    public async Task SeedData_ProviderUserCanLogin()
+    public async Task SeedData_ConsignorUserCanLogin()
     {
         // Arrange
         var loginRequest = new LoginRequest
         {
-            Email = "provider1@microsaasbuilders.com",
+            Email = "consignor1@microsaasbuilders.com",
             Password = "password123"
         };
 
@@ -115,7 +115,7 @@ public class SeedingTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("provider1@microsaasbuilders.com", result.Email);
+        Assert.Equal("consignor1@microsaasbuilders.com", result.Email);
         Assert.Equal(UserRole.Consignor, result.Role);
     }
 
@@ -139,22 +139,22 @@ public class SeedingTests : IDisposable
     }
 
     [Fact]
-    public async Task SeedData_CreatesProviderEntity()
+    public async Task SeedData_CreatesConsignorEntity()
     {
         // Act
-        var provider = await _context.Consignors
+        var consignor = await _context.Consignors
             .Include(p => p.User)
             .FirstOrDefaultAsync();
 
         // Assert
-        Assert.NotNull(provider);
-        Assert.Equal("Demo", provider.FirstName);
-        Assert.Equal("Artist", provider.LastName);
-        Assert.Equal("provider1@microsaasbuilders.com", provider.Email);
-        Assert.Equal(0.6000m, provider.CommissionRate);
-        Assert.Equal(ConsignorStatus.Active, provider.Status);
-        Assert.NotNull(provider.User);
-        Assert.Equal(UserRole.Consignor, provider.User.Role);
+        Assert.NotNull(consignor);
+        Assert.Equal("Demo", consignor.FirstName);
+        Assert.Equal("Artist", consignor.LastName);
+        Assert.Equal("consignor1@microsaasbuilders.com", consignor.Email);
+        Assert.Equal(0.6000m, consignor.CommissionRate);
+        Assert.Equal(ConsignorStatus.Active, consignor.Status);
+        Assert.NotNull(consignor.User);
+        Assert.Equal(UserRole.Consignor, consignor.User.Role);
     }
 
     public void Dispose()

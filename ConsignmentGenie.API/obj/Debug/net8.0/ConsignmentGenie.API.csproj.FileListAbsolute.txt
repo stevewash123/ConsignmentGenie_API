@@ -406,3 +406,7 @@ C:/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/obj/Debug
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/obj/Debug/net8.0/Consignm.B1A7A8CC.Up2Date
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/obj/Debug/net8.0/ConsignmentGenie.API.genruntimeconfig.cache
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/obj/Debug/net8.0/ref/ConsignmentGenie.API.dll
+C:/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/bin/Debug/net8.0/Templates/Email/welcome-email.html
+C:/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/bin/Debug/net8.0/Templates/Email/welcome-email.txt
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/bin/Debug/net8.0/Templates/Email/welcome-email.html
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.API/bin/Debug/net8.0/Templates/Email/welcome-email.txt

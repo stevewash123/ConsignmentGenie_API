@@ -12,16 +12,16 @@ using System.Text.Json;
 
 namespace ConsignmentGenie.Application.Services;
 
-public class ProviderNotificationService : IProviderNotificationService
+public class ConsignorNotificationService : IConsignorNotificationService
 {
     private readonly ConsignmentGenieContext _context;
     private readonly INotificationService _emailNotificationService; // Existing service for emails
-    private readonly ILogger<ProviderNotificationService> _logger;
+    private readonly ILogger<ConsignorNotificationService> _logger;
 
-    public ProviderNotificationService(
+    public ConsignorNotificationService(
         ConsignmentGenieContext context,
         INotificationService emailNotificationService,
-        ILogger<ProviderNotificationService> logger)
+        ILogger<ConsignorNotificationService> logger)
     {
         _context = context;
         _emailNotificationService = emailNotificationService;

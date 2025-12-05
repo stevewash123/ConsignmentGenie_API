@@ -23,7 +23,7 @@ public class OwnerInvitationService : IOwnerInvitationService
     private readonly IConfiguration _configuration;
     private readonly ILogger<OwnerInvitationService> _logger;
     private readonly IAuthService _authService;
-    private readonly IProviderNotificationService _notificationService;
+    private readonly IConsignorNotificationService _notificationService;
 
     public OwnerInvitationService(
         ConsignmentGenieContext context,
@@ -31,7 +31,7 @@ public class OwnerInvitationService : IOwnerInvitationService
         IConfiguration configuration,
         ILogger<OwnerInvitationService> logger,
         IAuthService authService,
-        IProviderNotificationService notificationService)
+        IConsignorNotificationService notificationService)
     {
         _context = context;
         _emailService = emailService;

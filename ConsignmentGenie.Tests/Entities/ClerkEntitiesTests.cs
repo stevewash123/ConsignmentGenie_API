@@ -14,7 +14,7 @@ public class ClerkEntitiesTests
         var permissions = new ClerkPermissions();
 
         // Assert
-        Assert.False(permissions.ShowProviderNames);
+        Assert.False(permissions.ShowConsignorNames);
         Assert.False(permissions.ShowItemCost);
         Assert.True(permissions.AllowReturns);
         Assert.Equal(50.00m, permissions.MaxReturnAmountWithoutPin);
@@ -33,7 +33,7 @@ public class ClerkEntitiesTests
         var permissions = new ClerkPermissions
         {
             OrganizationId = Guid.Empty, // Invalid GUID
-            ShowProviderNames = true
+            ShowConsignorNames = true
         };
 
         // Act
@@ -59,7 +59,7 @@ public class ClerkEntitiesTests
         var permissions = new ClerkPermissions
         {
             OrganizationId = Guid.NewGuid(),
-            ShowProviderNames = true,
+            ShowConsignorNames = true,
             AllowReturns = true,
             MaxReturnAmountWithoutPin = 100.00m
         };

@@ -19,18 +19,18 @@ public class ConsignorsController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
     private readonly ILogger<ConsignorsController> _logger;
-    private readonly IProviderInvitationService _invitationService;
+    private readonly IConsignorInvitationService _invitationService;
 
-    public ConsignorsController(ConsignmentGenieContext context, ILogger<ConsignorsController> logger, IProviderInvitationService invitationService)
+    public ConsignorsController(ConsignmentGenieContext context, ILogger<ConsignorsController> logger, IConsignorInvitationService invitationService)
     {
         _context = context;
         _logger = logger;
         _invitationService = invitationService;
     }
 
-    // LIST - Get providers with filtering/pagination
+    // LIST - Get consignors with filtering/pagination
     [HttpGet]
-    public async Task<ActionResult<PagedResult<ProviderListDto>>> GetProviders([FromQuery] ProviderQueryParams queryParams)
+    public async Task<ActionResult<PagedResult<ConsignorListDto>>> GetProviders([FromQuery] ConsignorQueryParams queryParams)
     {
         try
         {
@@ -58,20 +58,20 @@ public class ConsignorsController : ControllerBase
             }
 
             // Get data and calculate metrics
-            var providers = await query.ToListAsync();
-            var providersWithMetrics = new List<dynamic>();
+            var consignors = await query.ToListAsync();
+            var consignorsWithMetrics = new List<dynamic>();
 
-            foreach (var provider in providers)
+            foreach (var consignor in consignors)
             {
-                var pendingBalance = await CalculatePendingBalance(provider.Id, organizationId);
-                var totalEarnings = provider.Transactions.Sum(t => t.ConsignorAmount);
+                var pendingBalance = await CalculatePendingBalance(consignor.Id, organizationId);
+                var totalEarnings = consignor.Transactions.Sum(t => t.ConsignorAmount);
 
-                providersWithMetrics.Add(new
+                consignorsWithMetrics.Add(new
                 {
-                    Consignor = provider,
+                    Consignor = consignor,
                     PendingBalance = pendingBalance,
-                    ActiveItemCount = provider.Items.Count(i => i.Status == ItemStatus.Available),
-                    TotalItemCount = provider.Items.Count(),
+                    ActiveItemCount = consignor.Items.Count(i => i.Status == ItemStatus.Available),
+                    TotalItemCount = consignor.Items.Count(),
                     TotalEarnings = totalEarnings
                 });
             }
@@ -79,7 +79,7 @@ public class ConsignorsController : ControllerBase
             // Apply pending balance filter
             if (queryParams.HasPendingBalance.HasValue)
             {
-                providersWithMetrics = providersWithMetrics
+                consignorsWithMetrics = consignorsWithMetrics
                     .Where(p => queryParams.HasPendingBalance.Value
                         ? ((decimal)p.PendingBalance) > 0
                         : ((decimal)p.PendingBalance) == 0)
@@ -87,16 +87,16 @@ public class ConsignorsController : ControllerBase
             }
 
             // Apply sorting
-            providersWithMetrics = ApplySorting(providersWithMetrics, queryParams);
+            consignorsWithMetrics = ApplySorting(consignorsWithMetrics, queryParams);
 
             // Apply pagination
-            var totalCount = providersWithMetrics.Count;
-            var pagedProviders = providersWithMetrics
+            var totalCount = consignorsWithMetrics.Count;
+            var pagedProviders = consignorsWithMetrics
                 .Skip((queryParams.Page - 1) * queryParams.PageSize)
                 .Take(queryParams.PageSize)
                 .ToList();
 
-            var providerDtos = pagedProviders.Select(p => new ProviderListDto
+            var consignorDtos = pagedProviders.Select(p => new ConsignorListDto
             {
                 ConsignorId = ((Consignor)p.Consignor).Id,
                 ConsignorNumber = ((Consignor)p.Consignor).ConsignorNumber,
@@ -113,9 +113,9 @@ public class ConsignorsController : ControllerBase
                 CreatedAt = ((Consignor)p.Consignor).CreatedAt
             }).ToList();
 
-            var result = new PagedResult<ProviderListDto>
+            var result = new PagedResult<ConsignorListDto>
             {
-                Items = providerDtos,
+                Items = consignorDtos,
                 TotalCount = totalCount,
                 Page = queryParams.Page,
                 PageSize = queryParams.PageSize,
@@ -126,79 +126,79 @@ public class ConsignorsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting providers for organization {OrganizationId}", GetOrganizationId());
-            return StatusCode(500, "Failed to retrieve providers");
+            _logger.LogError(ex, "Error getting consignors for organization {OrganizationId}", GetOrganizationId());
+            return StatusCode(500, "Failed to retrieve consignors");
         }
     }
 
-    // GET ONE - Get provider by ID with full details
+    // GET ONE - Get consignor by ID with full details
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<ApiResponse<ProviderDetailDto>>> GetProvider(Guid id)
+    public async Task<ActionResult<ApiResponse<ConsignorDetailDto>>> GetConsignor(Guid id)
     {
         try
         {
             var organizationId = GetOrganizationId();
-            var provider = await _context.Consignors
+            var consignor = await _context.Consignors
                 .Include(p => p.ApprovedByUser)
                 .Include(p => p.User)
                 .Where(p => p.Id == id && p.OrganizationId == organizationId)
                 .FirstOrDefaultAsync();
 
-            if (provider == null)
+            if (consignor == null)
             {
-                return NotFound(ApiResponse<ProviderDetailDto>.ErrorResult("Consignor not found"));
+                return NotFound(ApiResponse<ConsignorDetailDto>.ErrorResult("Consignor not found"));
             }
 
-            var metrics = await CalculateProviderMetrics(provider.Id, organizationId);
+            var metrics = await CalculateProviderMetrics(consignor.Id, organizationId);
 
-            var providerDto = new ProviderDetailDto
+            var consignorDto = new ConsignorDetailDto
             {
-                ConsignorId = provider.Id,
-                UserId = provider.UserId,
-                ConsignorNumber = provider.ConsignorNumber,
-                FirstName = provider.FirstName,
-                LastName = provider.LastName,
-                FullName = $"{provider.FirstName} {provider.LastName}",
-                Email = provider.Email,
-                Phone = provider.Phone,
-                AddressLine1 = provider.AddressLine1,
-                AddressLine2 = provider.AddressLine2,
-                City = provider.City,
-                State = provider.State,
-                PostalCode = provider.PostalCode,
-                FullAddress = FormatAddress(provider),
-                CommissionRate = provider.CommissionRate,
-                ContractStartDate = provider.ContractStartDate,
-                ContractEndDate = provider.ContractEndDate,
-                IsContractExpired = provider.ContractEndDate.HasValue && provider.ContractEndDate.Value < DateTime.UtcNow,
-                PreferredPaymentMethod = provider.PreferredPaymentMethod,
-                PaymentDetails = provider.PaymentDetails,
-                Status = provider.Status.ToString(),
-                StatusChangedAt = provider.StatusChangedAt,
-                StatusChangedReason = provider.StatusChangedReason,
-                ApprovalStatus = provider.ApprovalStatus,
-                ApprovedAt = provider.ApprovedAt,
-                ApprovedByName = provider.ApprovedByUser?.Email,
-                RejectedReason = provider.RejectedReason,
-                Notes = provider.Notes,
-                HasPortalAccess = provider.UserId != null,
+                ConsignorId = consignor.Id,
+                UserId = consignor.UserId,
+                ConsignorNumber = consignor.ConsignorNumber,
+                FirstName = consignor.FirstName,
+                LastName = consignor.LastName,
+                FullName = $"{consignor.FirstName} {consignor.LastName}",
+                Email = consignor.Email,
+                Phone = consignor.Phone,
+                AddressLine1 = consignor.AddressLine1,
+                AddressLine2 = consignor.AddressLine2,
+                City = consignor.City,
+                State = consignor.State,
+                PostalCode = consignor.PostalCode,
+                FullAddress = FormatAddress(consignor),
+                CommissionRate = consignor.CommissionRate,
+                ContractStartDate = consignor.ContractStartDate,
+                ContractEndDate = consignor.ContractEndDate,
+                IsContractExpired = consignor.ContractEndDate.HasValue && consignor.ContractEndDate.Value < DateTime.UtcNow,
+                PreferredPaymentMethod = consignor.PreferredPaymentMethod,
+                PaymentDetails = consignor.PaymentDetails,
+                Status = consignor.Status.ToString(),
+                StatusChangedAt = consignor.StatusChangedAt,
+                StatusChangedReason = consignor.StatusChangedReason,
+                ApprovalStatus = consignor.ApprovalStatus,
+                ApprovedAt = consignor.ApprovedAt,
+                ApprovedByName = consignor.ApprovedByUser?.Email,
+                RejectedReason = consignor.RejectedReason,
+                Notes = consignor.Notes,
+                HasPortalAccess = consignor.UserId != null,
                 Metrics = metrics,
-                CreatedAt = provider.CreatedAt,
-                UpdatedAt = provider.UpdatedAt ?? provider.CreatedAt
+                CreatedAt = consignor.CreatedAt,
+                UpdatedAt = consignor.UpdatedAt ?? consignor.CreatedAt
             };
 
-            return Ok(ApiResponse<ProviderDetailDto>.SuccessResult(providerDto));
+            return Ok(ApiResponse<ConsignorDetailDto>.SuccessResult(consignorDto));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting provider {ConsignorId}", id);
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Failed to retrieve provider"));
+            _logger.LogError(ex, "Error getting consignor {ConsignorId}", id);
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Failed to retrieve consignor"));
         }
     }
 
-    // CREATE - Add new provider manually
+    // CREATE - Add new consignor manually
     [HttpPost]
-    public async Task<ActionResult<ApiResponse<ProviderDetailDto>>> CreateProvider([FromBody] CreateProviderRequest request)
+    public async Task<ActionResult<ApiResponse<ConsignorDetailDto>>> CreateConsignor([FromBody] CreateConsignorRequest request)
     {
         try
         {
@@ -215,7 +215,7 @@ public class ConsignorsController : ControllerBase
 
                 if (existingProvider)
                 {
-                    return BadRequest(ApiResponse<ProviderDetailDto>.ErrorResult("A provider with this email already exists"));
+                    return BadRequest(ApiResponse<ConsignorDetailDto>.ErrorResult("A consignor with this email already exists"));
                 }
             }
 
@@ -223,15 +223,15 @@ public class ConsignorsController : ControllerBase
             if (request.ContractStartDate.HasValue && request.ContractEndDate.HasValue &&
                 request.ContractEndDate.Value <= request.ContractStartDate.Value)
             {
-                return BadRequest(ApiResponse<ProviderDetailDto>.ErrorResult("Contract end date must be after start date"));
+                return BadRequest(ApiResponse<ConsignorDetailDto>.ErrorResult("Contract end date must be after start date"));
             }
 
-            var providerNumber = await GenerateProviderNumber(organizationId);
+            var consignorNumber = await GenerateProviderNumber(organizationId);
 
-            var provider = new Consignor
+            var consignor = new Consignor
             {
                 OrganizationId = organizationId,
-                ConsignorNumber = providerNumber,
+                ConsignorNumber = consignorNumber,
                 FirstName = request.FirstName.Trim(),
                 LastName = request.LastName.Trim(),
                 Email = request.Email?.Trim(),
@@ -251,46 +251,46 @@ public class ConsignorsController : ControllerBase
                 CreatedBy = userId
             };
 
-            _context.Consignors.Add(provider);
+            _context.Consignors.Add(consignor);
             await _context.SaveChangesAsync();
 
-            var result = await GetProvider(provider.Id);
+            var result = await GetConsignor(consignor.Id);
             if (result.Result is OkObjectResult okResult &&
-                okResult.Value is ApiResponse<ProviderDetailDto> apiResponse)
+                okResult.Value is ApiResponse<ConsignorDetailDto> apiResponse)
             {
                 apiResponse.Message = "Consignor created successfully";
-                return CreatedAtAction(nameof(GetProvider), new { id = provider.Id }, apiResponse);
+                return CreatedAtAction(nameof(GetConsignor), new { id = consignor.Id }, apiResponse);
             }
 
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Consignor created but failed to retrieve details"));
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Consignor created but failed to retrieve details"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating provider");
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Failed to create provider"));
+            _logger.LogError(ex, "Error creating consignor");
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Failed to create consignor"));
         }
     }
 
-    // UPDATE - Edit provider
+    // UPDATE - Edit consignor
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<ApiResponse<ProviderDetailDto>>> UpdateProvider(Guid id, [FromBody] UpdateProviderRequest request)
+    public async Task<ActionResult<ApiResponse<ConsignorDetailDto>>> UpdateConsignor(Guid id, [FromBody] UpdateConsignorRequest request)
     {
         try
         {
             var organizationId = GetOrganizationId();
             var userId = GetUserId();
 
-            var provider = await _context.Consignors
+            var consignor = await _context.Consignors
                 .Where(p => p.Id == id && p.OrganizationId == organizationId)
                 .FirstOrDefaultAsync();
 
-            if (provider == null)
+            if (consignor == null)
             {
-                return NotFound(ApiResponse<ProviderDetailDto>.ErrorResult("Consignor not found"));
+                return NotFound(ApiResponse<ConsignorDetailDto>.ErrorResult("Consignor not found"));
             }
 
             // Check email uniqueness
-            if (!string.IsNullOrEmpty(request.Email) && request.Email != provider.Email)
+            if (!string.IsNullOrEmpty(request.Email) && request.Email != consignor.Email)
             {
                 var existingProvider = await _context.Consignors
                     .AnyAsync(p => p.OrganizationId == organizationId &&
@@ -300,7 +300,7 @@ public class ConsignorsController : ControllerBase
 
                 if (existingProvider)
                 {
-                    return BadRequest(ApiResponse<ProviderDetailDto>.ErrorResult("A provider with this email already exists"));
+                    return BadRequest(ApiResponse<ConsignorDetailDto>.ErrorResult("A consignor with this email already exists"));
                 }
             }
 
@@ -308,146 +308,146 @@ public class ConsignorsController : ControllerBase
             if (request.ContractStartDate.HasValue && request.ContractEndDate.HasValue &&
                 request.ContractEndDate.Value <= request.ContractStartDate.Value)
             {
-                return BadRequest(ApiResponse<ProviderDetailDto>.ErrorResult("Contract end date must be after start date"));
+                return BadRequest(ApiResponse<ConsignorDetailDto>.ErrorResult("Contract end date must be after start date"));
             }
 
-            provider.FirstName = request.FirstName.Trim();
-            provider.LastName = request.LastName.Trim();
-            provider.Email = request.Email?.Trim();
-            provider.Phone = request.Phone?.Trim();
-            provider.AddressLine1 = request.AddressLine1?.Trim();
-            provider.AddressLine2 = request.AddressLine2?.Trim();
-            provider.City = request.City?.Trim();
-            provider.State = request.State?.Trim();
-            provider.PostalCode = request.PostalCode?.Trim();
-            provider.CommissionRate = request.CommissionRate;
-            provider.ContractStartDate = request.ContractStartDate;
-            provider.ContractEndDate = request.ContractEndDate;
-            provider.PreferredPaymentMethod = request.PreferredPaymentMethod?.Trim();
-            provider.PaymentDetails = request.PaymentDetails?.Trim();
-            provider.Notes = request.Notes?.Trim();
-            provider.UpdatedAt = DateTime.UtcNow;
-            provider.UpdatedBy = userId;
+            consignor.FirstName = request.FirstName.Trim();
+            consignor.LastName = request.LastName.Trim();
+            consignor.Email = request.Email?.Trim();
+            consignor.Phone = request.Phone?.Trim();
+            consignor.AddressLine1 = request.AddressLine1?.Trim();
+            consignor.AddressLine2 = request.AddressLine2?.Trim();
+            consignor.City = request.City?.Trim();
+            consignor.State = request.State?.Trim();
+            consignor.PostalCode = request.PostalCode?.Trim();
+            consignor.CommissionRate = request.CommissionRate;
+            consignor.ContractStartDate = request.ContractStartDate;
+            consignor.ContractEndDate = request.ContractEndDate;
+            consignor.PreferredPaymentMethod = request.PreferredPaymentMethod?.Trim();
+            consignor.PaymentDetails = request.PaymentDetails?.Trim();
+            consignor.Notes = request.Notes?.Trim();
+            consignor.UpdatedAt = DateTime.UtcNow;
+            consignor.UpdatedBy = userId;
 
             await _context.SaveChangesAsync();
 
-            var result = await GetProvider(provider.Id);
+            var result = await GetConsignor(consignor.Id);
             if (result.Result is OkObjectResult okResult &&
-                okResult.Value is ApiResponse<ProviderDetailDto> apiResponse)
+                okResult.Value is ApiResponse<ConsignorDetailDto> apiResponse)
             {
                 apiResponse.Message = "Consignor updated successfully";
                 return Ok(apiResponse);
             }
 
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Consignor updated but failed to retrieve details"));
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Consignor updated but failed to retrieve details"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating provider {ConsignorId}", id);
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Failed to update provider"));
+            _logger.LogError(ex, "Error updating consignor {ConsignorId}", id);
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Failed to update consignor"));
         }
     }
 
-    // DEACTIVATE - Soft deactivate provider
+    // DEACTIVATE - Soft deactivate consignor
     [HttpPost("{id:guid}/deactivate")]
-    public async Task<ActionResult<ApiResponse<ProviderDetailDto>>> DeactivateProvider(Guid id, [FromBody] DeactivateProviderRequest request)
+    public async Task<ActionResult<ApiResponse<ConsignorDetailDto>>> DeactivateProvider(Guid id, [FromBody] DeactivateConsignorRequest request)
     {
         try
         {
             var organizationId = GetOrganizationId();
             var userId = GetUserId();
 
-            var provider = await _context.Consignors
+            var consignor = await _context.Consignors
                 .Where(p => p.Id == id && p.OrganizationId == organizationId && p.Status == ConsignorStatus.Active)
                 .FirstOrDefaultAsync();
 
-            if (provider == null)
+            if (consignor == null)
             {
-                return NotFound(ApiResponse<ProviderDetailDto>.ErrorResult("Active provider not found"));
+                return NotFound(ApiResponse<ConsignorDetailDto>.ErrorResult("Active consignor not found"));
             }
 
-            provider.Status = ConsignorStatus.Deactivated;
-            provider.StatusChangedAt = DateTime.UtcNow;
-            provider.StatusChangedReason = request.Reason?.Trim();
-            provider.UpdatedAt = DateTime.UtcNow;
-            provider.UpdatedBy = userId;
+            consignor.Status = ConsignorStatus.Deactivated;
+            consignor.StatusChangedAt = DateTime.UtcNow;
+            consignor.StatusChangedReason = request.Reason?.Trim();
+            consignor.UpdatedAt = DateTime.UtcNow;
+            consignor.UpdatedBy = userId;
 
             await _context.SaveChangesAsync();
 
-            var result = await GetProvider(provider.Id);
+            var result = await GetConsignor(consignor.Id);
             if (result.Result is OkObjectResult okResult &&
-                okResult.Value is ApiResponse<ProviderDetailDto> apiResponse)
+                okResult.Value is ApiResponse<ConsignorDetailDto> apiResponse)
             {
                 apiResponse.Message = "Consignor deactivated successfully";
                 return Ok(apiResponse);
             }
 
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Consignor deactivated but failed to retrieve details"));
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Consignor deactivated but failed to retrieve details"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deactivating provider {ConsignorId}", id);
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Failed to deactivate provider"));
+            _logger.LogError(ex, "Error deactivating consignor {ConsignorId}", id);
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Failed to deactivate consignor"));
         }
     }
 
-    // REACTIVATE - Restore deactivated provider
+    // REACTIVATE - Restore deactivated consignor
     [HttpPost("{id:guid}/reactivate")]
-    public async Task<ActionResult<ApiResponse<ProviderDetailDto>>> ReactivateProvider(Guid id)
+    public async Task<ActionResult<ApiResponse<ConsignorDetailDto>>> ReactivateProvider(Guid id)
     {
         try
         {
             var organizationId = GetOrganizationId();
             var userId = GetUserId();
 
-            var provider = await _context.Consignors
+            var consignor = await _context.Consignors
                 .Where(p => p.Id == id && p.OrganizationId == organizationId && p.Status == ConsignorStatus.Deactivated)
                 .FirstOrDefaultAsync();
 
-            if (provider == null)
+            if (consignor == null)
             {
-                return NotFound(ApiResponse<ProviderDetailDto>.ErrorResult("Deactivated provider not found"));
+                return NotFound(ApiResponse<ConsignorDetailDto>.ErrorResult("Deactivated consignor not found"));
             }
 
-            provider.Status = ConsignorStatus.Active;
-            provider.StatusChangedAt = DateTime.UtcNow;
-            provider.StatusChangedReason = "Reactivated";
-            provider.UpdatedAt = DateTime.UtcNow;
-            provider.UpdatedBy = userId;
+            consignor.Status = ConsignorStatus.Active;
+            consignor.StatusChangedAt = DateTime.UtcNow;
+            consignor.StatusChangedReason = "Reactivated";
+            consignor.UpdatedAt = DateTime.UtcNow;
+            consignor.UpdatedBy = userId;
 
             await _context.SaveChangesAsync();
 
-            var result = await GetProvider(provider.Id);
+            var result = await GetConsignor(consignor.Id);
             if (result.Result is OkObjectResult okResult &&
-                okResult.Value is ApiResponse<ProviderDetailDto> apiResponse)
+                okResult.Value is ApiResponse<ConsignorDetailDto> apiResponse)
             {
                 apiResponse.Message = "Consignor reactivated successfully";
                 return Ok(apiResponse);
             }
 
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Consignor reactivated but failed to retrieve details"));
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Consignor reactivated but failed to retrieve details"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error reactivating provider {ConsignorId}", id);
-            return StatusCode(500, ApiResponse<ProviderDetailDto>.ErrorResult("Failed to reactivate provider"));
+            _logger.LogError(ex, "Error reactivating consignor {ConsignorId}", id);
+            return StatusCode(500, ApiResponse<ConsignorDetailDto>.ErrorResult("Failed to reactivate consignor"));
         }
     }
 
     #region Private Helper Methods
 
-    private async Task<ProviderMetricsDto> CalculateProviderMetrics(Guid providerId, Guid organizationId)
+    private async Task<ConsignorMetricsDto> CalculateProviderMetrics(Guid consignorId, Guid organizationId)
     {
         var items = await _context.Items
-            .Where(i => i.ConsignorId == providerId && i.OrganizationId == organizationId)
+            .Where(i => i.ConsignorId == consignorId && i.OrganizationId == organizationId)
             .ToListAsync();
 
         var transactions = await _context.Transactions
-            .Where(t => t.ConsignorId == providerId && t.OrganizationId == organizationId)
+            .Where(t => t.ConsignorId == consignorId && t.OrganizationId == organizationId)
             .ToListAsync();
 
         var payouts = await _context.Payouts
-            .Where(p => p.ConsignorId == providerId && p.OrganizationId == organizationId)
+            .Where(p => p.ConsignorId == consignorId && p.OrganizationId == organizationId)
             .ToListAsync();
 
         var now = DateTime.UtcNow;
@@ -462,14 +462,14 @@ public class ConsignorsController : ControllerBase
             .Where(t => t.SaleDate >= startOfLastMonth && t.SaleDate < startOfMonth)
             .ToList();
 
-        return new ProviderMetricsDto
+        return new ConsignorMetricsDto
         {
             TotalItems = items.Count,
             AvailableItems = items.Count(i => i.Status == ItemStatus.Available),
             SoldItems = items.Count(i => i.Status == ItemStatus.Sold),
             RemovedItems = items.Count(i => i.Status == ItemStatus.Removed),
             InventoryValue = items.Where(i => i.Status == ItemStatus.Available).Sum(i => i.Price),
-            PendingBalance = await CalculatePendingBalance(providerId, organizationId),
+            PendingBalance = await CalculatePendingBalance(consignorId, organizationId),
             TotalEarnings = totalEarnings,
             TotalPaid = totalPaid,
             EarningsThisMonth = thisMonthTransactions.Sum(t => t.ConsignorAmount),
@@ -484,36 +484,36 @@ public class ConsignorsController : ControllerBase
         };
     }
 
-    private async Task<decimal> CalculatePendingBalance(Guid providerId, Guid organizationId)
+    private async Task<decimal> CalculatePendingBalance(Guid consignorId, Guid organizationId)
     {
         var totalEarnings = await _context.Transactions
-            .Where(t => t.ConsignorId == providerId && t.OrganizationId == organizationId)
+            .Where(t => t.ConsignorId == consignorId && t.OrganizationId == organizationId)
             .SumAsync(t => t.ConsignorAmount);
 
         var totalPaid = await _context.Payouts
-            .Where(p => p.ConsignorId == providerId && p.OrganizationId == organizationId)
+            .Where(p => p.ConsignorId == consignorId && p.OrganizationId == organizationId)
             .SumAsync(p => p.Amount);
 
         return totalEarnings - totalPaid;
     }
 
-    private static List<dynamic> ApplySorting(List<dynamic> providers, ProviderQueryParams queryParams)
+    private static List<dynamic> ApplySorting(List<dynamic> consignors, ConsignorQueryParams queryParams)
     {
         return queryParams.SortBy?.ToLower() switch
         {
             "name" => queryParams.SortDirection?.ToLower() == "desc"
-                ? providers.OrderByDescending(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList()
-                : providers.OrderBy(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList(),
+                ? consignors.OrderByDescending(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList()
+                : consignors.OrderBy(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList(),
             "createdat" => queryParams.SortDirection?.ToLower() == "desc"
-                ? providers.OrderByDescending(p => ((Consignor)p.Consignor).CreatedAt).ToList()
-                : providers.OrderBy(p => ((Consignor)p.Consignor).CreatedAt).ToList(),
+                ? consignors.OrderByDescending(p => ((Consignor)p.Consignor).CreatedAt).ToList()
+                : consignors.OrderBy(p => ((Consignor)p.Consignor).CreatedAt).ToList(),
             "itemcount" => queryParams.SortDirection?.ToLower() == "desc"
-                ? providers.OrderByDescending(p => (int)p.TotalItemCount).ToList()
-                : providers.OrderBy(p => (int)p.TotalItemCount).ToList(),
+                ? consignors.OrderByDescending(p => (int)p.TotalItemCount).ToList()
+                : consignors.OrderBy(p => (int)p.TotalItemCount).ToList(),
             "balance" => queryParams.SortDirection?.ToLower() == "desc"
-                ? providers.OrderByDescending(p => (decimal)p.PendingBalance).ToList()
-                : providers.OrderBy(p => (decimal)p.PendingBalance).ToList(),
-            _ => providers.OrderBy(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList()
+                ? consignors.OrderByDescending(p => (decimal)p.PendingBalance).ToList()
+                : consignors.OrderBy(p => (decimal)p.PendingBalance).ToList(),
+            _ => consignors.OrderBy(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList()
         };
     }
 
@@ -542,20 +542,20 @@ public class ConsignorsController : ControllerBase
         return count > 0 ? totalDays / count : 0;
     }
 
-    private static string? FormatAddress(Consignor provider)
+    private static string? FormatAddress(Consignor consignor)
     {
         var parts = new List<string?>();
 
-        if (!string.IsNullOrEmpty(provider.AddressLine1))
-            parts.Add(provider.AddressLine1);
+        if (!string.IsNullOrEmpty(consignor.AddressLine1))
+            parts.Add(consignor.AddressLine1);
 
-        if (!string.IsNullOrEmpty(provider.AddressLine2))
-            parts.Add(provider.AddressLine2);
+        if (!string.IsNullOrEmpty(consignor.AddressLine2))
+            parts.Add(consignor.AddressLine2);
 
         var cityStateParts = new List<string?>();
-        if (!string.IsNullOrEmpty(provider.City)) cityStateParts.Add(provider.City);
-        if (!string.IsNullOrEmpty(provider.State)) cityStateParts.Add(provider.State);
-        if (!string.IsNullOrEmpty(provider.PostalCode)) cityStateParts.Add(provider.PostalCode);
+        if (!string.IsNullOrEmpty(consignor.City)) cityStateParts.Add(consignor.City);
+        if (!string.IsNullOrEmpty(consignor.State)) cityStateParts.Add(consignor.State);
+        if (!string.IsNullOrEmpty(consignor.PostalCode)) cityStateParts.Add(consignor.PostalCode);
 
         if (cityStateParts.Any())
             parts.Add(string.Join(", ", cityStateParts.Where(p => !string.IsNullOrEmpty(p))));
@@ -586,9 +586,9 @@ public class ConsignorsController : ControllerBase
 
     #region Consignor Invitations
 
-    // CREATE INVITATION - Send invitation to new provider
+    // CREATE INVITATION - Send invitation to new consignor
     [HttpPost("invitations")]
-    public async Task<ActionResult<ProviderDTOs.ProviderInvitationResultDto>> CreateInvitation([FromBody] ProviderDTOs.CreateProviderInvitationDto request)
+    public async Task<ActionResult<ProviderDTOs.ConsignorInvitationResultDto>> CreateInvitation([FromBody] ProviderDTOs.CreateConsignorInvitationDto request)
     {
         try
         {
@@ -606,8 +606,8 @@ public class ConsignorsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating provider invitation");
-            return StatusCode(500, new ProviderDTOs.ProviderInvitationResultDto
+            _logger.LogError(ex, "Error creating consignor invitation");
+            return StatusCode(500, new ProviderDTOs.ConsignorInvitationResultDto
             {
                 Success = false,
                 Message = "Internal server error occurred while creating invitation."
@@ -617,7 +617,7 @@ public class ConsignorsController : ControllerBase
 
     // GET PENDING INVITATIONS - List all pending invitations
     [HttpGet("invitations")]
-    public async Task<ActionResult<IEnumerable<ProviderDTOs.ProviderInvitationDto>>> GetPendingInvitations()
+    public async Task<ActionResult<IEnumerable<ProviderDTOs.ConsignorInvitationDto>>> GetPendingInvitations()
     {
         try
         {

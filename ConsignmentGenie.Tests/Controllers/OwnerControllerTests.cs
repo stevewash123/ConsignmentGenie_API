@@ -13,14 +13,14 @@ namespace ConsignmentGenie.Tests.Controllers;
 
 public class OwnerControllerTests
 {
-    private readonly Mock<IProviderNotificationService> _mockNotificationService;
+    private readonly Mock<IConsignorNotificationService> _mockNotificationService;
     private readonly Mock<ILogger<OwnerController>> _mockLogger;
     private readonly OwnerController _controller;
     private readonly Guid _testUserId = Guid.NewGuid();
 
     public OwnerControllerTests()
     {
-        _mockNotificationService = new Mock<IProviderNotificationService>();
+        _mockNotificationService = new Mock<IConsignorNotificationService>();
         _mockLogger = new Mock<ILogger<OwnerController>>();
         _controller = new OwnerController(_mockNotificationService.Object, _mockLogger.Object);
 
@@ -58,7 +58,7 @@ public class OwnerControllerTests
                     NotificationId = Guid.NewGuid(),
                     Title = "Test Notification",
                     Message = "Test message",
-                    Type = "provider_request",
+                    Type = "consignor_request",
                     IsRead = false,
                     CreatedAt = DateTime.UtcNow
                 }

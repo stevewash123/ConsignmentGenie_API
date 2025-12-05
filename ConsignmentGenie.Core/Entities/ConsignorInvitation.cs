@@ -10,7 +10,7 @@ public enum InvitationStatus
     Cancelled
 }
 
-public class ProviderInvitation : BaseEntity
+public class ConsignorInvitation : BaseEntity
 {
     [Required]
     public Guid OrganizationId { get; set; }

@@ -14,11 +14,11 @@ namespace ConsignmentGenie.Application.Services;
 public class TransactionService : ITransactionService
 {
     private readonly ConsignmentGenieContext _context;
-    private readonly IProviderNotificationService _notificationService;
+    private readonly IConsignorNotificationService _notificationService;
 
     public TransactionService(
         ConsignmentGenieContext context,
-        IProviderNotificationService notificationService)
+        IConsignorNotificationService notificationService)
     {
         _context = context;
         _notificationService = notificationService;
@@ -92,7 +92,7 @@ public class TransactionService : ITransactionService
                     Description = t.Item.Description,
                     OriginalPrice = t.Item.Price
                 },
-                Consignor = new ProviderSummaryDto
+                Consignor = new ConsignorSummaryDto
                 {
                     Id = t.Consignor.Id,
                     Name = t.Consignor.GetDisplayName(),
@@ -145,7 +145,7 @@ public class TransactionService : ITransactionService
                 Description = transaction.Item.Description,
                 OriginalPrice = transaction.Item.Price
             },
-            Consignor = new ProviderSummaryDto
+            Consignor = new ConsignorSummaryDto
             {
                 Id = transaction.Consignor.Id,
                 Name = transaction.Consignor.GetDisplayName(),
@@ -170,14 +170,14 @@ public class TransactionService : ITransactionService
         if (item.Status != ItemStatus.Available)
             throw new InvalidOperationException($"Item is not available for sale. Current status: {item.Status}");
 
-        // Get provider's commission rate
-        var provider = item.Consignor;
-        if (provider == null || provider.Status != ConsignorStatus.Active)
+        // Get consignor's commission rate
+        var consignor = item.Consignor;
+        if (consignor == null || consignor.Status != ConsignorStatus.Active)
             throw new InvalidOperationException("Consignor not found or inactive");
 
         // Calculate commission split
-        var providerAmount = request.SalePrice * (provider.CommissionRate / 100);
-        var shopAmount = request.SalePrice - providerAmount;
+        var consignorAmount = request.SalePrice * (consignor.CommissionRate / 100);
+        var shopAmount = request.SalePrice - consignorAmount;
 
         // Create transaction
         var transaction = new Core.Entities.Transaction
@@ -185,14 +185,14 @@ public class TransactionService : ITransactionService
             Id = Guid.NewGuid(),
             OrganizationId = organizationId,
             ItemId = request.ItemId,
-            ConsignorId = provider.Id,
+            ConsignorId = consignor.Id,
             SalePrice = request.SalePrice,
             SaleDate = request.SaleDate ?? DateTime.UtcNow,
             // Source removed for MVP - defaults to "Manual"
             PaymentMethod = request.PaymentMethod,
             SalesTaxAmount = request.SalesTaxAmount,
-            ConsignorSplitPercentage = provider.CommissionRate,
-            ConsignorAmount = providerAmount,
+            ConsignorSplitPercentage = consignor.CommissionRate,
+            ConsignorAmount = consignorAmount,
             ShopAmount = shopAmount,
             Notes = request.Notes,
             CreatedAt = DateTime.UtcNow,
@@ -207,16 +207,16 @@ public class TransactionService : ITransactionService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Send notification to provider about the sale
-        if (provider.UserId.HasValue)
+        // Send notification to consignor about the sale
+        if (consignor.UserId.HasValue)
         {
             try
             {
                 await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
                 {
                     OrganizationId = organizationId,
-                    UserId = provider.UserId.Value,
-                ConsignorId = provider.Id,
+                    UserId = consignor.UserId.Value,
+                ConsignorId = consignor.Id,
                 Type = NotificationType.ItemSold,
                 Title = "Item Sold! 🎉",
                 Message = $"Your item \"{item.Title}\" sold for {transaction.SalePrice:C}. Your cut: {transaction.ConsignorAmount:C}",
@@ -260,11 +260,11 @@ public class TransactionService : ITransactionService
                 Description = item.Description,
                 OriginalPrice = item.Price
             },
-            Consignor = new ProviderSummaryDto
+            Consignor = new ConsignorSummaryDto
             {
-                Id = provider.Id,
-                Name = provider.GetDisplayName(),
-                Email = provider.Email
+                Id = consignor.Id,
+                Name = consignor.GetDisplayName(),
+                Email = consignor.Email
             }
         };
     }
@@ -315,7 +315,7 @@ public class TransactionService : ITransactionService
                 Description = transaction.Item.Description,
                 OriginalPrice = transaction.Item.Price
             },
-            Consignor = new ProviderSummaryDto
+            Consignor = new ConsignorSummaryDto
             {
                 Id = transaction.Consignor.Id,
                 Name = transaction.Consignor.GetDisplayName(),
@@ -369,19 +369,19 @@ public class TransactionService : ITransactionService
 
         var totalSales = transactions.Sum(t => t.SalePrice);
         var totalShopAmount = transactions.Sum(t => t.ShopAmount);
-        var totalProviderAmount = transactions.Sum(t => t.ConsignorAmount);
+        var totalConsignorAmount = transactions.Sum(t => t.ConsignorAmount);
         var totalTax = transactions.Sum(t => t.SalesTaxAmount ?? 0);
         var transactionCount = transactions.Count;
 
-        var topProviders = transactions
+        var topConsignors = transactions
             .GroupBy(t => new { t.ConsignorId, ConsignorName = t.Consignor.FirstName + " " + t.Consignor.LastName })
-            .Select(g => new ProviderSalesDto
+            .Select(g => new ConsignorSalesDto
             {
                 ConsignorId = g.Key.ConsignorId,
                 ConsignorName = g.Key.ConsignorName,
                 TransactionCount = g.Count(),
                 TotalSales = g.Sum(t => t.SalePrice),
-                TotalProviderAmount = g.Sum(t => t.ConsignorAmount)
+                TotalConsignorAmount = g.Sum(t => t.ConsignorAmount)
             })
             .OrderByDescending(p => p.TotalSales)
             .Take(10)
@@ -402,11 +402,11 @@ public class TransactionService : ITransactionService
         {
             TotalSales = totalSales,
             TotalShopAmount = totalShopAmount,
-            TotalProviderAmount = totalProviderAmount,
+            TotalConsignorAmount = totalConsignorAmount,
             TotalTax = totalTax,
             TransactionCount = transactionCount,
             AverageTransactionValue = transactionCount > 0 ? totalSales / transactionCount : 0,
-            TopProviders = topProviders,
+            TopConsignors = topConsignors,
             PaymentMethodBreakdown = paymentMethodBreakdown,
             PeriodStart = queryParams.StartDate,
             PeriodEnd = queryParams.EndDate

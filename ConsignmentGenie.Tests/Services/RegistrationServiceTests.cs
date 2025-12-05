@@ -102,11 +102,11 @@ namespace ConsignmentGenie.Tests.Services
             };
             _context.Users.Add(existingUser);
 
-            // Add pending provider user
-            var pendingProviderUser = new User
+            // Add pending consignor user
+            var pendingConsignorUser = new User
             {
                 Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                Email = "pending.provider@test.com",
+                Email = "pending.consignor@test.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                 FullName = "Pending Consignor",
                 Role = UserRole.Consignor,
@@ -115,7 +115,7 @@ namespace ConsignmentGenie.Tests.Services
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            _context.Users.Add(pendingProviderUser);
+            _context.Users.Add(pendingConsignorUser);
 
             // Add pending owner user
             var pendingOwnerUser = new User
@@ -253,32 +253,32 @@ namespace ConsignmentGenie.Tests.Services
         }
 
         [Fact]
-        public async Task RegisterProviderAsync_WithValidRequest_CreatesProviderSuccessfully()
+        public async Task RegisterConsignorAsync_WithValidRequest_CreatesConsignorSuccessfully()
         {
             // Arrange
             _mockEmailService.Setup(e => e.SendSimpleEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
                 .ReturnsAsync(true);
 
-            var request = new RegisterProviderRequest
+            var request = new RegisterConsignorRequest
             {
                 StoreCode = "1234",
                 FullName = "New Consignor",
-                Email = "newprovider@test.com",
+                Email = "newconsignor@test.com",
                 Password = "SecurePassword123!",
                 Phone = "555-987-6543",
                 PreferredPaymentMethod = "Venmo",
-                PaymentDetails = "@newprovider"
+                PaymentDetails = "@newconsignor"
             };
 
             // Act
-            var result = await _registrationService.RegisterProviderAsync(request);
+            var result = await _registrationService.RegisterConsignorAsync(request);
 
             // Assert
             Assert.True(result.Success);
             Assert.Contains("Account created successfully", result.Message);
 
             // Verify user was created
-            var createdUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "newprovider@test.com");
+            var createdUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "newconsignor@test.com");
             Assert.NotNull(createdUser);
             Assert.Equal("New Consignor", createdUser.FullName);
             Assert.Equal(UserRole.Consignor, createdUser.Role);
@@ -287,7 +287,7 @@ namespace ConsignmentGenie.Tests.Services
 
             // Verify email notifications were sent
             _mockEmailService.Verify(e => e.SendSimpleEmailAsync(
-                "newprovider@test.com",
+                "newconsignor@test.com",
                 "Welcome to ConsignmentGenie - Account Pending",
                 It.IsAny<string>(),
                 true), Times.Once);
@@ -300,54 +300,54 @@ namespace ConsignmentGenie.Tests.Services
         }
 
         [Fact]
-        public async Task RegisterProviderAsync_WithAutoApproveOrg_CreatesProviderAndApproves()
+        public async Task RegisterConsignorAsync_WithAutoApproveOrg_CreatesConsignorAndApproves()
         {
             // Arrange
             _mockEmailService.Setup(e => e.SendSimpleEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
                 .ReturnsAsync(true);
 
-            var request = new RegisterProviderRequest
+            var request = new RegisterConsignorRequest
             {
                 StoreCode = "5678", // Auto-approve organization
                 FullName = "Auto Consignor",
-                Email = "autoprovider@test.com",
+                Email = "autoconsignor@test.com",
                 Password = "SecurePassword123!",
                 PreferredPaymentMethod = "Check"
             };
 
             // Act
-            var result = await _registrationService.RegisterProviderAsync(request);
+            var result = await _registrationService.RegisterConsignorAsync(request);
 
             // Assert
             Assert.True(result.Success);
             Assert.Contains("Account created and approved", result.Message);
 
             // Verify user was created and approved
-            var createdUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "autoprovider@test.com");
+            var createdUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "autoconsignor@test.com");
             Assert.NotNull(createdUser);
             Assert.Equal(ApprovalStatus.Approved, createdUser.ApprovalStatus);
 
-            // Verify provider record was created
-            var createdProvider = await _context.Consignors.FirstOrDefaultAsync(p => p.UserId == createdUser.Id);
-            Assert.NotNull(createdProvider);
-            Assert.Equal(ConsignorStatus.Active, createdProvider.Status);
-            Assert.Equal("Approved", createdProvider.ApprovalStatus);
+            // Verify consignor record was created
+            var createdConsignor = await _context.Consignors.FirstOrDefaultAsync(p => p.UserId == createdUser.Id);
+            Assert.NotNull(createdConsignor);
+            Assert.Equal(ConsignorStatus.Active, createdConsignor.Status);
+            Assert.Equal("Approved", createdConsignor.ApprovalStatus);
         }
 
         [Fact]
-        public async Task RegisterProviderAsync_WithInvalidStoreCode_ReturnsError()
+        public async Task RegisterConsignorAsync_WithInvalidStoreCode_ReturnsError()
         {
             // Arrange
-            var request = new RegisterProviderRequest
+            var request = new RegisterConsignorRequest
             {
                 StoreCode = "INVALID",
                 FullName = "Consignor Name",
-                Email = "provider@test.com",
+                Email = "consignor@test.com",
                 Password = "SecurePassword123!"
             };
 
             // Act
-            var result = await _registrationService.RegisterProviderAsync(request);
+            var result = await _registrationService.RegisterConsignorAsync(request);
 
             // Assert
             Assert.False(result.Success);
@@ -355,15 +355,15 @@ namespace ConsignmentGenie.Tests.Services
         }
 
         [Fact]
-        public async Task GetPendingProvidersAsync_ReturnsPendingProviders()
+        public async Task GetPendingConsignorsAsync_ReturnsPendingConsignors()
         {
             // Act
-            var result = await _registrationService.GetPendingProvidersAsync(_organizationId);
+            var result = await _registrationService.GetPendingConsignorsAsync(_organizationId);
 
             // Assert
             Assert.Single(result);
             Assert.Equal("Pending Consignor", result[0].FullName);
-            Assert.Equal("pending.provider@test.com", result[0].Email);
+            Assert.Equal("pending.consignor@test.com", result[0].Email);
         }
 
         [Fact]
@@ -373,11 +373,11 @@ namespace ConsignmentGenie.Tests.Services
             var result = await _registrationService.GetPendingApprovalCountAsync(_organizationId);
 
             // Assert
-            Assert.Equal(1, result); // One pending provider
+            Assert.Equal(1, result); // One pending consignor
         }
 
         [Fact]
-        public async Task ApproveUserAsync_ApprovesUserAndCreatesProvider()
+        public async Task ApproveUserAsync_ApprovesUserAndCreatesConsignor()
         {
             // Arrange
             var pendingUserId = new Guid("55555555-5555-5555-5555-555555555555");
@@ -396,15 +396,15 @@ namespace ConsignmentGenie.Tests.Services
             Assert.Equal(approverUserId, approvedUser.ApprovedBy);
             Assert.NotNull(approvedUser.ApprovedAt);
 
-            // Verify provider record was created
-            var provider = await _context.Consignors.FirstOrDefaultAsync(p => p.UserId == pendingUserId);
-            Assert.NotNull(provider);
-            Assert.Equal(ConsignorStatus.Active, provider.Status);
-            Assert.Equal("Approved", provider.ApprovalStatus);
+            // Verify consignor record was created
+            var consignor = await _context.Consignors.FirstOrDefaultAsync(p => p.UserId == pendingUserId);
+            Assert.NotNull(consignor);
+            Assert.Equal(ConsignorStatus.Active, consignor.Status);
+            Assert.Equal("Approved", consignor.ApprovalStatus);
 
             // Verify email was sent
             _mockEmailService.Verify(e => e.SendSimpleEmailAsync(
-                "pending.provider@test.com",
+                "pending.consignor@test.com",
                 "Account Approved - You're In! 🎉",
                 It.IsAny<string>(),
                 true), Times.Once);
@@ -432,7 +432,7 @@ namespace ConsignmentGenie.Tests.Services
 
             // Verify email was sent
             _mockEmailService.Verify(e => e.SendSimpleEmailAsync(
-                "pending.provider@test.com",
+                "pending.consignor@test.com",
                 "Account Request Update",
                 It.IsAny<string>(),
                 true), Times.Once);

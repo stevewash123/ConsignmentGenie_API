@@ -3,19 +3,19 @@ using ConsignmentGenie.Application.DTOs.Payout;
 namespace ConsignmentGenie.Application.Services.Interfaces;
 
 /// <summary>
-/// Payout service abstraction for provider payments
+/// Payout service abstraction for consignor payments
 /// MVP: ManualPayoutService (tracking only, owner pays manually)
 /// Phase 5+: PayPalPayoutService, StripeConnectService, etc.
 /// </summary>
 public interface IPayoutService
 {
     /// <summary>
-    /// Generate payout data for a provider for a date range
+    /// Generate payout data for a consignor for a date range
     /// </summary>
-    Task<PayoutReportDto> GeneratePayoutAsync(Guid providerId, DateTime startDate, DateTime endDate);
+    Task<PayoutReportDto> GeneratePayoutAsync(Guid consignorId, DateTime startDate, DateTime endDate);
 
     /// <summary>
-    /// Generate payout data for all providers for a date range
+    /// Generate payout data for all consignors for a date range
     /// </summary>
     Task<List<PayoutReportDto>> GenerateAllPayoutsAsync(DateTime startDate, DateTime endDate);
 
@@ -35,9 +35,9 @@ public interface IPayoutService
     Task<byte[]> ExportPayoutsToCsvAsync(List<Guid> payoutIds);
 
     /// <summary>
-    /// Calculate pending payout amount for a provider
+    /// Calculate pending payout amount for a consignor
     /// </summary>
-    Task<decimal> GetPendingPayoutAmountAsync(Guid providerId);
+    Task<decimal> GetPendingPayoutAmountAsync(Guid consignorId);
 
     /// <summary>
     /// Get all pending payouts for the organization

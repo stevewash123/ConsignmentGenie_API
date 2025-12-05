@@ -3,7 +3,7 @@ namespace ConsignmentGenie.Application.Services.Interfaces;
 public interface ISplitCalculationService
 {
     SplitResult CalculateSplit(decimal salePrice, decimal splitPercentage);
-    Task<PayoutSummary> CalculatePayoutsAsync(Guid providerId, DateTime periodStart, DateTime periodEnd);
+    Task<PayoutSummary> CalculatePayoutsAsync(Guid consignorId, DateTime periodStart, DateTime periodEnd);
 }
 
 public class SplitResult

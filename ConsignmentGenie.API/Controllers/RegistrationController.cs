@@ -50,7 +50,7 @@ public class RegistrationController : ControllerBase
 
     [HttpPost("register/provider")]
     [AllowAnonymous]
-    public async Task<ActionResult<RegistrationResultDto>> RegisterConsignor([FromBody] RegisterProviderRequest request)
+    public async Task<ActionResult<RegistrationResultDto>> RegisterConsignor([FromBody] RegisterConsignorRequest request)
     {
         var result = await _registrationService.RegisterProviderAsync(request);
 
@@ -72,7 +72,7 @@ public class RegistrationController : ControllerBase
 
     [HttpPost("register/provider/invitation")]
     [AllowAnonymous]
-    public async Task<ActionResult<RegistrationResultDto>> RegisterProviderFromInvitation([FromBody] RegisterProviderFromInvitationRequest request)
+    public async Task<ActionResult<RegistrationResultDto>> RegisterProviderFromInvitation([FromBody] RegisterConsignorFromInvitationRequest request)
     {
         var result = await _registrationService.RegisterProviderFromInvitationAsync(request);
 

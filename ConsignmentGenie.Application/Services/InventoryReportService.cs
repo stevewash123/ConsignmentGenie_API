@@ -160,7 +160,7 @@ public class InventoryReportService : IInventoryReportService
 
             var providerBreakdown = itemList
                 .GroupBy(i => new { i.ConsignorId, i.Consignor.DisplayName })
-                .Select(g => new ProviderBreakdownDto
+                .Select(g => new ConsignorBreakdownDto
                 {
                     ConsignorId = g.Key.ConsignorId,
                     ConsignorName = g.Key.DisplayName,
@@ -179,7 +179,7 @@ public class InventoryReportService : IInventoryReportService
                 AveragePrice = itemList.Any() ? itemList.Average(i => i.Price) : 0,
                 TotalInventoryValue = itemList.Where(i => i.Status == ItemStatus.Available).Sum(i => i.Price),
                 CategoryBreakdown = categoryBreakdown,
-                ProviderBreakdown = providerBreakdown
+                ConsignorBreakdown = providerBreakdown
             };
 
             return ServiceResult<InventoryOverviewDto>.SuccessResult(result);

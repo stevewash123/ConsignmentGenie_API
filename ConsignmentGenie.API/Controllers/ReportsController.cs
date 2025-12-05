@@ -16,7 +16,7 @@ public class ReportsController : ControllerBase
     private readonly ISalesReportService _salesReportService;
     private readonly IInventoryReportService _inventoryReportService;
     private readonly IPayoutReportService _payoutReportService;
-    private readonly IProviderReportService _providerReportService;
+    private readonly IConsignorReportService _consignorReportService;
     private readonly IPdfReportGenerator _pdfReportGenerator;
     private readonly ICsvExportService _csvExportService;
     private readonly ILogger<ReportsController> _logger;
@@ -25,7 +25,7 @@ public class ReportsController : ControllerBase
         ISalesReportService salesReportService,
         IInventoryReportService inventoryReportService,
         IPayoutReportService payoutReportService,
-        IProviderReportService providerReportService,
+        IConsignorReportService consignorReportService,
         IPdfReportGenerator pdfReportGenerator,
         ICsvExportService csvExportService,
         ILogger<ReportsController> logger)
@@ -33,7 +33,7 @@ public class ReportsController : ControllerBase
         _salesReportService = salesReportService;
         _inventoryReportService = inventoryReportService;
         _payoutReportService = payoutReportService;
-        _providerReportService = providerReportService;
+        _consignorReportService = consignorReportService;
         _pdfReportGenerator = pdfReportGenerator;
         _csvExportService = csvExportService;
         _logger = logger;
@@ -144,7 +144,7 @@ public class ReportsController : ControllerBase
             if (organizationId == Guid.Empty)
                 return BadRequest("Organization not found");
 
-            var filter = new ProviderPerformanceFilterDto
+            var filter = new ConsignorPerformanceFilterDto
             {
                 StartDate = startDate ?? DateTime.UtcNow.AddDays(-30),
                 EndDate = endDate ?? DateTime.UtcNow,
@@ -152,7 +152,7 @@ public class ReportsController : ControllerBase
                 MinItemsThreshold = minItemsThreshold
             };
 
-            var result = await _providerReportService.GetProviderPerformanceReportAsync(organizationId, filter);
+            var result = await _consignorReportService.GetConsignorPerformanceReportAsync(organizationId, filter);
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });
@@ -184,7 +184,7 @@ public class ReportsController : ControllerBase
             if (!new[] { "csv", "pdf" }.Contains(format.ToLower()))
                 return BadRequest("Unsupported format. Use 'csv' or 'pdf'");
 
-            var filter = new ProviderPerformanceFilterDto
+            var filter = new ConsignorPerformanceFilterDto
             {
                 StartDate = startDate ?? DateTime.UtcNow.AddDays(-30),
                 EndDate = endDate ?? DateTime.UtcNow,
@@ -193,14 +193,14 @@ public class ReportsController : ControllerBase
             };
 
             // Get the provider performance report data
-            var reportResult = await _providerReportService.GetProviderPerformanceReportAsync(organizationId, filter);
+            var reportResult = await _consignorReportService.GetConsignorPerformanceReportAsync(organizationId, filter);
             if (!reportResult.Success)
                 return BadRequest(new { success = false, message = reportResult.Message, errors = reportResult.Errors });
 
             // Export based on format
             var result = format.ToLower() == "csv"
-                ? await _csvExportService.ExportProviderPerformanceReportAsync(reportResult.Data)
-                : await _pdfReportGenerator.GenerateProviderPerformanceReportPdfAsync(reportResult.Data, $"Consignor Performance Report ({filter.StartDate:yyyy-MM-dd} to {filter.EndDate:yyyy-MM-dd})");
+                ? await _csvExportService.ExportConsignorPerformanceReportAsync(reportResult.Data)
+                : await _pdfReportGenerator.GenerateConsignorPerformanceReportPdfAsync(reportResult.Data, $"Consignor Performance Report ({filter.StartDate:yyyy-MM-dd} to {filter.EndDate:yyyy-MM-dd})");
 
             if (!result.Success)
                 return BadRequest(new { success = false, message = result.Message, errors = result.Errors });

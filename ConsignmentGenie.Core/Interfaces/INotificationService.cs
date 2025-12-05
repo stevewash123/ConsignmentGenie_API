@@ -3,7 +3,7 @@ using ConsignmentGenie.Core.DTOs;
 
 namespace ConsignmentGenie.Core.Interfaces;
 
-public interface IProviderNotificationService
+public interface IConsignorNotificationService
 {
     /// <summary>
     /// Creates a new notification and sends it via enabled channels

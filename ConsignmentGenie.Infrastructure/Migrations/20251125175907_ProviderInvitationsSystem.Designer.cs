@@ -13,7 +13,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
 {
     [DbContext(typeof(ConsignmentGenieContext))]
     [Migration("20251125175907_ProviderInvitationsSystem")]
-    partial class ProviderInvitationsSystem
+    partial class ConsignorInvitationsSystem
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

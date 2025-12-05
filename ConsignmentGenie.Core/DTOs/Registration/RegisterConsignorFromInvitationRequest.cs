@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ConsignmentGenie.Core.DTOs.Registration;
 
-public class RegisterProviderFromInvitationRequest
+public class RegisterConsignorFromInvitationRequest
 {
     [Required]
     public string InvitationToken { get; set; } = string.Empty;

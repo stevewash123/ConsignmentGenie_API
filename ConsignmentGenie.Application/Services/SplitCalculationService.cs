@@ -16,30 +16,30 @@ public class SplitCalculationService : ISplitCalculationService
 
     public SplitResult CalculateSplit(decimal salePrice, decimal splitPercentage)
     {
-        var providerAmount = Math.Round(salePrice * (splitPercentage / 100), 2);
-        var shopAmount = salePrice - providerAmount;
+        var consignorAmount = Math.Round(salePrice * (splitPercentage / 100), 2);
+        var shopAmount = salePrice - consignorAmount;
 
         return new SplitResult
         {
-            ConsignorAmount = providerAmount,
+            ConsignorAmount = consignorAmount,
             ShopAmount = shopAmount,
             SplitPercentage = splitPercentage
         };
     }
 
-    public async Task<PayoutSummary> CalculatePayoutsAsync(Guid providerId, DateTime periodStart, DateTime periodEnd)
+    public async Task<PayoutSummary> CalculatePayoutsAsync(Guid consignorId, DateTime periodStart, DateTime periodEnd)
     {
-        var provider = await _context.Consignors
-            .FirstOrDefaultAsync(p => p.Id == providerId);
+        var consignor = await _context.Consignors
+            .FirstOrDefaultAsync(p => p.Id == consignorId);
 
-        if (provider == null)
+        if (consignor == null)
         {
-            throw new ArgumentException("Consignor not found", nameof(providerId));
+            throw new ArgumentException("Consignor not found", nameof(consignorId));
         }
 
         var transactions = await _context.Transactions
             .Include(t => t.Item)
-            .Where(t => t.ConsignorId == providerId &&
+            .Where(t => t.ConsignorId == consignorId &&
                        t.SaleDate >= periodStart &&
                        t.SaleDate <= periodEnd)
             .OrderBy(t => t.SaleDate)
@@ -57,8 +57,8 @@ public class SplitCalculationService : ISplitCalculationService
 
         return new PayoutSummary
         {
-            ConsignorId = providerId,
-            ConsignorName = provider.GetDisplayName(),
+            ConsignorId = consignorId,
+            ConsignorName = consignor.GetDisplayName(),
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
             TotalAmount = transactions.Sum(t => t.ConsignorAmount),

@@ -14,37 +14,37 @@ namespace ConsignmentGenie.Application.Services;
 
 /// <summary>
 /// MVP Payout Service - Manual tracking only (no automation)
-/// Owner manually pays providers and marks payouts as paid in the system
+/// Owner manually pays consignors and marks payouts as paid in the system
 /// Phase 5+ will add automated PayPal/Stripe Connect payouts
 /// </summary>
 public class ManualPayoutService : IPayoutService
 {
     private readonly ConsignmentGenieContext _context;
     private readonly ILogger<ManualPayoutService> _logger;
-    private readonly IProviderNotificationService _notificationService;
+    private readonly IConsignorNotificationService _notificationService;
 
     public ManualPayoutService(
         ConsignmentGenieContext context,
         ILogger<ManualPayoutService> logger,
-        IProviderNotificationService notificationService)
+        IConsignorNotificationService notificationService)
     {
         _context = context;
         _logger = logger;
         _notificationService = notificationService;
     }
 
-    public async Task<PayoutReportDto> GeneratePayoutAsync(Guid providerId, DateTime startDate, DateTime endDate)
+    public async Task<PayoutReportDto> GeneratePayoutAsync(Guid consignorId, DateTime startDate, DateTime endDate)
     {
-        var provider = await _context.Consignors
-            .FirstOrDefaultAsync(p => p.Id == providerId);
+        var consignor = await _context.Consignors
+            .FirstOrDefaultAsync(p => p.Id == consignorId);
 
-        if (provider == null)
-            throw new ArgumentException($"Consignor {providerId} not found");
+        if (consignor == null)
+            throw new ArgumentException($"Consignor {consignorId} not found");
 
-        // Get all unpaid transactions for this provider in the date range
+        // Get all unpaid transactions for this consignor in the date range
         var transactions = await _context.Transactions
             .Include(t => t.Item)
-            .Where(t => t.ConsignorId == providerId
+            .Where(t => t.ConsignorId == consignorId
                      && t.SaleDate >= startDate
                      && t.SaleDate <= endDate
                      && !t.ConsignorPaidOut)
@@ -56,8 +56,8 @@ public class ManualPayoutService : IPayoutService
 
         return new PayoutReportDto
         {
-            ConsignorId = providerId,
-            ConsignorName = provider.GetDisplayName(),
+            ConsignorId = consignorId,
+            ConsignorName = consignor.GetDisplayName(),
             StartDate = startDate,
             EndDate = endDate,
             TotalAmount = totalAmount,
@@ -78,16 +78,16 @@ public class ManualPayoutService : IPayoutService
 
     public async Task<List<PayoutReportDto>> GenerateAllPayoutsAsync(DateTime startDate, DateTime endDate)
     {
-        var providers = await _context.Consignors
+        var consignors = await _context.Consignors
             .Where(p => p.Status == Core.Enums.ConsignorStatus.Active)
             .ToListAsync();
 
         var payouts = new List<PayoutReportDto>();
 
-        foreach (var provider in providers)
+        foreach (var consignor in consignors)
         {
-            var payout = await GeneratePayoutAsync(provider.Id, startDate, endDate);
-            if (payout.TotalAmount > 0) // Only include providers with amounts owed
+            var payout = await GeneratePayoutAsync(consignor.Id, startDate, endDate);
+            if (payout.TotalAmount > 0) // Only include consignors with amounts owed
             {
                 payouts.Add(payout);
             }
@@ -98,8 +98,8 @@ public class ManualPayoutService : IPayoutService
 
     public async Task MarkPayoutAsPaidAsync(Guid payoutId, string paymentMethod, string? notes = null)
     {
-        // In MVP, payoutId represents the provider ID for a date range
-        // Mark all unpaid transactions for this provider as paid
+        // In MVP, payoutId represents the consignor ID for a date range
+        // Mark all unpaid transactions for this consignor as paid
         var transactions = await _context.Transactions
             .Where(t => t.ConsignorId == payoutId && !t.ConsignorPaidOut)
             .ToListAsync();
@@ -114,28 +114,28 @@ public class ManualPayoutService : IPayoutService
 
         await _context.SaveChangesAsync();
 
-        // Send notification to provider about the payout
+        // Send notification to consignor about the payout
         if (transactions.Any())
         {
             try
             {
-                var provider = await _context.Consignors
+                var consignor = await _context.Consignors
                     .FirstOrDefaultAsync(p => p.Id == payoutId);
 
-                if (provider != null && provider.UserId.HasValue)
+                if (consignor != null && consignor.UserId.HasValue)
                 {
                     var totalAmount = transactions.Sum(t => t.ConsignorAmount);
 
                     await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
                     {
-                        OrganizationId = provider.OrganizationId,
-                        UserId = provider.UserId.Value,
-                        ConsignorId = provider.Id,
+                        OrganizationId = consignor.OrganizationId,
+                        UserId = consignor.UserId.Value,
+                        ConsignorId = consignor.Id,
                         Type = NotificationType.PayoutProcessed,
                         Title = "Payout Processed 💰",
                         Message = $"A payout of {totalAmount:C} has been processed via {paymentMethod}.",
                         RelatedEntityType = "Payout",
-                        RelatedEntityId = payoutId, // Using provider ID as payout identifier for MVP
+                        RelatedEntityId = payoutId, // Using consignor ID as payout identifier for MVP
                         Metadata = new NotificationMetadata
                         {
                             PayoutAmount = totalAmount,
@@ -148,12 +148,12 @@ public class ManualPayoutService : IPayoutService
             catch (Exception ex)
             {
                 // Log but don't fail the payout if notification fails
-                _logger.LogError(ex, "Failed to send payout notification for provider {ConsignorId}", payoutId);
+                _logger.LogError(ex, "Failed to send payout notification for consignor {ConsignorId}", payoutId);
             }
         }
 
         _logger.LogInformation(
-            "[MANUAL PAYOUT] Marked {Count} transactions as paid for provider {ConsignorId}\n" +
+            "[MANUAL PAYOUT] Marked {Count} transactions as paid for consignor {ConsignorId}\n" +
             "  Payment Method: {PaymentMethod}\n" +
             "  Notes: {Notes}",
             transactions.Count, payoutId, paymentMethod, notes ?? "None"
@@ -162,7 +162,7 @@ public class ManualPayoutService : IPayoutService
 
     public async Task<byte[]> ExportPayoutToCsvAsync(Guid payoutId)
     {
-        // For MVP, this would need the provider ID and date range
+        // For MVP, this would need the consignor ID and date range
         // This is a simplified implementation
         var csv = new StringBuilder();
         csv.AppendLine("Consignor,Item,Sale Date,Sale Price,Consignor Amount,Shop Amount");
@@ -184,10 +184,10 @@ public class ManualPayoutService : IPayoutService
         return Encoding.UTF8.GetBytes(csv.ToString());
     }
 
-    public async Task<decimal> GetPendingPayoutAmountAsync(Guid providerId)
+    public async Task<decimal> GetPendingPayoutAmountAsync(Guid consignorId)
     {
         var pendingAmount = await _context.Transactions
-            .Where(t => t.ConsignorId == providerId && !t.ConsignorPaidOut)
+            .Where(t => t.ConsignorId == consignorId && !t.ConsignorPaidOut)
             .SumAsync(t => t.ConsignorAmount);
 
         return pendingAmount;

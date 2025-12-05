@@ -96,7 +96,7 @@ public class PayoutsController : ControllerBase
                 PeriodStart = p.PeriodStart,
                 PeriodEnd = p.PeriodEnd,
                 TransactionCount = p.TransactionCount,
-                Consignor = new ProviderSummaryDto
+                Consignor = new ConsignorSummaryDto
                 {
                     Id = p.Consignor.Id,
                     Name = p.Consignor.DisplayName,
@@ -141,7 +141,7 @@ public class PayoutsController : ControllerBase
                 SyncedToQuickBooks = p.SyncedToQuickBooks,
                 QuickBooksBillId = p.QuickBooksBillId,
                 CreatedAt = p.CreatedAt,
-                Consignor = new ProviderSummaryDto
+                Consignor = new ConsignorSummaryDto
                 {
                     Id = p.Consignor.Id,
                     Name = p.Consignor.DisplayName,
@@ -224,11 +224,11 @@ public class PayoutsController : ControllerBase
     {
         var organizationId = GetOrganizationId();
 
-        // Validate provider exists
-        var provider = await _context.Consignors
+        // Validate consignor exists
+        var consignor = await _context.Consignors
             .FirstOrDefaultAsync(p => p.Id == request.ConsignorId && p.OrganizationId == organizationId);
 
-        if (provider == null)
+        if (consignor == null)
             return BadRequest("Consignor not found");
 
         // Validate transactions exist and are pending
@@ -302,7 +302,7 @@ public class PayoutsController : ControllerBase
                 TransactionCount = p.TransactionCount,
                 Notes = p.Notes,
                 CreatedAt = p.CreatedAt,
-                Consignor = new ProviderSummaryDto
+                Consignor = new ConsignorSummaryDto
                 {
                     Id = p.Consignor.Id,
                     Name = p.Consignor.DisplayName,

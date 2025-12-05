@@ -10,18 +10,18 @@ using System.Security.Claims;
 namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
-[Route("api/provider")]
+[Route("api/consignor")]
 [Authorize(Roles = "Consignor")]
-public class ProviderPortalController : ControllerBase
+public class ConsignorPortalController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthService _authService;
-    private readonly ILogger<ProviderPortalController> _logger;
+    private readonly ILogger<ConsignorPortalController> _logger;
 
-    public ProviderPortalController(
+    public ConsignorPortalController(
         IUnitOfWork unitOfWork,
         IAuthService authService,
-        ILogger<ProviderPortalController> logger)
+        ILogger<ConsignorPortalController> logger)
     {
         _unitOfWork = unitOfWork;
         _authService = authService;
@@ -30,7 +30,7 @@ public class ProviderPortalController : ControllerBase
 
     // DASHBOARD
     [HttpGet("dashboard")]
-    public async Task<ActionResult<ProviderDashboardDto>> GetDashboard()
+    public async Task<ActionResult<ConsignorDashboardDto>> GetDashboard()
     {
         try
         {
@@ -49,7 +49,7 @@ public class ProviderPortalController : ControllerBase
             var now = DateTime.UtcNow;
             var thisMonthStart = new DateTime(now.Year, now.Month, 1);
 
-            var dashboard = new ProviderDashboardDto
+            var dashboard = new ConsignorDashboardDto
             {
                 ShopName = provider.Organization.Name,
                 ConsignorName = provider.DisplayName,
@@ -76,7 +76,7 @@ public class ProviderPortalController : ControllerBase
                 RecentSales = provider.Transactions
                     .OrderByDescending(t => t.SaleDate)
                     .Take(5)
-                    .Select(t => new ProviderSaleDto
+                    .Select(t => new ConsignorSaleDto
                     {
                         TransactionId = t.Id,
                         SaleDate = t.SaleDate,
@@ -91,7 +91,7 @@ public class ProviderPortalController : ControllerBase
                 LastPayout = provider.Payouts
                     .Where(p => p.PaidAt.HasValue)
                     .OrderByDescending(p => p.PaidAt)
-                    .Select(p => new ProviderPayoutDto
+                    .Select(p => new ConsignorPayoutDto
                     {
                         PayoutId = p.Id,
                         PayoutNumber = p.PayoutNumber,
@@ -114,8 +114,8 @@ public class ProviderPortalController : ControllerBase
 
     // MY ITEMS
     [HttpGet("items")]
-    public async Task<ActionResult<PagedResult<ProviderItemDto>>> GetMyItems(
-        [FromQuery] ProviderItemQueryParams queryParams)
+    public async Task<ActionResult<PagedResult<ConsignorItemDto>>> GetMyItems(
+        [FromQuery] ConsignorItemQueryParams queryParams)
     {
         try
         {
@@ -153,7 +153,7 @@ public class ProviderPortalController : ControllerBase
             var pagedItems = items
                 .Skip((queryParams.Page - 1) * queryParams.PageSize)
                 .Take(queryParams.PageSize)
-                .Select(item => new ProviderItemDto
+                .Select(item => new ConsignorItemDto
                 {
                     ItemId = item.Id,
                     Sku = item.Sku,
@@ -169,7 +169,7 @@ public class ProviderPortalController : ControllerBase
                 })
                 .ToList();
 
-            var result = new PagedResult<ProviderItemDto>
+            var result = new PagedResult<ConsignorItemDto>
             {
                 Items = pagedItems,
                 TotalCount = totalCount,
@@ -187,7 +187,7 @@ public class ProviderPortalController : ControllerBase
     }
 
     [HttpGet("items/{id}")]
-    public async Task<ActionResult<ProviderItemDetailDto>> GetMyItem(Guid id)
+    public async Task<ActionResult<ConsignorItemDetailDto>> GetMyItem(Guid id)
     {
         try
         {
@@ -202,7 +202,7 @@ public class ProviderPortalController : ControllerBase
             if (item == null)
                 return NotFound("Item not found");
 
-            var itemDetail = new ProviderItemDetailDto
+            var itemDetail = new ConsignorItemDetailDto
             {
                 ItemId = item.Id,
                 Sku = item.Sku,
@@ -231,8 +231,8 @@ public class ProviderPortalController : ControllerBase
 
     // MY SALES
     [HttpGet("sales")]
-    public async Task<ActionResult<PagedResult<ProviderSaleDto>>> GetMySales(
-        [FromQuery] ProviderSaleQueryParams queryParams)
+    public async Task<ActionResult<PagedResult<ConsignorSaleDto>>> GetMySales(
+        [FromQuery] ConsignorSaleQueryParams queryParams)
     {
         try
         {
@@ -271,7 +271,7 @@ public class ProviderPortalController : ControllerBase
                 .OrderByDescending(t => t.SaleDate)
                 .Skip((queryParams.Page - 1) * queryParams.PageSize)
                 .Take(queryParams.PageSize)
-                .Select(t => new ProviderSaleDto
+                .Select(t => new ConsignorSaleDto
                 {
                     TransactionId = t.Id,
                     SaleDate = t.SaleDate,
@@ -283,7 +283,7 @@ public class ProviderPortalController : ControllerBase
                 })
                 .ToList();
 
-            var result = new PagedResult<ProviderSaleDto>
+            var result = new PagedResult<ConsignorSaleDto>
             {
                 Items = pagedSales,
                 TotalCount = totalCount,
@@ -302,7 +302,7 @@ public class ProviderPortalController : ControllerBase
 
     // MY PAYOUTS
     [HttpGet("payouts")]
-    public async Task<ActionResult<PagedResult<ProviderPayoutDto>>> GetMyPayouts()
+    public async Task<ActionResult<PagedResult<ConsignorPayoutDto>>> GetMyPayouts()
     {
         try
         {
@@ -316,7 +316,7 @@ public class ProviderPortalController : ControllerBase
 
             var payoutDtos = payouts
                 .OrderByDescending(p => p.CreatedAt)
-                .Select(p => new ProviderPayoutDto
+                .Select(p => new ConsignorPayoutDto
                 {
                     PayoutId = p.Id,
                     PayoutNumber = p.PayoutNumber,
@@ -327,7 +327,7 @@ public class ProviderPortalController : ControllerBase
                 })
                 .ToList();
 
-            var result = new PagedResult<ProviderPayoutDto>
+            var result = new PagedResult<ConsignorPayoutDto>
             {
                 Items = payoutDtos,
                 TotalCount = payoutDtos.Count,
@@ -345,7 +345,7 @@ public class ProviderPortalController : ControllerBase
     }
 
     [HttpGet("payouts/{id}")]
-    public async Task<ActionResult<ProviderPayoutDetailDto>> GetMyPayout(Guid id)
+    public async Task<ActionResult<ConsignorPayoutDetailDto>> GetMyPayout(Guid id)
     {
         try
         {
@@ -360,7 +360,7 @@ public class ProviderPortalController : ControllerBase
             if (payout == null)
                 return NotFound("Payout not found");
 
-            var payoutDetail = new ProviderPayoutDetailDto
+            var payoutDetail = new ConsignorPayoutDetailDto
             {
                 PayoutId = payout.Id,
                 PayoutNumber = payout.PayoutNumber,
@@ -369,10 +369,10 @@ public class ProviderPortalController : ControllerBase
                 PaymentMethod = payout.Consignor.PaymentMethod ?? "Not Set",
                 ItemCount = payout.Transactions.Count(),
                 PaymentReference = payout.PaymentReference ?? "",
-                PeriodStart = payout.PeriodStart,
-                PeriodEnd = payout.PeriodEnd,
+                PeriodStart = DateOnly.FromDateTime(payout.PeriodStart),
+                PeriodEnd = DateOnly.FromDateTime(payout.PeriodEnd),
                 Items = payout.Transactions
-                    .Select(t => new ProviderSaleDto
+                    .Select(t => new ConsignorSaleDto
                     {
                         TransactionId = t.Id,
                         SaleDate = t.SaleDate,
@@ -396,7 +396,7 @@ public class ProviderPortalController : ControllerBase
 
     // PROFILE
     [HttpGet("profile")]
-    public async Task<ActionResult<ProviderProfileDto>> GetProfile()
+    public async Task<ActionResult<ConsignorProfileDto>> GetProfile()
     {
         try
         {
@@ -411,7 +411,7 @@ public class ProviderPortalController : ControllerBase
             if (provider == null)
                 return NotFound("Consignor not found");
 
-            var profile = new ProviderProfileDto
+            var profile = new ConsignorProfileDto
             {
                 ConsignorId = provider.Id,
                 FullName = provider.DisplayName,
@@ -435,8 +435,8 @@ public class ProviderPortalController : ControllerBase
     }
 
     [HttpPut("profile")]
-    public async Task<ActionResult<ProviderProfileDto>> UpdateProfile(
-        [FromBody] UpdateProviderProfileRequest request)
+    public async Task<ActionResult<ConsignorProfileDto>> UpdateProfile(
+        [FromBody] UpdateConsignorProfileRequest request)
     {
         try
         {
@@ -461,7 +461,7 @@ public class ProviderPortalController : ControllerBase
             await _unitOfWork.Consignors.UpdateAsync(provider);
             await _unitOfWork.SaveChangesAsync();
 
-            var updatedProfile = new ProviderProfileDto
+            var updatedProfile = new ConsignorProfileDto
             {
                 ConsignorId = provider.Id,
                 FullName = provider.DisplayName,

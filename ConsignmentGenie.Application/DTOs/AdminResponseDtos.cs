@@ -42,7 +42,7 @@ public class StoreCodeValidationResponseDto
     public string OrganizationName { get; set; } = string.Empty;
 }
 
-public class ProviderRegistrationResponseDto
+public class ConsignorRegistrationResponseDto
 {
     public Guid ConsignorId { get; set; }
     public string Message { get; set; } = string.Empty;

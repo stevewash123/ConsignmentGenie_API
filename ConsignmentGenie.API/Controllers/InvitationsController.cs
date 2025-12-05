@@ -12,12 +12,12 @@ public class InvitationsController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
     private readonly ILogger<InvitationsController> _logger;
-    private readonly IProviderInvitationService _invitationService;
+    private readonly IConsignorInvitationService _invitationService;
 
     public InvitationsController(
         ConsignmentGenieContext context,
         ILogger<InvitationsController> logger,
-        IProviderInvitationService invitationService)
+        IConsignorInvitationService invitationService)
     {
         _context = context;
         _logger = logger;
@@ -34,7 +34,7 @@ public class InvitationsController : ControllerBase
 
         try
         {
-            var invitation = await _context.ProviderInvitations
+            var invitation = await _context.ConsignorInvitations
                 .Include(i => i.Organization)
                 .FirstOrDefaultAsync(i => i.Token == token);
 
@@ -101,8 +101,8 @@ public class InvitationsController : ControllerBase
     /// Register a new provider from invitation (public endpoint, no auth required)
     /// </summary>
     [HttpPost("register")]
-    public async Task<ActionResult<RegisterProviderFromInvitationResponse>> RegisterFromInvitation(
-        [FromBody] RegisterProviderFromInvitationRequest request)
+    public async Task<ActionResult<RegisterConsignorFromInvitationResponse>> RegisterFromInvitation(
+        [FromBody] RegisterConsignorFromInvitationRequest request)
     {
         _logger.LogInformation("[INVITATION] Processing provider registration from invitation token: {Token}",
             request.InvitationToken);
@@ -110,7 +110,7 @@ public class InvitationsController : ControllerBase
         try
         {
             // Validate invitation first
-            var invitation = await _context.ProviderInvitations
+            var invitation = await _context.ConsignorInvitations
                 .Include(i => i.Organization)
                 .FirstOrDefaultAsync(i => i.Token == request.InvitationToken);
 
@@ -119,7 +119,7 @@ public class InvitationsController : ControllerBase
                 invitation.Status != Core.Entities.InvitationStatus.Pending)
             {
                 _logger.LogWarning("[INVITATION] Invalid or expired invitation: {Token}", request.InvitationToken);
-                return BadRequest(new RegisterProviderFromInvitationResponse
+                return BadRequest(new RegisterConsignorFromInvitationResponse
                 {
                     Success = false,
                     Message = "Invalid or expired invitation"
@@ -147,7 +147,7 @@ public class InvitationsController : ControllerBase
             _logger.LogError(ex, "[INVITATION] Error during provider registration from invitation: {Token}",
                 request.InvitationToken);
 
-            return StatusCode(500, new RegisterProviderFromInvitationResponse
+            return StatusCode(500, new RegisterConsignorFromInvitationResponse
             {
                 Success = false,
                 Message = "Registration failed. Please try again."

@@ -83,7 +83,7 @@ public class AdminController : ControllerBase
             _context.Transactions.RemoveRange(_context.Transactions);
             _context.Payouts.RemoveRange(_context.Payouts);
             _context.Items.RemoveRange(_context.Items);
-            _context.ProviderInvitations.RemoveRange(_context.ProviderInvitations);
+            _context.ConsignorInvitations.RemoveRange(_context.ConsignorInvitations);
             _context.Consignors.RemoveRange(_context.Consignors);
             _context.Users.RemoveRange(_context.Users);
             _context.Organizations.RemoveRange(_context.Organizations);
@@ -105,7 +105,7 @@ public class AdminController : ControllerBase
                 {
                     new TestAccountDto { Email = "admin@demoshop.com", Role = "Owner", Password = "password123", Store = "demo-shop" },
                     new TestAccountDto { Email = "owner@demoshop.com", Role = "Owner", Password = "password123", Store = "demo-shop" },
-                    new TestAccountDto { Email = "provider@demoshop.com", Role = "Consignor", Password = "password123", Store = "demo-shop" },
+                    new TestAccountDto { Email = "consigner@demoshop.com", Role = "Consignor", Password = "password123", Store = "demo-shop" },
                     new TestAccountDto { Email = "customer@demoshop.com", Role = "Customer", Password = "password123", Store = "demo-shop" }
                 },
                 CypressTestData = new
@@ -205,7 +205,7 @@ public class AdminController : ControllerBase
             new ConsignmentGenie.Core.Entities.User
             {
                 Id = providerUserId,
-                Email = "provider@demoshop.com",
+                Email = "consigner@demoshop.com",
                 PasswordHash = hashedPassword,
                 Role = ConsignmentGenie.Core.Enums.UserRole.Consignor,
                 OrganizationId = orgId,
@@ -263,7 +263,7 @@ public class AdminController : ControllerBase
             UserId = providerUserId,
             OrganizationId = orgId,
             DisplayName = "Demo Consignor",
-            Email = "provider@demoshop.com",
+            Email = "consigner@demoshop.com",
             Phone = "555-987-6543",
             Address = "456 Consignor Ave, Demo City, DC 12345",
             CommissionRate = 60.0m,

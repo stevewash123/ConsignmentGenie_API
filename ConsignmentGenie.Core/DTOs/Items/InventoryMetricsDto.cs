@@ -14,7 +14,7 @@ public class InventoryMetricsDto
     public int ItemsSoldThisMonth { get; set; }
 
     public List<CategoryBreakdownDto> ByCategory { get; set; } = new();
-    public List<ProviderBreakdownDto> ByProvider { get; set; } = new();
+    public List<ConsignorBreakdownDto> ByProvider { get; set; } = new();
 }
 
 public class CategoryBreakdownDto
@@ -24,7 +24,7 @@ public class CategoryBreakdownDto
     public decimal Value { get; set; }
 }
 
-public class ProviderBreakdownDto
+public class ConsignorBreakdownDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorName { get; set; } = string.Empty;

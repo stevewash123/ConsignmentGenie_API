@@ -2,7 +2,7 @@ namespace ConsignmentGenie.Core.Extensions;
 
 using ConsignmentGenie.Core.Entities;
 
-public static class ProviderExtensions
+public static class ConsignorExtensions
 {
     public static string GetDisplayName(this Consignor provider)
     {

@@ -6,7 +6,7 @@ public interface IRegistrationService
 {
     Task<StoreCodeValidationDto> ValidateStoreCodeAsync(string code);
     Task<RegistrationResultDto> RegisterOwnerAsync(RegisterOwnerRequest request);
-    Task<RegistrationResultDto> RegisterProviderAsync(RegisterProviderRequest request);
+    Task<RegistrationResultDto> RegisterProviderAsync(RegisterConsignorRequest request);
     Task<List<PendingApprovalDto>> GetPendingProvidersAsync(Guid organizationId);
     Task<int> GetPendingApprovalCountAsync(Guid organizationId);
     Task ApproveUserAsync(Guid userId, Guid approvedByUserId);
@@ -15,5 +15,5 @@ public interface IRegistrationService
     Task ApproveOwnerAsync(Guid userId, Guid approvedByUserId);
     Task RejectOwnerAsync(Guid userId, Guid rejectedByUserId, string? reason);
     Task<InvitationValidationDto> ValidateInvitationTokenAsync(string token);
-    Task<RegistrationResultDto> RegisterProviderFromInvitationAsync(RegisterProviderFromInvitationRequest request);
+    Task<RegistrationResultDto> RegisterProviderFromInvitationAsync(RegisterConsignorFromInvitationRequest request);
 }

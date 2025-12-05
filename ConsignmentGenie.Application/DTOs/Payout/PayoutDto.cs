@@ -21,7 +21,7 @@ public class PayoutDto
     public DateTime CreatedAt { get; set; }
 
     // Navigation data
-    public ProviderSummaryDto Consignor { get; set; } = new();
+    public ConsignorSummaryDto Consignor { get; set; } = new();
     public List<PayoutTransactionDto> Transactions { get; set; } = new();
 }
 
@@ -36,7 +36,7 @@ public class PayoutListDto
     public DateTime PeriodStart { get; set; }
     public DateTime PeriodEnd { get; set; }
     public int TransactionCount { get; set; }
-    public ProviderSummaryDto Consignor { get; set; } = new();
+    public ConsignorSummaryDto Consignor { get; set; } = new();
 }
 
 

@@ -90,7 +90,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.True(data.GetProperty("showModal").GetBoolean()); // Should show modal since steps are incomplete
 
             var steps = data.GetProperty("steps");
-            Assert.False(steps.GetProperty("hasProviders").GetBoolean());
+            Assert.False(steps.GetProperty("hasConsignors").GetBoolean());
             Assert.False(steps.GetProperty("storefrontConfigured").GetBoolean());
             Assert.False(steps.GetProperty("hasInventory").GetBoolean());
             Assert.False(steps.GetProperty("quickBooksConnected").GetBoolean());
@@ -99,21 +99,21 @@ namespace ConsignmentGenie.Tests.Controllers
         [Fact]
         public async Task GetSetupStatus_ReturnsCorrectSetupStatus_WhenSomeStepsComplete()
         {
-            // Arrange - Add a provider and enable store
+            // Arrange - Add a consignor and enable store
             var organization = await _context.Organizations.FindAsync(_organizationId);
             organization!.StoreEnabled = true;
 
-            var provider = new Consignor
+            var consignor = new Consignor
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
                 FirstName = "Test",
                 LastName = "Consignor",
-                Email = "test@provider.com",
+                Email = "test@consignor.com",
                 Status = ConsignorStatus.Approved,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Consignors.Add(provider);
+            _context.Consignors.Add(consignor);
             await _context.SaveChangesAsync();
 
             // Act
@@ -133,7 +133,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.True(data.GetProperty("showModal").GetBoolean()); // Still should show since not all steps complete
 
             var steps = data.GetProperty("steps");
-            Assert.True(steps.GetProperty("hasProviders").GetBoolean());
+            Assert.True(steps.GetProperty("hasConsignors").GetBoolean());
             Assert.True(steps.GetProperty("storefrontConfigured").GetBoolean());
             Assert.False(steps.GetProperty("hasInventory").GetBoolean());
             Assert.False(steps.GetProperty("quickBooksConnected").GetBoolean());
@@ -147,23 +147,23 @@ namespace ConsignmentGenie.Tests.Controllers
             organization!.StoreEnabled = true;
             organization.QuickBooksConnected = true;
 
-            var provider = new Consignor
+            var consignor = new Consignor
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
                 FirstName = "Test",
                 LastName = "Consignor",
-                Email = "test@provider.com",
+                Email = "test@consignor.com",
                 Status = ConsignorStatus.Approved,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Consignors.Add(provider);
+            _context.Consignors.Add(consignor);
 
             var item = new Item
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = provider.Id,
+                ConsignorId = consignor.Id,
                 Title = "Test Item",
                 Price = 100.00m,
                 CreatedAt = DateTime.UtcNow
@@ -187,7 +187,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.False(data.GetProperty("showModal").GetBoolean()); // Should not show modal since all steps complete
 
             var steps = data.GetProperty("steps");
-            Assert.True(steps.GetProperty("hasProviders").GetBoolean());
+            Assert.True(steps.GetProperty("hasConsignors").GetBoolean());
             Assert.True(steps.GetProperty("storefrontConfigured").GetBoolean());
             Assert.True(steps.GetProperty("hasInventory").GetBoolean());
             Assert.True(steps.GetProperty("quickBooksConnected").GetBoolean());

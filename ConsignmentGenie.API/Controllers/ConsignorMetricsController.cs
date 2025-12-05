@@ -12,12 +12,12 @@ namespace ConsignmentGenie.API.Controllers;
 [ApiController]
 [Route("api/consignors")]
 [Authorize(Roles = "Owner")]
-public class ProviderMetricsController : ControllerBase
+public class ConsignorMetricsController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
-    private readonly ILogger<ProviderMetricsController> _logger;
+    private readonly ILogger<ConsignorMetricsController> _logger;
 
-    public ProviderMetricsController(ConsignmentGenieContext context, ILogger<ProviderMetricsController> logger)
+    public ConsignorMetricsController(ConsignmentGenieContext context, ILogger<ConsignorMetricsController> logger)
     {
         _context = context;
         _logger = logger;
@@ -25,7 +25,7 @@ public class ProviderMetricsController : ControllerBase
 
     // GET PROVIDER METRICS - Get detailed metrics for specific provider
     [HttpGet("{id:guid}/metrics")]
-    public async Task<ActionResult<ApiResponse<ProviderMetricsDto>>> GetProviderMetrics(Guid id)
+    public async Task<ActionResult<ApiResponse<ConsignorMetricsDto>>> GetProviderMetrics(Guid id)
     {
         try
         {
@@ -37,22 +37,22 @@ public class ProviderMetricsController : ControllerBase
 
             if (!providerExists)
             {
-                return NotFound(ApiResponse<ProviderMetricsDto>.ErrorResult("Consignor not found"));
+                return NotFound(ApiResponse<ConsignorMetricsDto>.ErrorResult("Consignor not found"));
             }
 
             var metrics = await CalculateProviderMetrics(id, organizationId);
-            return Ok(ApiResponse<ProviderMetricsDto>.SuccessResult(metrics));
+            return Ok(ApiResponse<ConsignorMetricsDto>.SuccessResult(metrics));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting metrics for provider {ConsignorId}", id);
-            return StatusCode(500, ApiResponse<ProviderMetricsDto>.ErrorResult("Failed to retrieve provider metrics"));
+            return StatusCode(500, ApiResponse<ConsignorMetricsDto>.ErrorResult("Failed to retrieve provider metrics"));
         }
     }
 
     // GET PROVIDER DASHBOARD - Get summary metrics for dashboard
     [HttpGet("dashboard")]
-    public async Task<ActionResult<ApiResponse<ProviderDashboardMetricsDto>>> GetProviderDashboard()
+    public async Task<ActionResult<ApiResponse<ConsignorDashboardMetricsDto>>> GetProviderDashboard()
     {
         try
         {
@@ -81,14 +81,14 @@ public class ProviderMetricsController : ControllerBase
                 .Include(p => p.Items)
                 .ToListAsync();
 
-            var topProviders = new List<ProviderTopPerformerDto>();
+            var topProviders = new List<ConsignorTopPerformerDto>();
 
             foreach (var provider in topProvidersData.Take(5))
             {
                 var pendingBalance = await CalculatePendingBalance(provider.Id, organizationId);
                 var totalEarnings = provider.Transactions.Sum(t => t.ConsignorAmount);
 
-                topProviders.Add(new ProviderTopPerformerDto
+                topProviders.Add(new ConsignorTopPerformerDto
                 {
                     ConsignorId = provider.Id,
                     ConsignorName = $"{provider.FirstName} {provider.LastName}",
@@ -120,7 +120,7 @@ public class ProviderMetricsController : ControllerBase
                 ? ((decimal)(thisMonthNewProviders - lastMonthNewProviders) / lastMonthNewProviders) * 100
                 : 0;
 
-            var dashboardMetrics = new ProviderDashboardMetricsDto
+            var dashboardMetrics = new ConsignorDashboardMetricsDto
             {
                 TotalProviders = totalProviders,
                 ActiveProviders = activeProviders,
@@ -131,18 +131,18 @@ public class ProviderMetricsController : ControllerBase
                 TopProvidersByBalance = topProviders
             };
 
-            return Ok(ApiResponse<ProviderDashboardMetricsDto>.SuccessResult(dashboardMetrics));
+            return Ok(ApiResponse<ConsignorDashboardMetricsDto>.SuccessResult(dashboardMetrics));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting provider dashboard for organization {OrganizationId}", GetOrganizationId());
-            return StatusCode(500, ApiResponse<ProviderDashboardMetricsDto>.ErrorResult("Failed to retrieve provider dashboard"));
+            return StatusCode(500, ApiResponse<ConsignorDashboardMetricsDto>.ErrorResult("Failed to retrieve provider dashboard"));
         }
     }
 
     // GET PROVIDER ACTIVITY - Get recent activity for provider
     [HttpGet("{id:guid}/activity")]
-    public async Task<ActionResult<ApiResponse<ProviderActivityDto>>> GetProviderActivity(
+    public async Task<ActionResult<ApiResponse<ConsignorActivityDto>>> GetProviderActivity(
         Guid id,
         [FromQuery] int days = 30)
     {
@@ -157,7 +157,7 @@ public class ProviderMetricsController : ControllerBase
 
             if (provider == null)
             {
-                return NotFound(ApiResponse<ProviderActivityDto>.ErrorResult("Consignor not found"));
+                return NotFound(ApiResponse<ConsignorActivityDto>.ErrorResult("Consignor not found"));
             }
 
             var cutoffDate = DateTime.UtcNow.AddDays(-days);
@@ -167,7 +167,7 @@ public class ProviderMetricsController : ControllerBase
                 .Include(t => t.Item)
                 .Where(t => t.ConsignorId == id && t.OrganizationId == organizationId && t.SaleDate >= cutoffDate)
                 .OrderByDescending(t => t.SaleDate)
-                .Select(t => new ProviderActivityTransactionDto
+                .Select(t => new ConsignorActivityTransactionDto
                 {
                     TransactionId = t.Id,
                     SaleDate = t.SaleDate,
@@ -182,7 +182,7 @@ public class ProviderMetricsController : ControllerBase
             var recentItems = await _context.Items
                 .Where(i => i.ConsignorId == id && i.OrganizationId == organizationId && i.CreatedAt >= cutoffDate)
                 .OrderByDescending(i => i.CreatedAt)
-                .Select(i => new ProviderActivityItemDto
+                .Select(i => new ConsignorActivityItemDto
                 {
                     ItemId = i.Id,
                     ItemName = i.Title,
@@ -196,7 +196,7 @@ public class ProviderMetricsController : ControllerBase
             var recentPayouts = await _context.Payouts
                 .Where(p => p.ConsignorId == id && p.OrganizationId == organizationId && p.CreatedAt >= cutoffDate)
                 .OrderByDescending(p => p.CreatedAt)
-                .Select(p => new ProviderActivityPayoutDto
+                .Select(p => new ConsignorActivityPayoutDto
                 {
                     PayoutId = p.Id,
                     Amount = p.Amount,
@@ -206,7 +206,7 @@ public class ProviderMetricsController : ControllerBase
                 })
                 .ToListAsync();
 
-            var activity = new ProviderActivityDto
+            var activity = new ConsignorActivityDto
             {
                 ConsignorId = id,
                 ConsignorName = $"{provider.FirstName} {provider.LastName}",
@@ -214,23 +214,23 @@ public class ProviderMetricsController : ControllerBase
                 RecentTransactions = recentTransactions,
                 RecentItems = recentItems,
                 RecentPayouts = recentPayouts,
-                TotalTransactions = recentTransactions.Count,
-                TotalItemsAdded = recentItems.Count,
-                TotalPayouts = recentPayouts.Count
+                TotalTransactions = recentTransactions.Count(),
+                TotalItemsAdded = recentItems.Count(),
+                TotalPayouts = recentPayouts.Count()
             };
 
-            return Ok(ApiResponse<ProviderActivityDto>.SuccessResult(activity));
+            return Ok(ApiResponse<ConsignorActivityDto>.SuccessResult(activity));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting activity for provider {ConsignorId}", id);
-            return StatusCode(500, ApiResponse<ProviderActivityDto>.ErrorResult("Failed to retrieve provider activity"));
+            return StatusCode(500, ApiResponse<ConsignorActivityDto>.ErrorResult("Failed to retrieve provider activity"));
         }
     }
 
     #region Private Helper Methods
 
-    private async Task<ProviderMetricsDto> CalculateProviderMetrics(Guid providerId, Guid organizationId)
+    private async Task<ConsignorMetricsDto> CalculateProviderMetrics(Guid providerId, Guid organizationId)
     {
         var items = await _context.Items
             .Where(i => i.ConsignorId == providerId && i.OrganizationId == organizationId)
@@ -256,7 +256,7 @@ public class ProviderMetricsController : ControllerBase
             .Where(t => t.SaleDate >= startOfLastMonth && t.SaleDate < startOfMonth)
             .ToList();
 
-        return new ProviderMetricsDto
+        return new ConsignorMetricsDto
         {
             TotalItems = items.Count,
             AvailableItems = items.Count(i => i.Status == ItemStatus.Available),

@@ -19,7 +19,7 @@ namespace ConsignmentGenie.Tests.Controllers
         private readonly Mock<ISalesReportService> _salesReportServiceMock;
         private readonly Mock<IInventoryReportService> _inventoryReportServiceMock;
         private readonly Mock<IPayoutReportService> _payoutReportServiceMock;
-        private readonly Mock<IProviderReportService> _providerReportServiceMock;
+        private readonly Mock<IConsignorReportService> _consignorReportServiceMock;
         private readonly Mock<IPdfReportGenerator> _pdfReportGeneratorMock;
         private readonly Mock<ICsvExportService> _csvExportServiceMock;
         private readonly Mock<ILogger<ReportsController>> _loggerMock;
@@ -31,7 +31,7 @@ namespace ConsignmentGenie.Tests.Controllers
             _salesReportServiceMock = new Mock<ISalesReportService>();
             _inventoryReportServiceMock = new Mock<IInventoryReportService>();
             _payoutReportServiceMock = new Mock<IPayoutReportService>();
-            _providerReportServiceMock = new Mock<IProviderReportService>();
+            _consignorReportServiceMock = new Mock<IConsignorReportService>();
             _pdfReportGeneratorMock = new Mock<IPdfReportGenerator>();
             _csvExportServiceMock = new Mock<ICsvExportService>();
             _loggerMock = new Mock<ILogger<ReportsController>>();
@@ -39,7 +39,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 _salesReportServiceMock.Object,
                 _inventoryReportServiceMock.Object,
                 _payoutReportServiceMock.Object,
-                _providerReportServiceMock.Object,
+                _consignorReportServiceMock.Object,
                 _pdfReportGeneratorMock.Object,
                 _csvExportServiceMock.Object,
                 _loggerMock.Object);
@@ -69,7 +69,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 TotalSales = 1000m,
                 ShopRevenue = 400m,
-                ProviderPayable = 600m,
+                ConsignorPayable = 600m,
                 TransactionCount = 10,
                 AverageSale = 100m,
                 ChartData = new List<SalesChartPointDto>(),
@@ -126,7 +126,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 _salesReportServiceMock.Object,
                 _inventoryReportServiceMock.Object,
                 _payoutReportServiceMock.Object,
-                _providerReportServiceMock.Object,
+                _consignorReportServiceMock.Object,
                 _pdfReportGeneratorMock.Object,
                 _csvExportServiceMock.Object,
                 _loggerMock.Object);
@@ -184,33 +184,33 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetProviderPerformanceReport_WithValidRequest_ReturnsOkResult()
+        public async Task GetConsignorPerformanceReport_WithValidRequest_ReturnsOkResult()
         {
             // Arrange
-            var providerPerformanceDto = new ProviderPerformanceReportDto
+            var consignorPerformanceDto = new ConsignorPerformanceReportDto
             {
-                TotalProviders = 5,
+                TotalConsignors = 5,
                 TotalSales = 5000m,
-                AverageSalesPerProvider = 1000m,
-                TopProviderName = "Top Consignor",
-                TopProviderSales = 2000m,
-                Consignors = new List<ProviderPerformanceLineDto>()
+                AverageSalesPerConsignor = 1000m,
+                TopConsignorName = "Top Consignor",
+                TopConsignorSales = 2000m,
+                Consignors = new List<ConsignorPerformanceLineDto>()
             };
 
-            _providerReportServiceMock
-                .Setup(s => s.GetProviderPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ProviderPerformanceFilterDto>()))
-                .ReturnsAsync(ServiceResult<ProviderPerformanceReportDto>.SuccessResult(providerPerformanceDto));
+            _consignorReportServiceMock
+                .Setup(s => s.GetConsignorPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ConsignorPerformanceFilterDto>()))
+                .ReturnsAsync(ServiceResult<ConsignorPerformanceReportDto>.SuccessResult(consignorPerformanceDto));
 
             // Act
-            var result = await _controller.GetProviderPerformanceReport();
+            var result = await _controller.GetConsignorPerformanceReport();
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
             Assert.NotNull(okResult.Value);
 
-            _providerReportServiceMock.Verify(
-                s => s.GetProviderPerformanceReportAsync(_organizationId, It.IsAny<ProviderPerformanceFilterDto>()),
+            _consignorReportServiceMock.Verify(
+                s => s.GetConsignorPerformanceReportAsync(_organizationId, It.IsAny<ConsignorPerformanceFilterDto>()),
                 Times.Once);
         }
 
@@ -254,7 +254,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 TotalPaid = 3000m,
                 TotalPending = 1500m,
-                ProvidersWithPending = 3,
+                ConsignorsWithPending = 3,
                 AveragePayoutAmount = 500m,
                 ChartData = new List<PayoutChartPointDto>(),
                 Consignors = new List<PayoutSummaryLineDto>()
@@ -396,7 +396,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 AveragePrice = 85.50m,
                 TotalInventoryValue = 15390m,
                 CategoryBreakdown = new List<CategoryBreakdownDto>(),
-                ProviderBreakdown = new List<ProviderBreakdownDto>()
+                ConsignorBreakdown = new List<ConsignorBreakdownDto>()
             };
 
             _inventoryReportServiceMock
@@ -417,20 +417,20 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task ExportProviderPerformanceReport_PDF_ReturnsFileResult()
+        public async Task ExportConsignorPerformanceReport_PDF_ReturnsFileResult()
         {
             // Arrange
             var pdfData = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // PDF header bytes
-            _providerReportServiceMock
-                .Setup(s => s.GetProviderPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ProviderPerformanceFilterDto>()))
-                .ReturnsAsync(ServiceResult<ProviderPerformanceReportDto>.SuccessResult(new ProviderPerformanceReportDto()));
+            _consignorReportServiceMock
+                .Setup(s => s.GetConsignorPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ConsignorPerformanceFilterDto>()))
+                .ReturnsAsync(ServiceResult<ConsignorPerformanceReportDto>.SuccessResult(new ConsignorPerformanceReportDto()));
 
             _pdfReportGeneratorMock
-                .Setup(s => s.GenerateProviderPerformanceReportPdfAsync(It.IsAny<ProviderPerformanceReportDto>(), It.IsAny<string>()))
+                .Setup(s => s.GenerateConsignorPerformanceReportPdfAsync(It.IsAny<ConsignorPerformanceReportDto>(), It.IsAny<string>()))
                 .ReturnsAsync(ServiceResult<byte[]>.SuccessResult(pdfData));
 
             // Act
-            var result = await _controller.ExportProviderPerformanceReport("pdf");
+            var result = await _controller.ExportConsignorPerformanceReport("pdf");
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
@@ -468,7 +468,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var startDate = DateTime.UtcNow.AddDays(-30);
             var endDate = DateTime.UtcNow;
-            var providerIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+            var consignorIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
             var categories = new List<string> { "Electronics", "Clothing" };
             var paymentMethods = new List<string> { "Cash", "Card" };
 
@@ -477,7 +477,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 .ReturnsAsync(ServiceResult<SalesReportDto>.SuccessResult(new SalesReportDto()));
 
             // Act
-            var result = await _controller.GetSalesReport(startDate, endDate, providerIds, categories, paymentMethods);
+            var result = await _controller.GetSalesReport(startDate, endDate, consignorIds, categories, paymentMethods);
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
@@ -487,14 +487,14 @@ namespace ConsignmentGenie.Tests.Controllers
                 s => s.GetSalesReportAsync(_organizationId, It.Is<SalesReportFilterDto>(f =>
                     f.StartDate == startDate &&
                     f.EndDate == endDate &&
-                    f.ConsignorIds == providerIds &&
+                    f.ConsignorIds == consignorIds &&
                     f.Categories == categories &&
                     f.PaymentMethods == paymentMethods)),
                 Times.Once);
         }
 
         [Fact]
-        public async Task GetProviderPerformanceReport_WithParameters_PassesCorrectFilter()
+        public async Task GetConsignorPerformanceReport_WithParameters_PassesCorrectFilter()
         {
             // Arrange
             var startDate = DateTime.UtcNow.AddDays(-60);
@@ -502,19 +502,19 @@ namespace ConsignmentGenie.Tests.Controllers
             var includeInactive = true;
             var minItemsThreshold = 5;
 
-            _providerReportServiceMock
-                .Setup(s => s.GetProviderPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ProviderPerformanceFilterDto>()))
-                .ReturnsAsync(ServiceResult<ProviderPerformanceReportDto>.SuccessResult(new ProviderPerformanceReportDto()));
+            _consignorReportServiceMock
+                .Setup(s => s.GetConsignorPerformanceReportAsync(It.IsAny<Guid>(), It.IsAny<ConsignorPerformanceFilterDto>()))
+                .ReturnsAsync(ServiceResult<ConsignorPerformanceReportDto>.SuccessResult(new ConsignorPerformanceReportDto()));
 
             // Act
-            var result = await _controller.GetProviderPerformanceReport(startDate, endDate, includeInactive, minItemsThreshold);
+            var result = await _controller.GetConsignorPerformanceReport(startDate, endDate, includeInactive, minItemsThreshold);
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
             var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
 
-            _providerReportServiceMock.Verify(
-                s => s.GetProviderPerformanceReportAsync(_organizationId, It.Is<ProviderPerformanceFilterDto>(f =>
+            _consignorReportServiceMock.Verify(
+                s => s.GetConsignorPerformanceReportAsync(_organizationId, It.Is<ConsignorPerformanceFilterDto>(f =>
                     f.StartDate == startDate &&
                     f.EndDate == endDate &&
                     f.IncludeInactive == includeInactive &&
@@ -528,7 +528,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var ageThreshold = 60;
             var categories = new List<string> { "Books", "Art" };
-            var providerIds = new List<Guid> { Guid.NewGuid() };
+            var consignorIds = new List<Guid> { Guid.NewGuid() };
             var minPrice = 10m;
             var maxPrice = 500m;
 
@@ -537,7 +537,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 .ReturnsAsync(ServiceResult<InventoryAgingReportDto>.SuccessResult(new InventoryAgingReportDto()));
 
             // Act
-            var result = await _controller.GetInventoryAgingReport(ageThreshold, categories, providerIds, minPrice, maxPrice);
+            var result = await _controller.GetInventoryAgingReport(ageThreshold, categories, consignorIds, minPrice, maxPrice);
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
@@ -547,7 +547,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 s => s.GetInventoryAgingReportAsync(_organizationId, It.Is<InventoryAgingFilterDto>(f =>
                     f.AgeThreshold == ageThreshold &&
                     f.Categories == categories &&
-                    f.ConsignorIds == providerIds &&
+                    f.ConsignorIds == consignorIds &&
                     f.MinPrice == minPrice &&
                     f.MaxPrice == maxPrice)),
                 Times.Once);

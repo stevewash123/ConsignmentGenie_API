@@ -151,10 +151,10 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public void GetInventoryItems_WithProviderFilter_ReturnsFilteredItems()
+        public void GetInventoryItems_WithConsignorFilter_ReturnsFilteredItems()
         {
             // Act
-            var result = _controller.GetInventoryItems(provider: "Sarah Johnson");
+            var result = _controller.GetInventoryItems(consignor: "Sarah Johnson");
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);

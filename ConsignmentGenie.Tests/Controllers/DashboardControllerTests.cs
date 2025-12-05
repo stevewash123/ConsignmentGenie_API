@@ -80,19 +80,19 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.True(response.GetProperty("success").GetBoolean());
 
             var data = response.GetProperty("data");
-            Assert.True(data.GetProperty("autoApproveProviders").GetBoolean());
+            Assert.True(data.GetProperty("autoApproveConsignors").GetBoolean());
             Assert.True(data.GetProperty("storeCodeEnabled").GetBoolean());
             Assert.Equal("TEST", data.GetProperty("storeCode").GetString());
         }
 
         [Fact]
-        public async Task UpdateAutoApproveProviders_EnablesAutoApprove()
+        public async Task UpdateAutoApproveConsignors_EnablesAutoApprove()
         {
             // Arrange
             var request = new UpdateAutoApproveRequest { AutoApproveConsignors = true };
 
             // Act
-            var result = await _controller.UpdateAutoApproveProviders(request);
+            var result = await _controller.UpdateAutoApproveConsignors(request);
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
@@ -107,7 +107,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.Contains("auto-approval enabled", response.GetProperty("message").GetString());
 
             var data = response.GetProperty("data");
-            Assert.True(data.GetProperty("autoApproveProviders").GetBoolean());
+            Assert.True(data.GetProperty("autoApproveConsignors").GetBoolean());
 
             // Verify in database
             var organization = await _context.Organizations.FindAsync(_organizationId);
@@ -115,13 +115,13 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task UpdateAutoApproveProviders_DisablesAutoApprove()
+        public async Task UpdateAutoApproveConsignors_DisablesAutoApprove()
         {
             // Arrange
             var request = new UpdateAutoApproveRequest { AutoApproveConsignors = false };
 
             // Act
-            var result = await _controller.UpdateAutoApproveProviders(request);
+            var result = await _controller.UpdateAutoApproveConsignors(request);
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<object>>(result);
@@ -136,7 +136,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.Contains("auto-approval disabled", response.GetProperty("message").GetString());
 
             var data = response.GetProperty("data");
-            Assert.False(data.GetProperty("autoApproveProviders").GetBoolean());
+            Assert.False(data.GetProperty("autoApproveConsignors").GetBoolean());
 
             // Verify in database
             var organization = await _context.Organizations.FindAsync(_organizationId);
@@ -165,7 +165,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.True(data.GetProperty("showModal").GetBoolean()); // Should show modal since steps are incomplete
 
             var steps = data.GetProperty("steps");
-            Assert.False(steps.GetProperty("hasProviders").GetBoolean());
+            Assert.False(steps.GetProperty("hasConsignors").GetBoolean());
             Assert.False(steps.GetProperty("storefrontConfigured").GetBoolean());
             Assert.False(steps.GetProperty("hasInventory").GetBoolean());
             Assert.False(steps.GetProperty("quickBooksConnected").GetBoolean());

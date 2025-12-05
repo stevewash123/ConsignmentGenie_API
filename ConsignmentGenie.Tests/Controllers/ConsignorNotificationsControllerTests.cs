@@ -11,18 +11,18 @@ using Xunit;
 
 namespace ConsignmentGenie.Tests.Controllers;
 
-public class ProviderNotificationsControllerTests
+public class ConsignorNotificationsControllerTests
 {
-    private readonly Mock<IProviderNotificationService> _mockNotificationService;
-    private readonly Mock<ILogger<ProviderNotificationsController>> _mockLogger;
-    private readonly ProviderNotificationsController _controller;
+    private readonly Mock<IConsignorNotificationService> _mockNotificationService;
+    private readonly Mock<ILogger<ConsignorNotificationsController>> _mockLogger;
+    private readonly ConsignorNotificationsController _controller;
     private readonly Guid _testUserId = Guid.NewGuid();
 
-    public ProviderNotificationsControllerTests()
+    public ConsignorNotificationsControllerTests()
     {
-        _mockNotificationService = new Mock<IProviderNotificationService>();
-        _mockLogger = new Mock<ILogger<ProviderNotificationsController>>();
-        _controller = new ProviderNotificationsController(_mockNotificationService.Object, _mockLogger.Object);
+        _mockNotificationService = new Mock<IConsignorNotificationService>();
+        _mockLogger = new Mock<ILogger<ConsignorNotificationsController>>();
+        _controller = new ConsignorNotificationsController(_mockNotificationService.Object, _mockLogger.Object);
 
         // Setup the controller's HttpContext with a user claim
         var claims = new List<Claim>

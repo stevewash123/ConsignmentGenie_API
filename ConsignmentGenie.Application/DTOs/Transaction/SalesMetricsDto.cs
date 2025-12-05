@@ -4,25 +4,25 @@ public class SalesMetricsDto
 {
     public decimal TotalSales { get; set; }
     public decimal TotalShopAmount { get; set; }
-    public decimal TotalProviderAmount { get; set; }
+    public decimal TotalConsignorAmount { get; set; }
     public decimal TotalTax { get; set; }
     public int TransactionCount { get; set; }
     public decimal AverageTransactionValue { get; set; }
 
-    public List<ProviderSalesDto> TopProviders { get; set; } = new();
+    public List<ConsignorSalesDto> TopConsignors { get; set; } = new();
     public List<PaymentMethodBreakdownDto> PaymentMethodBreakdown { get; set; } = new();
 
     public DateTime? PeriodStart { get; set; }
     public DateTime? PeriodEnd { get; set; }
 }
 
-public class ProviderSalesDto
+public class ConsignorSalesDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorName { get; set; } = string.Empty;
     public int TransactionCount { get; set; }
     public decimal TotalSales { get; set; }
-    public decimal TotalProviderAmount { get; set; }
+    public decimal TotalConsignorAmount { get; set; }
 }
 
 public class PaymentMethodBreakdownDto

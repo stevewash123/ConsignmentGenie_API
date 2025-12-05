@@ -8,16 +8,16 @@ using System.Security.Claims;
 namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
-[Route("api/provider/notifications")]
+[Route("api/consignor/notifications")]
 [Authorize]
-public class ProviderNotificationsController : ControllerBase
+public class ConsignorNotificationsController : ControllerBase
 {
-    private readonly IProviderNotificationService _notificationService;
-    private readonly ILogger<ProviderNotificationsController> _logger;
+    private readonly IConsignorNotificationService _notificationService;
+    private readonly ILogger<ConsignorNotificationsController> _logger;
 
-    public ProviderNotificationsController(
-        IProviderNotificationService notificationService,
-        ILogger<ProviderNotificationsController> logger)
+    public ConsignorNotificationsController(
+        IConsignorNotificationService notificationService,
+        ILogger<ConsignorNotificationsController> logger)
     {
         _notificationService = notificationService;
         _logger = logger;

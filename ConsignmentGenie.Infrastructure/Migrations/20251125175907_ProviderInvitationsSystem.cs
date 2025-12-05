@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ConsignmentGenie.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class ProviderInvitationsSystem : Migration
+    public partial class ConsignorInvitationsSystem : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -90,7 +90,7 @@ public class PayoutReportService : IPayoutReportService
                         ConsignorId = g.Key.ConsignorId,
                         ConsignorName = g.Key.DisplayName,
                         TotalSales = totalSales,
-                        ProviderCut = providerCut,
+                        ConsignorCut = providerCut,
                         AlreadyPaid = alreadyPaid,
                         PendingBalance = pendingBalance,
                         LastPayoutDate = lastPayoutDate == DateTime.MinValue ? null : lastPayoutDate
@@ -105,7 +105,7 @@ public class PayoutReportService : IPayoutReportService
             {
                 TotalPaid = totalPaid,
                 TotalPending = totalPending,
-                ProvidersWithPending = providersWithPending,
+                ConsignorsWithPending = providersWithPending,
                 AveragePayoutAmount = averagePayoutAmount,
                 ChartData = chartData,
                 Consignors = providerSummaries

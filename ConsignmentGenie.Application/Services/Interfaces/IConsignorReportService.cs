@@ -3,7 +3,7 @@ using ConsignmentGenie.Application.DTOs.Reports;
 
 namespace ConsignmentGenie.Application.Services.Interfaces;
 
-public interface IProviderReportService
+public interface IConsignorReportService
 {
-    Task<ServiceResult<ProviderPerformanceReportDto>> GetProviderPerformanceReportAsync(Guid organizationId, ProviderPerformanceFilterDto filter);
+    Task<ServiceResult<ConsignorPerformanceReportDto>> GetConsignorPerformanceReportAsync(Guid organizationId, ConsignorPerformanceFilterDto filter);
 }

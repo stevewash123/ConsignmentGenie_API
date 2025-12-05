@@ -219,13 +219,13 @@ public class ItemsController : ControllerBase
             var organizationId = GetOrganizationId();
             var userId = GetUserId();
 
-            // Validate provider belongs to organization
-            var provider = await _context.Consignors
+            // Validate consignor belongs to organization
+            var consignor = await _context.Consignors
                 .FirstOrDefaultAsync(p => p.Id == request.ConsignorId && p.OrganizationId == organizationId);
 
-            if (provider == null)
+            if (consignor == null)
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Invalid provider"));
+                return BadRequest(ApiResponse<object>.ErrorResult("Invalid consignor"));
             }
 
             // Generate SKU if not provided
@@ -394,13 +394,13 @@ public class ItemsController : ControllerBase
                 return NotFound(ApiResponse<object>.ErrorResult("Item not found"));
             }
 
-            // Validate provider belongs to organization
-            var provider = await _context.Consignors
+            // Validate consignor belongs to organization
+            var consignor = await _context.Consignors
                 .FirstOrDefaultAsync(p => p.Id == request.ConsignorId && p.OrganizationId == organizationId);
 
-            if (provider == null)
+            if (consignor == null)
             {
-                return BadRequest(ApiResponse<object>.ErrorResult("Invalid provider"));
+                return BadRequest(ApiResponse<object>.ErrorResult("Invalid consignor"));
             }
 
             // Check SKU uniqueness if changed
@@ -670,7 +670,7 @@ public class ItemsController : ControllerBase
             // Consignor breakdown
             metrics.ByProvider = availableItems
                 .GroupBy(i => new { i.ConsignorId, i.Consignor.DisplayName })
-                .Select(g => new ProviderBreakdownDto
+                .Select(g => new ConsignorBreakdownDto
                 {
                     ConsignorId = g.Key.ConsignorId,
                     ConsignorName = g.Key.DisplayName,

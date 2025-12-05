@@ -7,46 +7,46 @@ using Microsoft.Extensions.Logging;
 
 namespace ConsignmentGenie.Application.Services;
 
-public class ProviderReportService : IProviderReportService
+public class ConsignorReportService : IConsignorReportService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<ProviderReportService> _logger;
+    private readonly ILogger<ConsignorReportService> _logger;
 
-    public ProviderReportService(IUnitOfWork unitOfWork, ILogger<ProviderReportService> logger)
+    public ConsignorReportService(IUnitOfWork unitOfWork, ILogger<ConsignorReportService> logger)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
-    public async Task<ServiceResult<ProviderPerformanceReportDto>> GetProviderPerformanceReportAsync(Guid organizationId, ProviderPerformanceFilterDto filter)
+    public async Task<ServiceResult<ConsignorPerformanceReportDto>> GetConsignorPerformanceReportAsync(Guid organizationId, ConsignorPerformanceFilterDto filter)
     {
         try
         {
-            // Get providers
-            var providersQuery = await _unitOfWork.Consignors
+            // Get consignors
+            var consignorsQuery = await _unitOfWork.Consignors
                 .GetAllAsync(p => p.OrganizationId == organizationId,
                     includeProperties: "Items,Transactions");
 
-            var providers = providersQuery.AsQueryable();
+            var consignors = consignorsQuery.AsQueryable();
 
             if (!filter.IncludeInactive)
             {
-                providers = providers.Where(p => p.Status == ConsignorStatus.Active);
+                consignors = consignors.Where(p => p.Status == ConsignorStatus.Active);
             }
 
-            var providerList = providers.ToList();
+            var consignorList = consignors.ToList();
 
-            var providerPerformance = new List<ProviderPerformanceLineDto>();
+            var consignorPerformance = new List<ConsignorPerformanceLineDto>();
 
-            foreach (var provider in providerList)
+            foreach (var consignor in consignorList)
             {
-                var transactions = provider.Transactions
+                var transactions = consignor.Transactions
                     .Where(t => t.SaleDate >= filter.StartDate && t.SaleDate <= filter.EndDate)
                     .ToList();
 
-                var totalItems = provider.Items.Count;
+                var totalItems = consignor.Items.Count;
                 var itemsSold = transactions.Count;
-                var itemsAvailable = provider.Items.Count(i => i.Status == ItemStatus.Available);
+                var itemsAvailable = consignor.Items.Count(i => i.Status == ItemStatus.Available);
                 var totalSales = transactions.Sum(t => t.SalePrice);
                 var sellThroughRate = totalItems > 0 ? (decimal)itemsSold / totalItems * 100 : 0;
 
@@ -70,10 +70,10 @@ public class ProviderReportService : IProviderReportService
                 if (filter.MinItemsThreshold.HasValue && totalItems < filter.MinItemsThreshold.Value)
                     continue;
 
-                providerPerformance.Add(new ProviderPerformanceLineDto
+                consignorPerformance.Add(new ConsignorPerformanceLineDto
                 {
-                    ConsignorId = provider.Id,
-                    ConsignorName = provider.DisplayName,
+                    ConsignorId = consignor.Id,
+                    ConsignorName = consignor.DisplayName,
                     ItemsConsigned = totalItems,
                     ItemsSold = itemsSold,
                     ItemsAvailable = itemsAvailable,
@@ -84,28 +84,28 @@ public class ProviderReportService : IProviderReportService
                 });
             }
 
-            var orderedProviders = providerPerformance.OrderByDescending(p => p.TotalSales).ToList();
-            var totalProviders = providerPerformance.Count;
-            var totalSalesAmount = providerPerformance.Sum(p => p.TotalSales);
-            var averageSalesPerProvider = totalProviders > 0 ? totalSalesAmount / totalProviders : 0;
-            var topProvider = orderedProviders.FirstOrDefault();
+            var orderedConsignors = consignorPerformance.OrderByDescending(p => p.TotalSales).ToList();
+            var totalConsignors = consignorPerformance.Count;
+            var totalSalesAmount = consignorPerformance.Sum(p => p.TotalSales);
+            var averageSalesPerConsignor = totalConsignors > 0 ? totalSalesAmount / totalConsignors : 0;
+            var topConsignor = orderedConsignors.FirstOrDefault();
 
-            var result = new ProviderPerformanceReportDto
+            var result = new ConsignorPerformanceReportDto
             {
-                TotalProviders = totalProviders,
+                TotalConsignors = totalConsignors,
                 TotalSales = totalSalesAmount,
-                AverageSalesPerProvider = averageSalesPerProvider,
-                TopProviderName = topProvider?.ConsignorName ?? "",
-                TopProviderSales = topProvider?.TotalSales ?? 0,
-                Consignors = orderedProviders
+                AverageSalesPerConsignor = averageSalesPerConsignor,
+                TopConsignorName = topConsignor?.ConsignorName ?? "",
+                TopConsignorSales = topConsignor?.TotalSales ?? 0,
+                Consignors = orderedConsignors
             };
 
-            return ServiceResult<ProviderPerformanceReportDto>.SuccessResult(result);
+            return ServiceResult<ConsignorPerformanceReportDto>.SuccessResult(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating provider performance report for organization {OrganizationId}", organizationId);
-            return ServiceResult<ProviderPerformanceReportDto>.FailureResult("Failed to generate provider performance report", new List<string> { ex.Message });
+            _logger.LogError(ex, "Error generating consignor performance report for organization {OrganizationId}", organizationId);
+            return ServiceResult<ConsignorPerformanceReportDto>.FailureResult("Failed to generate consignor performance report", new List<string> { ex.Message });
         }
     }
 }

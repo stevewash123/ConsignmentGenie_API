@@ -21,7 +21,7 @@ public class StatementService : IStatementService
         _logger = logger;
     }
 
-    public async Task<StatementDto> GenerateStatementAsync(Guid providerId, DateOnly periodStart, DateOnly periodEnd)
+    public async Task<StatementDto> GenerateStatementAsync(Guid consignorId, DateOnly periodStart, DateOnly periodEnd)
     {
         // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
         foreach (var entry in _context.ChangeTracker.Entries().ToList())
@@ -29,17 +29,17 @@ public class StatementService : IStatementService
             entry.State = EntityState.Detached;
         }
 
-        var provider = await _context.Consignors
+        var consignor = await _context.Consignors
             .Include(p => p.Organization)
             .Include(p => p.User)
-            .FirstOrDefaultAsync(p => p.Id == providerId);
+            .FirstOrDefaultAsync(p => p.Id == consignorId);
 
-        if (provider == null)
-            throw new ArgumentException("Consignor not found", nameof(providerId));
+        if (consignor == null)
+            throw new ArgumentException("Consignor not found", nameof(consignorId));
 
         // Check if statement already exists for this period
         var existingStatement = await _context.Statements
-            .FirstOrDefaultAsync(s => s.ConsignorId == providerId
+            .FirstOrDefaultAsync(s => s.ConsignorId == consignorId
                 && s.PeriodStart == periodStart
                 && s.PeriodEnd == periodEnd);
 
@@ -49,12 +49,12 @@ public class StatementService : IStatementService
         }
 
         // Calculate opening balance (unpaid earnings before this period)
-        var openingBalance = await CalculateBalanceBeforePeriod(providerId, periodStart);
+        var openingBalance = await CalculateBalanceBeforePeriod(consignorId, periodStart);
 
         // Get transactions in this period
         var transactions = await _context.Transactions
             .Include(t => t.Item)
-            .Where(t => t.ConsignorId == providerId
+            .Where(t => t.ConsignorId == consignorId
                 && t.TransactionDate >= periodStart.ToDateTime(TimeOnly.MinValue)
                 && t.TransactionDate <= periodEnd.ToDateTime(TimeOnly.MaxValue)
                 && t.Status == "Completed")
@@ -62,7 +62,7 @@ public class StatementService : IStatementService
 
         // Get payouts in this period
         var payouts = await _context.Payouts
-            .Where(p => p.ConsignorId == providerId
+            .Where(p => p.ConsignorId == consignorId
                 && p.PayoutDate >= periodStart.ToDateTime(TimeOnly.MinValue)
                 && p.PayoutDate <= periodEnd.ToDateTime(TimeOnly.MaxValue)
                 && p.Status == PayoutStatus.Paid)
@@ -75,13 +75,13 @@ public class StatementService : IStatementService
         var closingBalance = openingBalance + totalEarnings - totalPayouts;
 
         // Generate statement number
-        var statementNumber = GenerateStatementNumber(provider.Organization, provider, periodStart, periodEnd);
+        var statementNumber = GenerateStatementNumber(consignor.Organization, consignor, periodStart, periodEnd);
 
         // 🏗️ AGGREGATE ROOT PATTERN: Create statement aggregate root
         var statement = new Statement
         {
-            OrganizationId = provider.OrganizationId,
-            ConsignorId = providerId,
+            OrganizationId = consignor.OrganizationId,
+            ConsignorId = consignorId,
             StatementNumber = statementNumber,
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
@@ -99,7 +99,7 @@ public class StatementService : IStatementService
         _context.Statements.Add(statement);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Generated statement {StatementNumber} for provider {ConsignorId}", statementNumber, providerId);
+        _logger.LogInformation("Generated statement {StatementNumber} for provider {ConsignorId}", statementNumber, consignorId);
 
         return await MapToStatementDto(statement);
     }
@@ -115,25 +115,25 @@ public class StatementService : IStatementService
             .Select(p => p.Id)
             .ToListAsync();
 
-        foreach (var providerId in providers)
+        foreach (var consignorId in providers)
         {
             try
             {
-                await GenerateStatementAsync(providerId, periodStart, periodEnd);
+                await GenerateStatementAsync(consignorId, periodStart, periodEnd);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate statement for provider {ConsignorId} for period {Year}-{Month}", providerId, year, month);
+                _logger.LogError(ex, "Failed to generate statement for provider {ConsignorId} for period {Year}-{Month}", consignorId, year, month);
             }
         }
 
         _logger.LogInformation("Completed statement generation for {Year}-{Month}. Processed {ProviderCount} providers", year, month, providers.Count());
     }
 
-    public async Task<List<StatementListDto>> GetStatementsAsync(Guid providerId)
+    public async Task<List<StatementListDto>> GetStatementsAsync(Guid consignorId)
     {
         return await _context.Statements
-            .Where(s => s.ConsignorId == providerId)
+            .Where(s => s.ConsignorId == consignorId)
             .OrderByDescending(s => s.PeriodStart)
             .Select(s => new StatementListDto
             {
@@ -152,25 +152,25 @@ public class StatementService : IStatementService
             .ToListAsync();
     }
 
-    public async Task<StatementDto?> GetStatementAsync(Guid statementId, Guid providerId)
+    public async Task<StatementDto?> GetStatementAsync(Guid statementId, Guid consignorId)
     {
         var statement = await _context.Statements
-            .FirstOrDefaultAsync(s => s.Id == statementId && s.ConsignorId == providerId);
+            .FirstOrDefaultAsync(s => s.Id == statementId && s.ConsignorId == consignorId);
 
         return statement != null ? await MapToStatementDto(statement) : null;
     }
 
-    public async Task<StatementDto?> GetStatementByPeriodAsync(Guid providerId, DateOnly periodStart, DateOnly periodEnd)
+    public async Task<StatementDto?> GetStatementByPeriodAsync(Guid consignorId, DateOnly periodStart, DateOnly periodEnd)
     {
         var statement = await _context.Statements
-            .FirstOrDefaultAsync(s => s.ConsignorId == providerId
+            .FirstOrDefaultAsync(s => s.ConsignorId == consignorId
                 && s.PeriodStart == periodStart
                 && s.PeriodEnd == periodEnd);
 
         return statement != null ? await MapToStatementDto(statement) : null;
     }
 
-    public async Task MarkAsViewedAsync(Guid statementId, Guid providerId)
+    public async Task MarkAsViewedAsync(Guid statementId, Guid consignorId)
     {
         // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
         foreach (var entry in _context.ChangeTracker.Entries().ToList())
@@ -179,7 +179,7 @@ public class StatementService : IStatementService
         }
 
         var statement = await _context.Statements
-            .FirstOrDefaultAsync(s => s.Id == statementId && s.ConsignorId == providerId);
+            .FirstOrDefaultAsync(s => s.Id == statementId && s.ConsignorId == consignorId);
 
         if (statement != null && statement.ViewedAt == null)
         {
@@ -189,10 +189,10 @@ public class StatementService : IStatementService
         }
     }
 
-    public async Task<byte[]> GeneratePdfAsync(Guid statementId, Guid providerId)
+    public async Task<byte[]> GeneratePdfAsync(Guid statementId, Guid consignorId)
     {
         // TODO: Implement PDF generation using QuestPDF
-        var statement = await GetStatementAsync(statementId, providerId);
+        var statement = await GetStatementAsync(statementId, consignorId);
         if (statement == null)
             throw new ArgumentException("Statement not found");
 
@@ -204,7 +204,7 @@ public class StatementService : IStatementService
         return pdfContent;
     }
 
-    public async Task<StatementDto> RegenerateStatementAsync(Guid statementId, Guid providerId)
+    public async Task<StatementDto> RegenerateStatementAsync(Guid statementId, Guid consignorId)
     {
         // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
         foreach (var entry in _context.ChangeTracker.Entries().ToList())
@@ -213,7 +213,7 @@ public class StatementService : IStatementService
         }
 
         var existingStatement = await _context.Statements
-            .FirstOrDefaultAsync(s => s.Id == statementId && s.ConsignorId == providerId);
+            .FirstOrDefaultAsync(s => s.Id == statementId && s.ConsignorId == consignorId);
 
         if (existingStatement == null)
             throw new ArgumentException("Statement not found");
@@ -223,23 +223,23 @@ public class StatementService : IStatementService
         await _context.SaveChangesAsync();
 
         // Generate new statement for same period
-        return await GenerateStatementAsync(providerId, existingStatement.PeriodStart, existingStatement.PeriodEnd);
+        return await GenerateStatementAsync(consignorId, existingStatement.PeriodStart, existingStatement.PeriodEnd);
     }
 
-    private async Task<decimal> CalculateBalanceBeforePeriod(Guid providerId, DateOnly periodStart)
+    private async Task<decimal> CalculateBalanceBeforePeriod(Guid consignorId, DateOnly periodStart)
     {
         var periodStartDateTime = periodStart.ToDateTime(TimeOnly.MinValue);
 
         // Get all earnings before this period
         var totalEarnings = await _context.Transactions
-            .Where(t => t.ConsignorId == providerId
+            .Where(t => t.ConsignorId == consignorId
                 && t.TransactionDate < periodStartDateTime
                 && t.Status == "Completed")
             .SumAsync(t => t.ConsignorAmount);
 
         // Get all payouts before this period
         var totalPayouts = await _context.Payouts
-            .Where(p => p.ConsignorId == providerId
+            .Where(p => p.ConsignorId == consignorId
                 && p.PayoutDate < periodStartDateTime
                 && p.Status == PayoutStatus.Paid)
             .SumAsync(p => p.Amount);
@@ -247,15 +247,15 @@ public class StatementService : IStatementService
         return totalEarnings - totalPayouts;
     }
 
-    private string GenerateStatementNumber(Organization organization, Consignor provider, DateOnly periodStart, DateOnly periodEnd)
+    private string GenerateStatementNumber(Organization organization, Consignor consignor, DateOnly periodStart, DateOnly periodEnd)
     {
         // Format: STMT-2025-11-PRV00042
-        return $"STMT-{periodStart.Year}-{periodStart.Month:D2}-PRV{provider.Id.ToString()[..8].ToUpper()}";
+        return $"STMT-{periodStart.Year}-{periodStart.Month:D2}-PRV{consignor.Id.ToString()[..8].ToUpper()}";
     }
 
     private async Task<StatementDto> MapToStatementDto(Statement statement)
     {
-        var provider = await _context.Consignors
+        var consignor = await _context.Consignors
             .Include(p => p.Organization)
             .Include(p => p.User)
             .FirstOrDefaultAsync(p => p.Id == statement.ConsignorId);
@@ -300,8 +300,8 @@ public class StatementService : IStatementService
             PeriodStart = statement.PeriodStart,
             PeriodEnd = statement.PeriodEnd,
             PeriodLabel = statement.PeriodStart.ToString("MMMM yyyy"),
-            ConsignorName = provider != null ? $"{provider.FirstName} {provider.LastName}" : "Unknown",
-            ShopName = provider?.Organization?.Name ?? "Unknown",
+            ConsignorName = consignor != null ? $"{consignor.FirstName} {consignor.LastName}" : "Unknown",
+            ShopName = consignor?.Organization?.Name ?? "Unknown",
             OpeningBalance = statement.OpeningBalance,
             TotalSales = statement.TotalSales,
             TotalEarnings = statement.TotalEarnings,

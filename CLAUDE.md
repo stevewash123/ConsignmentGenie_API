@@ -3,7 +3,7 @@
 **🚨 CRITICAL: Read [Master CLAUDE.md](../../CLAUDE.md) FIRST for ConsignmentGenie context, workspace structure, and development guidelines.**
 
 ## Project Overview
-Multi-tenant consignment management platform with Phase 1 focus on core shop owner functionality: provider tracking, inventory management, split payment calculation, and accounting export.
+Multi-tenant consignment management platform with Phase 1 focus on core shop owner functionality: consigner tracking, inventory management, split payment calculation, and accounting export.
 
 ## Architecture
 - **Backend**: C# ASP.NET Core Web API (.NET 8)
@@ -20,8 +20,8 @@ Multi-tenant consignment management platform with Phase 1 focus on core shop own
 
 ## Key Features (Phase 1)
 - Shop owner registration/authentication
-- Provider (consigner/artist/vendor) management
-- Item inventory tracking with provider assignment
+- Consigner management
+- Item inventory tracking with consigner assignment
 - Transaction recording with automatic split calculation
 - Payout report generation and CSV export
 - Multi-tenant data scoping
@@ -33,7 +33,7 @@ See [Full-Stack Setup Guide](../docs/NEW-PROJECT-SETUP-GUIDE.md)
 - **Database**: PostgreSQL connection provided in config files
 - **JWT**: Custom secret key with 24-hour expiration
 - **Email Service**: Resend.com API Key: `re_yMtGsic1_MY5eDicfxseeziqq9a64FZEW`
-- **Roles**: ShopOwner (Phase 1), Provider (Phase 3), Shopper (Phase 5)
+- **Roles**: ShopOwner (Phase 1), Consigner (Phase 3), Shopper (Phase 5)
 - **Multi-tenant**: All entities scoped by OrganizationId
 - **Cross-Platform**: Angular environment files handle Windows vs WSL API URL differences
   - `environment.ts` - Windows development (localhost)

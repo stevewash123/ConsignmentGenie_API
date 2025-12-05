@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ConsignmentGenie.Core.Entities;
 
-public class ProviderMessage : BaseEntity
+public class ConsignorMessage : BaseEntity
 {
     [Required]
     public Guid FromProviderId { get; set; }
@@ -32,6 +32,6 @@ public class ProviderMessage : BaseEntity
     public Consignor FromProvider { get; set; } = null!;
     public User ToUser { get; set; } = null!;
     public Organization Organization { get; set; } = null!;
-    public ProviderMessage? InReplyToMessage { get; set; }
-    public ICollection<ProviderMessage> Replies { get; set; } = new List<ProviderMessage>();
+    public ConsignorMessage? InReplyToMessage { get; set; }
+    public ICollection<ConsignorMessage> Replies { get; set; } = new List<ConsignorMessage>();
 }

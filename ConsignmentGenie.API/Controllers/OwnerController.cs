@@ -12,11 +12,11 @@ namespace ConsignmentGenie.API.Controllers;
 [Authorize(Roles = "Owner")]
 public class OwnerController : ControllerBase
 {
-    private readonly IProviderNotificationService _notificationService;
+    private readonly IConsignorNotificationService _notificationService;
     private readonly ILogger<OwnerController> _logger;
 
     public OwnerController(
-        IProviderNotificationService notificationService,
+        IConsignorNotificationService notificationService,
         ILogger<OwnerController> logger)
     {
         _notificationService = notificationService;

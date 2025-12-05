@@ -296,10 +296,10 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task ApproveOwner_WithNonOwnerUser_ReturnsBadRequest()
         {
             // Arrange - Create a non-owner user
-            var providerUser = new User
+            var consignorUser = new User
             {
                 Id = Guid.NewGuid(),
-                Email = "provider@test.com",
+                Email = "consignor@test.com",
                 PasswordHash = "hashed_password",
                 Role = UserRole.Consignor, // Not an owner
                 OrganizationId = _organizationId,
@@ -307,11 +307,11 @@ namespace ConsignmentGenie.Tests.Controllers
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            _context.Users.Add(providerUser);
+            _context.Users.Add(consignorUser);
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _controller.ApproveOwner(providerUser.Id);
+            var result = await _controller.ApproveOwner(consignorUser.Id);
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<ApiResponse<ApprovalResponseDto>>>(result);

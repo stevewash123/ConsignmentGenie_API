@@ -64,7 +64,7 @@ public class SalesReportService : ISalesReportService
                     Date = g.Key,
                     GrossSales = g.Sum(t => t.SalePrice),
                     ShopRevenue = g.Sum(t => t.ShopAmount),
-                    ProviderPayable = g.Sum(t => t.ConsignorAmount)
+                    ConsignorPayable = g.Sum(t => t.ConsignorAmount)
                 })
                 .OrderBy(x => x.Date)
                 .ToList();
@@ -81,7 +81,7 @@ public class SalesReportService : ISalesReportService
                     ConsignorName = t.Consignor.DisplayName,
                     SalePrice = t.SalePrice,
                     ShopCut = t.ShopAmount,
-                    ProviderCut = t.ConsignorAmount,
+                    ConsignorCut = t.ConsignorAmount,
                     PaymentMethod = t.PaymentMethod ?? ""
                 })
                 .ToList();
@@ -90,7 +90,7 @@ public class SalesReportService : ISalesReportService
             {
                 TotalSales = totalSales,
                 ShopRevenue = shopRevenue,
-                ProviderPayable = providerPayable,
+                ConsignorPayable = providerPayable,
                 TransactionCount = transactionCount,
                 AverageSale = averageSale,
                 ChartData = chartData,

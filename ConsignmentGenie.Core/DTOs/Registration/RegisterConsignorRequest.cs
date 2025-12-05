@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ConsignmentGenie.Core.DTOs.Registration;
 
-public class RegisterProviderRequest
+public class RegisterConsignorRequest
 {
     [Required]
     public string StoreCode { get; set; } = string.Empty;

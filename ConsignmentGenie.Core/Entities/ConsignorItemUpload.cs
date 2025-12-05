@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ConsignmentGenie.Core.Entities;
 
-public class ProviderItemUpload : BaseEntity
+public class ConsignorItemUpload : BaseEntity
 {
     [Required]
     public Guid ConsignorId { get; set; }

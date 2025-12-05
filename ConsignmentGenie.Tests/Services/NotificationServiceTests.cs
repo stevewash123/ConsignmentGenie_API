@@ -105,7 +105,7 @@ public class NotificationServiceTests : IDisposable
 
         var request = new NotificationRequest
         {
-            Type = NotificationType.NewProviderRequest,
+            Type = NotificationType.NewConsignorRequest,
             UserId = user.Id,
             Data = new Dictionary<string, string>()
         };
@@ -119,7 +119,7 @@ public class NotificationServiceTests : IDisposable
             It.Is<Dictionary<string, string>>(data =>
                 data["LoginUrl"] == $"{expectedUrl}/login" &&
                 data["PortalUrl"] == $"{expectedUrl}/owner/dashboard" &&
-                data["ReviewUrl"] == $"{expectedUrl}/owner/providers"),
+                data["ReviewUrl"] == $"{expectedUrl}/owner/consignors"),
             It.IsAny<string>()),
             Times.Once);
     }
@@ -177,7 +177,7 @@ public class NotificationServiceTests : IDisposable
 
         var request = new NotificationRequest
         {
-            Type = NotificationType.NewProviderRequest,
+            Type = NotificationType.NewConsignorRequest,
             UserId = user.Id,
             Data = new Dictionary<string, string>()
         };
@@ -211,7 +211,7 @@ public class NotificationServiceTests : IDisposable
 
         var request = new NotificationRequest
         {
-            Type = NotificationType.NewProviderRequest,
+            Type = NotificationType.NewConsignorRequest,
             UserId = Guid.NewGuid(), // Non-existent user
             Data = new Dictionary<string, string>()
         };
@@ -242,7 +242,7 @@ public class NotificationServiceTests : IDisposable
         var userPreference = new UserNotificationPreference
         {
             UserId = user.Id,
-            NotificationType = NotificationType.NewProviderRequest,
+            NotificationType = NotificationType.NewConsignorRequest,
             EmailEnabled = false
         };
 
@@ -259,7 +259,7 @@ public class NotificationServiceTests : IDisposable
 
         var request = new NotificationRequest
         {
-            Type = NotificationType.NewProviderRequest,
+            Type = NotificationType.NewConsignorRequest,
             UserId = user.Id,
             Data = new Dictionary<string, string>()
         };

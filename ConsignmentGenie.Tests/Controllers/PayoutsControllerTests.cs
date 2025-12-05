@@ -18,7 +18,7 @@ namespace ConsignmentGenie.Tests.Controllers
         private readonly ConsignmentGenieContext _context;
         private readonly PayoutsController _controller;
         private readonly Guid _organizationId = Guid.NewGuid();
-        private readonly Guid _providerId = Guid.NewGuid();
+        private readonly Guid _consignorId = Guid.NewGuid();
         private readonly Guid _payoutId = Guid.NewGuid();
 
         public PayoutsControllerTests()
@@ -58,25 +58,25 @@ namespace ConsignmentGenie.Tests.Controllers
             };
             _context.Organizations.Add(organization);
 
-            // Add provider
-            var provider = new Consignor
+            // Add consignor
+            var consignor = new Consignor
             {
-                Id = _providerId,
+                Id = _consignorId,
                 OrganizationId = _organizationId,
                 DisplayName = "Test Consignor",
-                Email = "provider@test.com",
+                Email = "consignor@test.com",
                 DefaultSplitPercentage = 60.0m,
                 Status = ConsignorStatus.Active,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Consignors.Add(provider);
+            _context.Consignors.Add(consignor);
 
             // Add items
             var item1 = new Item
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Sku = "ITEM001",
                 Title = "Test Item 1",
                 Price = 100.00m,
@@ -89,7 +89,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Sku = "ITEM002",
                 Title = "Test Item 2",
                 Price = 80.00m,
@@ -105,7 +105,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 ItemId = item1.Id,
                 Item = item1,
                 SaleDate = DateTime.UtcNow.AddDays(-10),
@@ -121,7 +121,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 ItemId = item2.Id,
                 Item = item2,
                 SaleDate = DateTime.UtcNow.AddDays(-8),
@@ -140,7 +140,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = _payoutId,
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 PayoutNumber = "PAY-001",
                 PayoutDate = DateTime.UtcNow.AddDays(-5),
                 Amount = 108.00m,
@@ -187,14 +187,14 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetPayouts_WithProviderId_ReturnsFilteredResults()
+        public async Task GetPayouts_WithConsignorId_ReturnsFilteredResults()
         {
             // Arrange
             var request = new PayoutSearchRequestDto
             {
                 Page = 1,
                 PageSize = 10,
-                ConsignorId = _providerId
+                ConsignorId = _consignorId
             };
 
             // Act
@@ -273,7 +273,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var request = new PendingPayoutsRequestDto
             {
-                ConsignorId = _providerId
+                ConsignorId = _consignorId
             };
 
             // Act
@@ -298,7 +298,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var request = new PendingPayoutsRequestDto
             {
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 MinimumAmount = 50.00m
             };
 
@@ -325,7 +325,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             var request = new CreatePayoutRequestDto
             {
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 TransactionIds = pendingTransactions.Select(t => t.Id).ToList(),
                 PayoutDate = DateTime.UtcNow,
                 PaymentMethod = "Direct Deposit",
@@ -364,12 +364,12 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task CreatePayout_WithInvalidProvider_ReturnsBadRequest()
+        public async Task CreatePayout_WithInvalidConsignor_ReturnsBadRequest()
         {
             // Arrange
             var request = new CreatePayoutRequestDto
             {
-                ConsignorId = Guid.NewGuid(), // Invalid provider
+                ConsignorId = Guid.NewGuid(), // Invalid consignor
                 TransactionIds = new List<Guid> { Guid.NewGuid() },
                 PayoutDate = DateTime.UtcNow,
                 PaymentMethod = "Check",
@@ -391,7 +391,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var request = new CreatePayoutRequestDto
             {
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 TransactionIds = new List<Guid> { Guid.NewGuid() }, // Invalid transaction
                 PayoutDate = DateTime.UtcNow,
                 PaymentMethod = "Check",

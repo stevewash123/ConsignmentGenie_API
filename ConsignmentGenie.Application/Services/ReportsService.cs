@@ -71,7 +71,7 @@ public class ReportsService : IReportsService
                     Date = g.Key,
                     GrossSales = g.Sum(t => t.SalePrice),
                     ShopRevenue = g.Sum(t => t.ShopAmount),
-                    ProviderPayable = g.Sum(t => t.ConsignorAmount)
+                    ConsignorPayable = g.Sum(t => t.ConsignorAmount)
                 })
                 .OrderBy(x => x.Date)
                 .ToList();
@@ -88,7 +88,7 @@ public class ReportsService : IReportsService
                     ConsignorName = t.Consignor.DisplayName,
                     SalePrice = t.SalePrice,
                     ShopCut = t.ShopAmount,
-                    ProviderCut = t.ConsignorAmount,
+                    ConsignorCut = t.ConsignorAmount,
                     PaymentMethod = t.PaymentMethod ?? ""
                 })
                 .ToList();
@@ -97,7 +97,7 @@ public class ReportsService : IReportsService
             {
                 TotalSales = totalSales,
                 ShopRevenue = shopRevenue,
-                ProviderPayable = providerPayable,
+                ConsignorPayable = providerPayable,
                 TransactionCount = transactionCount,
                 AverageSale = averageSale,
                 ChartData = chartData,
@@ -113,7 +113,7 @@ public class ReportsService : IReportsService
         }
     }
 
-    public async Task<ServiceResult<ProviderPerformanceReportDto>> GetProviderPerformanceReportAsync(Guid organizationId, ProviderPerformanceFilterDto filter)
+    public async Task<ServiceResult<ConsignorPerformanceReportDto>> GetConsignorPerformanceReportAsync(Guid organizationId, ConsignorPerformanceFilterDto filter)
     {
         try
         {
@@ -131,7 +131,7 @@ public class ReportsService : IReportsService
 
             var providerList = providers.ToList();
 
-            var providerPerformance = new List<ProviderPerformanceLineDto>();
+            var consignorPerformance = new List<ConsignorPerformanceLineDto>();
 
             foreach (var provider in providerList)
             {
@@ -165,7 +165,7 @@ public class ReportsService : IReportsService
                 if (filter.MinItemsThreshold.HasValue && totalItems < filter.MinItemsThreshold.Value)
                     continue;
 
-                providerPerformance.Add(new ProviderPerformanceLineDto
+                consignorPerformance.Add(new ConsignorPerformanceLineDto
                 {
                     ConsignorId = provider.Id,
                     ConsignorName = provider.DisplayName,
@@ -179,28 +179,28 @@ public class ReportsService : IReportsService
                 });
             }
 
-            var orderedProviders = providerPerformance.OrderByDescending(p => p.TotalSales).ToList();
-            var totalProviders = providerPerformance.Count;
-            var totalSalesAmount = providerPerformance.Sum(p => p.TotalSales);
-            var averageSalesPerProvider = totalProviders > 0 ? totalSalesAmount / totalProviders : 0;
-            var topProvider = orderedProviders.FirstOrDefault();
+            var orderedConsignors = consignorPerformance.OrderByDescending(p => p.TotalSales).ToList();
+            var totalConsignors = consignorPerformance.Count;
+            var totalSalesAmount = consignorPerformance.Sum(p => p.TotalSales);
+            var averageSalesPerConsignor = totalConsignors > 0 ? totalSalesAmount / totalConsignors : 0;
+            var topConsignor = orderedConsignors.FirstOrDefault();
 
-            var result = new ProviderPerformanceReportDto
+            var result = new ConsignorPerformanceReportDto
             {
-                TotalProviders = totalProviders,
+                TotalConsignors = totalConsignors,
                 TotalSales = totalSalesAmount,
-                AverageSalesPerProvider = averageSalesPerProvider,
-                TopProviderName = topProvider?.ConsignorName ?? "",
-                TopProviderSales = topProvider?.TotalSales ?? 0,
-                Consignors = orderedProviders
+                AverageSalesPerConsignor = averageSalesPerConsignor,
+                TopConsignorName = topConsignor?.ConsignorName ?? "",
+                TopConsignorSales = topConsignor?.TotalSales ?? 0,
+                Consignors = orderedConsignors
             };
 
-            return ServiceResult<ProviderPerformanceReportDto>.SuccessResult(result);
+            return ServiceResult<ConsignorPerformanceReportDto>.SuccessResult(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating provider performance report for organization {OrganizationId}", organizationId);
-            return ServiceResult<ProviderPerformanceReportDto>.FailureResult("Failed to generate provider performance report", new List<string> { ex.Message });
+            return ServiceResult<ConsignorPerformanceReportDto>.FailureResult("Failed to generate consignor performance report", new List<string> { ex.Message });
         }
     }
 
@@ -396,7 +396,7 @@ public class ReportsService : IReportsService
                         ConsignorId = g.Key.ConsignorId,
                         ConsignorName = g.Key.DisplayName,
                         TotalSales = totalSales,
-                        ProviderCut = providerCut,
+                        ConsignorCut = providerCut,
                         AlreadyPaid = alreadyPaid,
                         PendingBalance = pendingBalance,
                         LastPayoutDate = lastPayoutDate == DateTime.MinValue ? null : lastPayoutDate
@@ -411,7 +411,7 @@ public class ReportsService : IReportsService
             {
                 TotalPaid = totalPaid,
                 TotalPending = totalPending,
-                ProvidersWithPending = providersWithPending,
+                ConsignorsWithPending = providersWithPending,
                 AveragePayoutAmount = averagePayoutAmount,
                 ChartData = chartData,
                 Consignors = providerSummaries
@@ -619,7 +619,7 @@ public class ReportsService : IReportsService
 
             var providerBreakdown = itemList
                 .GroupBy(i => new { i.ConsignorId, i.Consignor.DisplayName })
-                .Select(g => new ProviderBreakdownDto
+                .Select(g => new ConsignorBreakdownDto
                 {
                     ConsignorId = g.Key.ConsignorId,
                     ConsignorName = g.Key.DisplayName,
@@ -638,7 +638,7 @@ public class ReportsService : IReportsService
                 AveragePrice = itemList.Any() ? itemList.Average(i => i.Price) : 0,
                 TotalInventoryValue = itemList.Where(i => i.Status == ItemStatus.Available).Sum(i => i.Price),
                 CategoryBreakdown = categoryBreakdown,
-                ProviderBreakdown = providerBreakdown
+                ConsignorBreakdown = providerBreakdown
             };
 
             return ServiceResult<InventoryOverviewDto>.SuccessResult(result);
@@ -681,11 +681,11 @@ public class ReportsService : IReportsService
         }
     }
 
-    public async Task<ServiceResult<byte[]>> ExportProviderPerformanceReportAsync(Guid organizationId, ProviderPerformanceFilterDto filter, string format)
+    public async Task<ServiceResult<byte[]>> ExportConsignorPerformanceReportAsync(Guid organizationId, ConsignorPerformanceFilterDto filter, string format)
     {
         try
         {
-            var reportResult = await GetProviderPerformanceReportAsync(organizationId, filter);
+            var reportResult = await GetConsignorPerformanceReportAsync(organizationId, filter);
             if (!reportResult.Success)
                 return ServiceResult<byte[]>.FailureResult(reportResult.Message, reportResult.Errors);
 
@@ -693,12 +693,12 @@ public class ReportsService : IReportsService
 
             if (format.ToLower() == "csv")
             {
-                var csv = GenerateProviderPerformanceCsv(data);
+                var csv = GenerateConsignorPerformanceCsv(data);
                 return ServiceResult<byte[]>.SuccessResult(Encoding.UTF8.GetBytes(csv));
             }
             else if (format.ToLower() == "pdf")
             {
-                var pdf = GenerateProviderPerformancePdf(data, filter);
+                var pdf = GenerateConsignorPerformancePdf(data, filter);
                 return ServiceResult<byte[]>.SuccessResult(pdf);
             }
 
@@ -706,8 +706,8 @@ public class ReportsService : IReportsService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting provider performance report for organization {OrganizationId}", organizationId);
-            return ServiceResult<byte[]>.FailureResult("Failed to export provider performance report", new List<string> { ex.Message });
+            _logger.LogError(ex, "Error exporting consignor performance report for organization {OrganizationId}", organizationId);
+            return ServiceResult<byte[]>.FailureResult("Failed to export consignor performance report", new List<string> { ex.Message });
         }
     }
 
@@ -852,13 +852,13 @@ public class ReportsService : IReportsService
 
         foreach (var transaction in data.Transactions)
         {
-            csv.AppendLine($"{transaction.Date:yyyy-MM-dd},{EscapeCsv(transaction.ItemName)},{EscapeCsv(transaction.Category)},{EscapeCsv(transaction.ConsignorName)},{transaction.SalePrice:F2},{transaction.ShopCut:F2},{transaction.ProviderCut:F2},{EscapeCsv(transaction.PaymentMethod)}");
+            csv.AppendLine($"{transaction.Date:yyyy-MM-dd},{EscapeCsv(transaction.ItemName)},{EscapeCsv(transaction.Category)},{EscapeCsv(transaction.ConsignorName)},{transaction.SalePrice:F2},{transaction.ShopCut:F2},{transaction.ConsignorCut:F2},{EscapeCsv(transaction.PaymentMethod)}");
         }
 
         return csv.ToString();
     }
 
-    private static string GenerateProviderPerformanceCsv(ProviderPerformanceReportDto data)
+    private static string GenerateConsignorPerformanceCsv(ConsignorPerformanceReportDto data)
     {
         var csv = new StringBuilder();
         csv.AppendLine("Consignor Name,Items Consigned,Items Sold,Items Available,Total Sales,Sell-Through Rate %,Avg Days to Sell,Pending Payout");
@@ -892,7 +892,7 @@ public class ReportsService : IReportsService
         foreach (var provider in data.Consignors)
         {
             var lastPayoutDate = provider.LastPayoutDate?.ToString("yyyy-MM-dd") ?? "";
-            csv.AppendLine($"{EscapeCsv(provider.ConsignorName)},{provider.TotalSales:F2},{provider.ProviderCut:F2},{provider.AlreadyPaid:F2},{provider.PendingBalance:F2},{lastPayoutDate}");
+            csv.AppendLine($"{EscapeCsv(provider.ConsignorName)},{provider.TotalSales:F2},{provider.ConsignorCut:F2},{provider.AlreadyPaid:F2},{provider.PendingBalance:F2},{lastPayoutDate}");
         }
 
         return csv.ToString();
@@ -962,7 +962,7 @@ public class ReportsService : IReportsService
                             row.RelativeItem().Border(1).Padding(10).Column(col =>
                             {
                                 col.Item().Text("Consignor Payable").FontSize(10);
-                                col.Item().Text($"${data.ProviderPayable:F2}").FontSize(16).SemiBold();
+                                col.Item().Text($"${data.ConsignorPayable:F2}").FontSize(16).SemiBold();
                             });
                         });
 
@@ -1023,7 +1023,7 @@ public class ReportsService : IReportsService
         .GeneratePdf();
     }
 
-    private static byte[] GenerateProviderPerformancePdf(ProviderPerformanceReportDto data, ProviderPerformanceFilterDto filter)
+    private static byte[] GenerateConsignorPerformancePdf(ConsignorPerformanceReportDto data, ConsignorPerformanceFilterDto filter)
     {
         return Document.Create(container =>
         {
@@ -1214,7 +1214,7 @@ public class ReportsService : IReportsService
                             {
                                 table.Cell().Element(CellStyle).Text(provider.ConsignorName);
                                 table.Cell().Element(CellStyle).Text($"${provider.TotalSales:F0}");
-                                table.Cell().Element(CellStyle).Text($"${provider.ProviderCut:F0}");
+                                table.Cell().Element(CellStyle).Text($"${provider.ConsignorCut:F0}");
                                 table.Cell().Element(CellStyle).Text($"${provider.AlreadyPaid:F0}");
                                 table.Cell().Element(CellStyle).Text($"${provider.PendingBalance:F0}");
 

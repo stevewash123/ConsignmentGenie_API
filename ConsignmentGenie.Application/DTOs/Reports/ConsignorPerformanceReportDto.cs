@@ -1,16 +1,16 @@
 namespace ConsignmentGenie.Application.DTOs.Reports;
 
-public class ProviderPerformanceReportDto
+public class ConsignorPerformanceReportDto
 {
-    public int TotalProviders { get; set; }
+    public int TotalConsignors { get; set; }
     public decimal TotalSales { get; set; }
-    public decimal AverageSalesPerProvider { get; set; }
-    public string TopProviderName { get; set; } = string.Empty;
-    public decimal TopProviderSales { get; set; }
-    public List<ProviderPerformanceLineDto> Consignors { get; set; } = new();
+    public decimal AverageSalesPerConsignor { get; set; }
+    public string TopConsignorName { get; set; } = string.Empty;
+    public decimal TopConsignorSales { get; set; }
+    public List<ConsignorPerformanceLineDto> Consignors { get; set; } = new();
 }
 
-public class ProviderPerformanceLineDto
+public class ConsignorPerformanceLineDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorName { get; set; } = string.Empty;

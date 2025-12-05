@@ -3,7 +3,7 @@
 Multi-tenant consignment management platform supporting multiple business verticals (consignment shops, art galleries, booth rentals, farmers markets) with configurable terminology and workflows.
 
 ## Project Overview
-Track provider (consigner/artist/vendor) inventory, calculate split payments automatically, generate payout reports, and export to accounting software.
+Track consigner inventory, calculate split payments automatically, generate payout reports, and export to accounting software.
 
 ## Architecture
 - **Backend**: C# ASP.NET Core Web API (.NET 8)

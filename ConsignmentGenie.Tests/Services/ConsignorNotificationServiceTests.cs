@@ -12,20 +12,20 @@ using System.Text.Json;
 
 namespace ConsignmentGenie.Tests.Services;
 
-public class ProviderNotificationServiceTests : IDisposable
+public class ConsignorNotificationServiceTests : IDisposable
 {
-    private readonly ProviderNotificationService _service;
+    private readonly ConsignorNotificationService _service;
     private readonly Infrastructure.Data.ConsignmentGenieContext _context;
     private readonly Mock<INotificationService> _mockEmailService;
-    private readonly Mock<ILogger<ProviderNotificationService>> _mockLogger;
+    private readonly Mock<ILogger<ConsignorNotificationService>> _mockLogger;
 
-    public ProviderNotificationServiceTests()
+    public ConsignorNotificationServiceTests()
     {
         _context = TestDbContextFactory.CreateInMemoryContext();
         _mockEmailService = new Mock<INotificationService>();
-        _mockLogger = new Mock<ILogger<ProviderNotificationService>>();
+        _mockLogger = new Mock<ILogger<ConsignorNotificationService>>();
 
-        _service = new ProviderNotificationService(
+        _service = new ConsignorNotificationService(
             _context,
             _mockEmailService.Object,
             _mockLogger.Object);
@@ -47,13 +47,13 @@ public class ProviderNotificationServiceTests : IDisposable
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = "provider@test.com",
+            Email = "consignor@test.com",
             PasswordHash = "hashedpassword",
             Role = UserRole.Consignor,
             OrganizationId = organization.Id
         };
 
-        var provider = new Consignor
+        var consignor = new Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
@@ -61,21 +61,21 @@ public class ProviderNotificationServiceTests : IDisposable
             ConsignorNumber = "PRV-001",
             FirstName = "Test",
             LastName = "Consignor",
-            Email = "provider@test.com",
+            Email = "consignor@test.com",
             CommissionRate = 60.00m,
             Status = ConsignorStatus.Approved
         };
 
         _context.Organizations.Add(organization);
         _context.Users.Add(user);
-        _context.Consignors.Add(provider);
+        _context.Consignors.Add(consignor);
         await _context.SaveChangesAsync();
 
         var request = new CreateNotificationRequest
         {
             OrganizationId = organization.Id,
             UserId = user.Id,
-            ConsignorId = provider.Id,
+            ConsignorId = consignor.Id,
             Type = NotificationType.ItemSold,
             Title = "Test Notification",
             Message = "Test message",
@@ -120,13 +120,13 @@ public class ProviderNotificationServiceTests : IDisposable
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = "provider@test.com",
+            Email = "consignor@test.com",
             PasswordHash = "hashedpassword",
             Role = UserRole.Consignor,
             OrganizationId = organization.Id
         };
 
-        var provider = new Consignor
+        var consignor = new Consignor
         {
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
@@ -134,7 +134,7 @@ public class ProviderNotificationServiceTests : IDisposable
             ConsignorNumber = "PRV-001",
             FirstName = "Test",
             LastName = "Consignor",
-            Email = "provider@test.com",
+            Email = "consignor@test.com",
             CommissionRate = 60.00m,
             Status = ConsignorStatus.Approved
         };
@@ -148,7 +148,7 @@ public class ProviderNotificationServiceTests : IDisposable
 
         _context.Organizations.Add(organization);
         _context.Users.Add(user);
-        _context.Consignors.Add(provider);
+        _context.Consignors.Add(consignor);
         _context.UserNotificationPreferences.Add(preference);
         await _context.SaveChangesAsync();
 
@@ -159,7 +159,7 @@ public class ProviderNotificationServiceTests : IDisposable
         {
             OrganizationId = organization.Id,
             UserId = user.Id,
-            ConsignorId = provider.Id,
+            ConsignorId = consignor.Id,
             Type = NotificationType.ItemSold,
             Title = "Test Notification",
             Message = "Test message"

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ConsignmentGenie.Application.DTOs;
 
 // Query Parameters
-public class ProviderQueryParams
+public class ConsignorQueryParams
 {
     public string? Search { get; set; }              // Search name, email, number
     public string? Status { get; set; }              // Active, Deactivated, Pending, or null for all
@@ -15,7 +15,7 @@ public class ProviderQueryParams
 }
 
 // List View DTO
-public class ProviderListDto
+public class ConsignorListDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorNumber { get; set; } = string.Empty;
@@ -37,7 +37,7 @@ public class ProviderListDto
 }
 
 // Summary View DTO (for approvals and simple lists)
-public class ProviderApprovalSummaryDto
+public class ConsignorApprovalSummaryDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorNumber { get; set; } = string.Empty;
@@ -50,7 +50,7 @@ public class ProviderApprovalSummaryDto
 }
 
 // Approval History DTO
-public class ProviderApprovalHistoryDto
+public class ConsignorApprovalHistoryDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorNumber { get; set; } = string.Empty;
@@ -64,7 +64,7 @@ public class ProviderApprovalHistoryDto
 }
 
 // Detail View DTO
-public class ProviderDetailDto
+public class ConsignorDetailDto
 {
     public Guid ConsignorId { get; set; }
     public Guid? UserId { get; set; }
@@ -114,7 +114,7 @@ public class ProviderDetailDto
     public DateTime? LastPortalLogin { get; set; }
 
     // Stats
-    public ProviderMetricsDto? Metrics { get; set; }
+    public ConsignorMetricsDto? Metrics { get; set; }
 
     // Audit
     public DateTime CreatedAt { get; set; }
@@ -122,7 +122,7 @@ public class ProviderDetailDto
 }
 
 // Metrics DTO
-public class ProviderMetricsDto
+public class ConsignorMetricsDto
 {
     // Items
     public int TotalItems { get; set; }
@@ -151,7 +151,7 @@ public class ProviderMetricsDto
 }
 
 // Dashboard Metrics DTO
-public class ProviderDashboardMetricsDto
+public class ConsignorDashboardMetricsDto
 {
     public int TotalProviders { get; set; }
     public int ActiveProviders { get; set; }
@@ -159,11 +159,11 @@ public class ProviderDashboardMetricsDto
     public int DeactivatedProviders { get; set; }
     public int NewProvidersThisMonth { get; set; }
     public decimal ProviderGrowthRate { get; set; }
-    public List<ProviderTopPerformerDto> TopProvidersByBalance { get; set; } = new();
+    public List<ConsignorTopPerformerDto> TopProvidersByBalance { get; set; } = new();
 }
 
 // Top Performer DTO
-public class ProviderTopPerformerDto
+public class ConsignorTopPerformerDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorName { get; set; } = string.Empty;
@@ -174,21 +174,21 @@ public class ProviderTopPerformerDto
 }
 
 // Activity DTO
-public class ProviderActivityDto
+public class ConsignorActivityDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorName { get; set; } = string.Empty;
     public int DaysRange { get; set; }
-    public List<ProviderActivityTransactionDto> RecentTransactions { get; set; } = new();
-    public List<ProviderActivityItemDto> RecentItems { get; set; } = new();
-    public List<ProviderActivityPayoutDto> RecentPayouts { get; set; } = new();
+    public List<ConsignorActivityTransactionDto> RecentTransactions { get; set; } = new();
+    public List<ConsignorActivityItemDto> RecentItems { get; set; } = new();
+    public List<ConsignorActivityPayoutDto> RecentPayouts { get; set; } = new();
     public int TotalTransactions { get; set; }
     public int TotalItemsAdded { get; set; }
     public int TotalPayouts { get; set; }
 }
 
 // Activity Transaction DTO
-public class ProviderActivityTransactionDto
+public class ConsignorActivityTransactionDto
 {
     public Guid TransactionId { get; set; }
     public DateTime SaleDate { get; set; }
@@ -199,7 +199,7 @@ public class ProviderActivityTransactionDto
 }
 
 // Activity Item DTO
-public class ProviderActivityItemDto
+public class ConsignorActivityItemDto
 {
     public Guid ItemId { get; set; }
     public string ItemName { get; set; } = string.Empty;
@@ -209,7 +209,7 @@ public class ProviderActivityItemDto
 }
 
 // Activity Payout DTO
-public class ProviderActivityPayoutDto
+public class ConsignorActivityPayoutDto
 {
     public Guid PayoutId { get; set; }
     public decimal Amount { get; set; }
@@ -219,7 +219,7 @@ public class ProviderActivityPayoutDto
 }
 
 // Create Request
-public class CreateProviderRequest
+public class CreateConsignorRequest
 {
     [Required, MaxLength(100)]
     public string FirstName { get; set; } = string.Empty;
@@ -259,7 +259,7 @@ public class CreateProviderRequest
 }
 
 // Update Request
-public class UpdateProviderRequest
+public class UpdateConsignorRequest
 {
     [Required, MaxLength(100)]
     public string FirstName { get; set; } = string.Empty;
@@ -296,13 +296,13 @@ public class UpdateProviderRequest
 }
 
 // Status Change Requests
-public class DeactivateProviderRequest
+public class DeactivateConsignorRequest
 {
     [MaxLength(255)]
     public string? Reason { get; set; }
 }
 
-public class RejectProviderRequest
+public class RejectConsignorRequest
 {
     [Required, MaxLength(255)]
     public string Reason { get; set; } = string.Empty;
@@ -322,7 +322,7 @@ public class ToggleStoreCodeRequest
 }
 
 // Settings Summary DTO
-public class ProviderSettingsSummaryDto
+public class ConsignorSettingsSummaryDto
 {
     public bool AllowSelfRegistration { get; set; }
     public string RegistrationCode { get; set; } = string.Empty;

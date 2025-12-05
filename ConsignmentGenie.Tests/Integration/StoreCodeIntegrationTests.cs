@@ -184,7 +184,7 @@ namespace ConsignmentGenie.Tests.Integration
         }
 
         [Fact]
-        public async Task StoreCodeValidation_WithProviderRegistration_WorksCorrectly()
+        public async Task StoreCodeValidation_WithConsignorRegistration_WorksCorrectly()
         {
             // Arrange - Create shop owner first
             var ownerRequest = new RegisterOwnerRequest
@@ -210,17 +210,17 @@ namespace ConsignmentGenie.Tests.Integration
             Assert.True(validationResult.IsValid);
             Assert.Equal(organization.ShopName, validationResult.ShopName);
 
-            // Test provider registration with the valid store code
-            var providerRequest = new RegisterProviderRequest
+            // Test consignor registration with the valid store code
+            var consignorRequest = new RegisterConsignorRequest
             {
                 StoreCode = organization.StoreCode,
                 FullName = "Test Consignor",
-                Email = "provider@example.com",
+                Email = "consignor@example.com",
                 Password = "SecurePassword123!"
             };
 
-            var providerResult = await _registrationService.RegisterProviderAsync(providerRequest);
-            Assert.True(providerResult.Success);
+            var consignorResult = await _registrationService.RegisterConsignorAsync(consignorRequest);
+            Assert.True(consignorResult.Success);
         }
 
         [Fact]

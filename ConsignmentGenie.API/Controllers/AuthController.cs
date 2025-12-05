@@ -91,7 +91,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("provider/register")]
-    public async Task<ActionResult<ApiResponse<ProviderRegistrationResponseDto>>> RegisterConsignor([FromBody] RegisterProviderRequest request)
+    public async Task<ActionResult<ApiResponse<ConsignorRegistrationResponseDto>>> RegisterConsignor([FromBody] RegisterConsignorRequest request)
     {
         try
         {
@@ -101,7 +101,7 @@ public class AuthController : ControllerBase
 
             if (organization == null)
             {
-                return BadRequest(ApiResponse<ProviderRegistrationResponseDto>.ErrorResult("Invalid store code"));
+                return BadRequest(ApiResponse<ConsignorRegistrationResponseDto>.ErrorResult("Invalid store code"));
             }
 
             // Check if provider already exists
@@ -110,7 +110,7 @@ public class AuthController : ControllerBase
 
             if (existingProvider != null)
             {
-                return BadRequest(ApiResponse<ProviderRegistrationResponseDto>.ErrorResult("Consignor with this email already exists"));
+                return BadRequest(ApiResponse<ConsignorRegistrationResponseDto>.ErrorResult("Consignor with this email already exists"));
             }
 
             // Create provider registration request (pending approval)
@@ -131,22 +131,22 @@ public class AuthController : ControllerBase
             // TODO: Send email notification to shop owner about pending approval
             // TODO: Send confirmation email to provider
 
-            var response = new ProviderRegistrationResponseDto
+            var response = new ConsignorRegistrationResponseDto
             {
                 ConsignorId = provider.Id,
                 Message = "Registration submitted successfully. You will receive an email when approved."
             };
-            return Ok(ApiResponse<ProviderRegistrationResponseDto>.SuccessResult(response, "Consignor registration submitted"));
+            return Ok(ApiResponse<ConsignorRegistrationResponseDto>.SuccessResult(response, "Consignor registration submitted"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error registering provider");
-            return StatusCode(500, ApiResponse<ProviderRegistrationResponseDto>.ErrorResult("Registration failed"));
+            return StatusCode(500, ApiResponse<ConsignorRegistrationResponseDto>.ErrorResult("Registration failed"));
         }
     }
 
     [HttpPost("provider/setup")]
-    public async Task<ActionResult<ApiResponse<LoginResponse>>> SetupProviderAccount([FromBody] ProviderPortalSetupRequest request)
+    public async Task<ActionResult<ApiResponse<LoginResponse>>> SetupProviderAccount([FromBody] ConsignorPortalSetupRequest request)
     {
         try
         {
@@ -209,7 +209,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("provider/login")]
-    public async Task<ActionResult<ApiResponse<LoginResponse>>> LoginProvider([FromBody] ProviderLoginRequest request)
+    public async Task<ActionResult<ApiResponse<LoginResponse>>> LoginProvider([FromBody] ConsignorLoginRequest request)
     {
         try
         {
@@ -285,14 +285,14 @@ public class AuthController : ControllerBase
 }
 
 // Request DTOs
-public class ProviderPortalSetupRequest
+public class ConsignorPortalSetupRequest
 {
     public string Email { get; set; } = string.Empty;
     public string InviteCode { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
 }
 
-public class ProviderLoginRequest
+public class ConsignorLoginRequest
 {
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;

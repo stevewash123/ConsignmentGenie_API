@@ -154,18 +154,18 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task RegisterProvider_WithValidRequest_ReturnsSuccessResult()
+        public async Task RegisterConsignor_WithValidRequest_ReturnsSuccessResult()
         {
             // Arrange
-            var request = new RegisterProviderRequest
+            var request = new RegisterConsignorRequest
             {
                 StoreCode = "1234",
                 FullName = "Consignor Name",
-                Email = "provider@example.com",
+                Email = "consignor@example.com",
                 Password = "SecurePassword123!",
                 Phone = "555-987-6543",
                 PreferredPaymentMethod = "Venmo",
-                PaymentDetails = "@provider"
+                PaymentDetails = "@consignor"
             };
 
             var expectedResult = new RegistrationResultDto
@@ -175,7 +175,7 @@ namespace ConsignmentGenie.Tests.Controllers
             };
 
             _mockRegistrationService
-                .Setup(s => s.RegisterProviderAsync(request))
+                .Setup(s => s.RegisterConsignorAsync(request))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -188,18 +188,18 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.True(actualResult.Success);
             Assert.Equal(expectedResult.Message, actualResult.Message);
 
-            _mockRegistrationService.Verify(s => s.RegisterProviderAsync(request), Times.Once);
+            _mockRegistrationService.Verify(s => s.RegisterConsignorAsync(request), Times.Once);
         }
 
         [Fact]
-        public async Task RegisterProvider_WithInvalidStoreCode_ReturnsErrorResult()
+        public async Task RegisterConsignor_WithInvalidStoreCode_ReturnsErrorResult()
         {
             // Arrange
-            var request = new RegisterProviderRequest
+            var request = new RegisterConsignorRequest
             {
                 StoreCode = "INVALID",
                 FullName = "Consignor Name",
-                Email = "provider@example.com",
+                Email = "consignor@example.com",
                 Password = "SecurePassword123!"
             };
 
@@ -211,7 +211,7 @@ namespace ConsignmentGenie.Tests.Controllers
             };
 
             _mockRegistrationService
-                .Setup(s => s.RegisterProviderAsync(request))
+                .Setup(s => s.RegisterConsignorAsync(request))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -225,7 +225,7 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.Equal(expectedResult.Message, actualResult.Message);
             Assert.Equal(expectedResult.Errors, actualResult.Errors);
 
-            _mockRegistrationService.Verify(s => s.RegisterProviderAsync(request), Times.Once);
+            _mockRegistrationService.Verify(s => s.RegisterConsignorAsync(request), Times.Once);
         }
 
         [Fact]

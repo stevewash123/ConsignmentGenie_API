@@ -25,7 +25,7 @@ namespace ConsignmentGenie.Tests.Controllers
         private readonly Mock<ILogger<ItemsController>> _loggerMock;
         private readonly Guid _organizationId = new("11111111-1111-1111-1111-111111111111");
         private readonly Guid _userId = new("22222222-2222-2222-2222-222222222222");
-        private readonly Guid _providerId = new("66666666-6666-6666-6666-666666666666");
+        private readonly Guid _consignorId = new("66666666-6666-6666-6666-666666666666");
 
         public ItemsControllerTests()
         {
@@ -66,18 +66,18 @@ namespace ConsignmentGenie.Tests.Controllers
             };
             _context.Organizations.Add(organization);
 
-            // Add provider
-            var provider = new Consignor
+            // Add consignor
+            var consignor = new Consignor
             {
-                Id = _providerId,
+                Id = _consignorId,
                 OrganizationId = _organizationId,
                 DisplayName = "Test Consignor",
-                Email = "provider@test.com",
+                Email = "consignor@test.com",
                 DefaultSplitPercentage = 60.0m,
                 Status = ConsignorStatus.Active,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Consignors.Add(provider);
+            _context.Consignors.Add(consignor);
 
             // Add category
             var category = new Category
@@ -94,7 +94,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Sku = "ITEM001",
                 Title = "Test Item 1",
                 Description = "A test item",
@@ -110,7 +110,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Sku = "ITEM002",
                 Title = "Test Item 2",
                 Description = "Another test item",
@@ -197,7 +197,7 @@ namespace ConsignmentGenie.Tests.Controllers
             // Arrange
             var createRequest = new CreateItemRequest
             {
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Title = "New Test Item",
                 Description = "A new test item",
                 Category = "Clothing",
@@ -224,13 +224,13 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task CreateItem_WithInvalidProvider_ReturnsBadRequest()
+        public async Task CreateItem_WithInvalidConsignor_ReturnsBadRequest()
         {
             // Arrange
-            var invalidProviderId = Guid.NewGuid();
+            var invalidConsignorId = Guid.NewGuid();
             var createRequest = new CreateItemRequest
             {
-                ConsignorId = invalidProviderId,
+                ConsignorId = invalidConsignorId,
                 Title = "Invalid Consignor Item",
                 Description = "This should fail",
                 Category = "Clothing",
@@ -245,7 +245,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             var response = Assert.IsType<ApiResponse<object>>(badRequestResult.Value);
             Assert.False(response.Success);
-            Assert.Contains("Invalid provider", response.Errors);
+            Assert.Contains("Invalid consignor", response.Errors);
         }
 
         [Fact]
@@ -281,7 +281,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Sku = "TEST-00001",
                 Title = "Existing Test Item",
                 Price = 10.00m,

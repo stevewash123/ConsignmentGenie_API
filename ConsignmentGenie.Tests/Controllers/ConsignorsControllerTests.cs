@@ -20,17 +20,17 @@ namespace ConsignmentGenie.Tests.Controllers
     {
         private readonly ConsignmentGenieContext _context;
         private readonly Mock<ILogger<ConsignorsController>> _mockLogger;
-        private readonly Mock<IProviderInvitationService> _mockInvitationService;
+        private readonly Mock<IConsignorInvitationService> _mockInvitationService;
         private readonly ConsignorsController _controller;
         private readonly Guid _organizationId = Guid.NewGuid();
         private readonly Guid _userId = Guid.NewGuid();
-        private readonly Guid _providerId = Guid.NewGuid();
+        private readonly Guid _consignorId = Guid.NewGuid();
 
         public ConsignorsControllerTests()
         {
             _context = TestDbContextFactory.CreateInMemoryContext();
             _mockLogger = new Mock<ILogger<ConsignorsController>>();
-            _mockInvitationService = new Mock<IProviderInvitationService>();
+            _mockInvitationService = new Mock<IConsignorInvitationService>();
             _controller = new ConsignorsController(_context, _mockLogger.Object, _mockInvitationService.Object);
 
             // Setup user claims
@@ -77,10 +77,10 @@ namespace ConsignmentGenie.Tests.Controllers
             };
             _context.Users.Add(user);
 
-            // Add providers
-            var provider1 = new Consignor
+            // Add consignors
+            var consignor1 = new Consignor
             {
-                Id = _providerId,
+                Id = _consignorId,
                 OrganizationId = _organizationId,
                 ConsignorNumber = "PROV001",
                 DisplayName = "John Doe",
@@ -94,7 +94,7 @@ namespace ConsignmentGenie.Tests.Controllers
                 CreatedBy = _userId
             };
 
-            var provider2 = new Consignor
+            var consignor2 = new Consignor
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
@@ -109,14 +109,14 @@ namespace ConsignmentGenie.Tests.Controllers
                 CreatedBy = _userId
             };
 
-            _context.Consignors.AddRange(provider1, provider2);
+            _context.Consignors.AddRange(consignor1, consignor2);
 
-            // Add some items for provider metrics
+            // Add some items for consignor metrics
             var item1 = new Item
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Sku = "ITEM001",
                 Title = "Test Item 1",
                 Price = 100.00m,
@@ -130,7 +130,7 @@ namespace ConsignmentGenie.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 OrganizationId = _organizationId,
-                ConsignorId = _providerId,
+                ConsignorId = _consignorId,
                 Sku = "ITEM002",
                 Title = "Test Item 2",
                 Price = 80.00m,
@@ -156,30 +156,30 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetProviders_ReturnsPagedResults()
+        public async Task GetConsignors_ReturnsPagedResults()
         {
             // Arrange
-            var queryParams = new ProviderQueryParams
+            var queryParams = new ConsignorQueryParams
             {
                 Page = 1,
                 PageSize = 10
             };
 
             // Act
-            var result = await _controller.GetProviders(queryParams);
+            var result = await _controller.GetConsignors(queryParams);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var pagedResult = Assert.IsType<PagedResult<ProviderListDto>>(okResult.Value);
+            var pagedResult = Assert.IsType<PagedResult<ConsignorListDto>>(okResult.Value);
             Assert.Equal(2, pagedResult.TotalCount);
             Assert.Equal(2, pagedResult.Items.Count);
         }
 
         [Fact]
-        public async Task GetProviders_WithSearchFilter_ReturnsFilteredResults()
+        public async Task GetConsignors_WithSearchFilter_ReturnsFilteredResults()
         {
             // Arrange
-            var queryParams = new ProviderQueryParams
+            var queryParams = new ConsignorQueryParams
             {
                 Page = 1,
                 PageSize = 10,
@@ -187,21 +187,21 @@ namespace ConsignmentGenie.Tests.Controllers
             };
 
             // Act
-            var result = await _controller.GetProviders(queryParams);
+            var result = await _controller.GetConsignors(queryParams);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var pagedResult = Assert.IsType<PagedResult<ProviderListDto>>(okResult.Value);
+            var pagedResult = Assert.IsType<PagedResult<ConsignorListDto>>(okResult.Value);
             Assert.Equal(1, pagedResult.TotalCount);
             Assert.Single(pagedResult.Items);
             Assert.Contains("John", pagedResult.Items.First().FullName);
         }
 
         [Fact]
-        public async Task GetProviders_WithStatusFilter_ReturnsFilteredResults()
+        public async Task GetConsignors_WithStatusFilter_ReturnsFilteredResults()
         {
             // Arrange
-            var queryParams = new ProviderQueryParams
+            var queryParams = new ConsignorQueryParams
             {
                 Page = 1,
                 PageSize = 10,
@@ -209,52 +209,52 @@ namespace ConsignmentGenie.Tests.Controllers
             };
 
             // Act
-            var result = await _controller.GetProviders(queryParams);
+            var result = await _controller.GetConsignors(queryParams);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var pagedResult = Assert.IsType<PagedResult<ProviderListDto>>(okResult.Value);
+            var pagedResult = Assert.IsType<PagedResult<ConsignorListDto>>(okResult.Value);
             Assert.Equal(1, pagedResult.TotalCount);
             Assert.Single(pagedResult.Items);
             Assert.Equal("Active", pagedResult.Items.First().Status);
         }
 
         [Fact]
-        public async Task GetProvider_WithValidId_ReturnsProvider()
+        public async Task GetConsignor_WithValidId_ReturnsConsignor()
         {
             // Act
-            var result = await _controller.GetProvider(_providerId);
+            var result = await _controller.GetConsignor(_consignorId);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var apiResponse = Assert.IsType<ApiResponse<ProviderDetailDto>>(okResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<ConsignorDetailDto>>(okResult.Value);
             Assert.True(apiResponse.Success);
-            Assert.Equal(_providerId, apiResponse.Data.ConsignorId);
+            Assert.Equal(_consignorId, apiResponse.Data.ConsignorId);
             Assert.Equal("John", apiResponse.Data.FirstName);
             Assert.Equal("Doe", apiResponse.Data.LastName);
         }
 
         [Fact]
-        public async Task GetProvider_WithInvalidId_ReturnsNotFound()
+        public async Task GetConsignor_WithInvalidId_ReturnsNotFound()
         {
             // Arrange
             var invalidId = Guid.NewGuid();
 
             // Act
-            var result = await _controller.GetProvider(invalidId);
+            var result = await _controller.GetConsignor(invalidId);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-            var apiResponse = Assert.IsType<ApiResponse<ProviderDetailDto>>(notFoundResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<ConsignorDetailDto>>(notFoundResult.Value);
             Assert.False(apiResponse.Success);
             Assert.Contains("Consignor not found", apiResponse.Errors);
         }
 
         [Fact]
-        public async Task CreateProvider_WithValidData_CreatesSuccessfully()
+        public async Task CreateConsignor_WithValidData_CreatesSuccessfully()
         {
             // Arrange
-            var request = new CreateProviderRequest
+            var request = new CreateConsignorRequest
             {
                 FirstName = "Alice",
                 LastName = "Johnson",
@@ -266,31 +266,31 @@ namespace ConsignmentGenie.Tests.Controllers
                 State = "TS",
                 PostalCode = "12345",
                 PreferredPaymentMethod = "Direct Deposit",
-                Notes = "Test provider"
+                Notes = "Test consignor"
             };
 
             // Act
-            var result = await _controller.CreateProvider(request);
+            var result = await _controller.CreateConsignor(request);
 
             // Assert
             var createdAtResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var apiResponse = Assert.IsType<ApiResponse<ProviderDetailDto>>(createdAtResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<ConsignorDetailDto>>(createdAtResult.Value);
             Assert.True(apiResponse.Success);
             Assert.Equal("Alice", apiResponse.Data.FirstName);
             Assert.Equal("Johnson", apiResponse.Data.LastName);
             Assert.Equal("alice@example.com", apiResponse.Data.Email);
 
-            // Verify provider was created in database
-            var providerInDb = await _context.Consignors.FindAsync(apiResponse.Data.ConsignorId);
-            Assert.NotNull(providerInDb);
-            Assert.Equal("Alice", providerInDb.FirstName);
+            // Verify consignor was created in database
+            var consignorInDb = await _context.Consignors.FindAsync(apiResponse.Data.ConsignorId);
+            Assert.NotNull(consignorInDb);
+            Assert.Equal("Alice", consignorInDb.FirstName);
         }
 
         [Fact]
-        public async Task CreateProvider_WithDuplicateEmail_ReturnsBadRequest()
+        public async Task CreateConsignor_WithDuplicateEmail_ReturnsBadRequest()
         {
             // Arrange
-            var request = new CreateProviderRequest
+            var request = new CreateConsignorRequest
             {
                 FirstName = "Test",
                 LastName = "Consignor",
@@ -299,20 +299,20 @@ namespace ConsignmentGenie.Tests.Controllers
             };
 
             // Act
-            var result = await _controller.CreateProvider(request);
+            var result = await _controller.CreateConsignor(request);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            var apiResponse = Assert.IsType<ApiResponse<ProviderDetailDto>>(badRequestResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<ConsignorDetailDto>>(badRequestResult.Value);
             Assert.False(apiResponse.Success);
-            Assert.Contains("A provider with this email already exists", apiResponse.Errors);
+            Assert.Contains("A consignor with this email already exists", apiResponse.Errors);
         }
 
         [Fact]
-        public async Task CreateProvider_WithInvalidContractDates_ReturnsBadRequest()
+        public async Task CreateConsignor_WithInvalidContractDates_ReturnsBadRequest()
         {
             // Arrange
-            var request = new CreateProviderRequest
+            var request = new CreateConsignorRequest
             {
                 FirstName = "Test",
                 LastName = "Consignor",
@@ -323,11 +323,11 @@ namespace ConsignmentGenie.Tests.Controllers
             };
 
             // Act
-            var result = await _controller.CreateProvider(request);
+            var result = await _controller.CreateConsignor(request);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            var apiResponse = Assert.IsType<ApiResponse<ProviderDetailDto>>(badRequestResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<ConsignorDetailDto>>(badRequestResult.Value);
             Assert.False(apiResponse.Success);
             Assert.Contains("Contract end date must be after start date", apiResponse.Errors);
         }
@@ -338,7 +338,7 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task GetPendingInvitations_ReturnsSuccessfully()
         {
             // Arrange
-            var invitations = new List<ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationDto>
+            var invitations = new List<ConsignmentGenie.Application.DTOs.Consignor.ConsignorInvitationDto>
             {
                 new()
                 {
@@ -360,7 +360,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returnedInvitations = Assert.IsType<List<ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationDto>>(okResult.Value);
+            var returnedInvitations = Assert.IsType<List<ConsignmentGenie.Application.DTOs.Consignor.ConsignorInvitationDto>>(okResult.Value);
             Assert.Single(returnedInvitations);
             Assert.Equal("John Invited", returnedInvitations[0].Name);
             Assert.Equal("john.invited@example.com", returnedInvitations[0].Email);
@@ -370,20 +370,20 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task CreateInvitation_WithValidData_ReturnsSuccessfully()
         {
             // Arrange
-            var request = new ConsignmentGenie.Application.DTOs.Consignor.CreateProviderInvitationDto
+            var request = new ConsignmentGenie.Application.DTOs.Consignor.CreateConsignorInvitationDto
             {
                 Name = "Jane Invited",
                 Email = "jane.invited@example.com"
             };
 
-            var resultDto = new ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationResultDto
+            var resultDto = new ConsignmentGenie.Application.DTOs.Consignor.ConsignorInvitationResultDto
             {
                 Success = true,
                 Message = "Invitation sent successfully"
             };
 
             _mockInvitationService.Setup(x => x.CreateInvitationAsync(
-                    It.IsAny<ConsignmentGenie.Application.DTOs.Consignor.CreateProviderInvitationDto>(),
+                    It.IsAny<ConsignmentGenie.Application.DTOs.Consignor.CreateConsignorInvitationDto>(),
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>()))
                 .ReturnsAsync(resultDto);
@@ -393,7 +393,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returnedResult = Assert.IsType<ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationResultDto>(okResult.Value);
+            var returnedResult = Assert.IsType<ConsignmentGenie.Application.DTOs.Consignor.ConsignorInvitationResultDto>(okResult.Value);
             Assert.True(returnedResult.Success);
             Assert.Equal("Invitation sent successfully", returnedResult.Message);
         }
@@ -402,20 +402,20 @@ namespace ConsignmentGenie.Tests.Controllers
         public async Task CreateInvitation_WithInvalidData_ReturnsBadRequest()
         {
             // Arrange
-            var request = new ConsignmentGenie.Application.DTOs.Consignor.CreateProviderInvitationDto
+            var request = new ConsignmentGenie.Application.DTOs.Consignor.CreateConsignorInvitationDto
             {
                 Name = "Jane Invited",
                 Email = "jane.invited@example.com"
             };
 
-            var resultDto = new ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationResultDto
+            var resultDto = new ConsignmentGenie.Application.DTOs.Consignor.ConsignorInvitationResultDto
             {
                 Success = false,
                 Message = "A user with this email already exists in the system."
             };
 
             _mockInvitationService.Setup(x => x.CreateInvitationAsync(
-                    It.IsAny<ConsignmentGenie.Application.DTOs.Consignor.CreateProviderInvitationDto>(),
+                    It.IsAny<ConsignmentGenie.Application.DTOs.Consignor.CreateConsignorInvitationDto>(),
                     It.IsAny<Guid>(),
                     It.IsAny<Guid>()))
                 .ReturnsAsync(resultDto);
@@ -425,7 +425,7 @@ namespace ConsignmentGenie.Tests.Controllers
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            var returnedResult = Assert.IsType<ConsignmentGenie.Application.DTOs.Consignor.ProviderInvitationResultDto>(badRequestResult.Value);
+            var returnedResult = Assert.IsType<ConsignmentGenie.Application.DTOs.Consignor.ConsignorInvitationResultDto>(badRequestResult.Value);
             Assert.False(returnedResult.Success);
             Assert.Contains("A user with this email already exists", returnedResult.Message);
         }

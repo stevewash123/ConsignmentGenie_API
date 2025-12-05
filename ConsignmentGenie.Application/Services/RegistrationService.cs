@@ -173,7 +173,7 @@ public class RegistrationService : IRegistrationService
         }
     }
 
-    public async Task<RegistrationResultDto> RegisterProviderAsync(RegisterProviderRequest request)
+    public async Task<RegistrationResultDto> RegisterProviderAsync(RegisterConsignorRequest request)
     {
         _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration for email {Email} with store code {StoreCode}",
             request.Email, request.StoreCode);
@@ -256,7 +256,7 @@ public class RegistrationService : IRegistrationService
             if (organization.AutoApproveConsignors)
             {
                 _logger.LogInformation("[PROVIDER_INVITATION] Auto-approval enabled - creating Consignor record for {Email}", request.Email);
-                var provider = new Consignor
+                var consignor = new Consignor
                 {
                     OrganizationId = organization.Id,
                     UserId = user.Id,
@@ -271,9 +271,9 @@ public class RegistrationService : IRegistrationService
                     ApprovedBy = null // Auto-approved
                 };
 
-                _context.Consignors.Add(provider);
+                _context.Consignors.Add(consignor);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("[PROVIDER_INVITATION] Consignor record created for {Email} with ID {ConsignorId}", request.Email, provider.Id);
+                _logger.LogInformation("[PROVIDER_INVITATION] Consignor record created for {Email} with ID {ConsignorId}", request.Email, consignor.Id);
             }
             else
             {
@@ -282,7 +282,7 @@ public class RegistrationService : IRegistrationService
 
             // Send confirmation email to provider
             _logger.LogInformation("[PROVIDER_INVITATION] Sending confirmation email to provider {Email}", request.Email);
-            var providerEmailBody = $@"
+            var consignorEmailBody = $@"
                 <h2>Welcome to ConsignmentGenie</h2>
                 <p>Hi {request.FullName},</p>
                 <p>Thanks for registering with ConsignmentGenie!</p>
@@ -296,7 +296,7 @@ public class RegistrationService : IRegistrationService
             var emailResult = await _emailService.SendSimpleEmailAsync(
                 request.Email,
                 organization.AutoApproveConsignors ? "Account Approved - You're In! 🎉" : "Welcome to ConsignmentGenie - Account Pending",
-                providerEmailBody);
+                consignorEmailBody);
             _logger.LogInformation("[PROVIDER_INVITATION] Consignor confirmation email sent to {Email}: {EmailResult}", request.Email, emailResult);
 
             // Send notification to owner if not auto-approved
@@ -432,8 +432,8 @@ public class RegistrationService : IRegistrationService
         if (user.Role == UserRole.Consignor)
         {
             _logger.LogInformation("[PROVIDER_INVITATION] Creating Consignor record for approved user {Email}", user.Email);
-            var providerNumber = await GenerateProviderNumberAsync(user.OrganizationId);
-            var provider = new Consignor
+            var consignorNumber = await GenerateProviderNumberAsync(user.OrganizationId);
+            var consignor = new Consignor
             {
                 OrganizationId = user.OrganizationId,
                 UserId = user.Id,
@@ -445,12 +445,12 @@ public class RegistrationService : IRegistrationService
                 Status = ConsignorStatus.Active,
                 ApprovalStatus = "Approved",
                 ApprovedBy = approvedByUserId,
-                ConsignorNumber = providerNumber
+                ConsignorNumber = consignorNumber
             };
 
-            _context.Consignors.Add(provider);
+            _context.Consignors.Add(consignor);
             _logger.LogInformation("[PROVIDER_INVITATION] Consignor record will be created with number {ConsignorNumber} for {Email}",
-                providerNumber, user.Email);
+                consignorNumber, user.Email);
         }
 
         await _context.SaveChangesAsync();
@@ -641,7 +641,7 @@ public class RegistrationService : IRegistrationService
     {
         _logger.LogInformation("[PROVIDER_INVITATION] Validating invitation token: {Token}", token?.Substring(0, Math.Min(token?.Length ?? 0, 8)) + "...");
 
-        var invitation = await _context.ProviderInvitations
+        var invitation = await _context.ConsignorInvitations
             .Include(i => i.Organization)
             .FirstOrDefaultAsync(i => i.Token == token);
 
@@ -698,7 +698,7 @@ public class RegistrationService : IRegistrationService
         };
     }
 
-    public async Task<RegistrationResultDto> RegisterProviderFromInvitationAsync(RegisterProviderFromInvitationRequest request)
+    public async Task<RegistrationResultDto> RegisterProviderFromInvitationAsync(RegisterConsignorFromInvitationRequest request)
     {
         _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration from invitation for email {Email}", request.Email);
         _logger.LogDebug("[PROVIDER_INVITATION] Invitation registration details: FullName={FullName}, Phone={Phone}, Address={Address}",
@@ -724,7 +724,7 @@ public class RegistrationService : IRegistrationService
                 request.Email, validation.ShopName);
 
             _logger.LogDebug("[PROVIDER_INVITATION] Retrieving invitation details from database");
-            var invitation = await _context.ProviderInvitations
+            var invitation = await _context.ConsignorInvitations
                 .Include(i => i.Organization)
                 .FirstOrDefaultAsync(i => i.Token == request.InvitationToken);
 
@@ -763,7 +763,7 @@ public class RegistrationService : IRegistrationService
 
             // Create the provider record
             _logger.LogInformation("[PROVIDER_INVITATION] Creating Consignor record for {Email}", request.Email);
-            var providerNumber = await GenerateProviderNumberAsync(invitation.OrganizationId);
+            var consignorNumber = await GenerateProviderNumberAsync(invitation.OrganizationId);
             var provider = new Consignor
             {
                 OrganizationId = invitation.OrganizationId,
@@ -777,7 +777,7 @@ public class RegistrationService : IRegistrationService
                 Status = ConsignorStatus.Active,
                 ApprovalStatus = "Approved",
                 ApprovedBy = invitation.InvitedById,
-                ConsignorNumber = providerNumber
+                ConsignorNumber = consignorNumber
             };
 
             _context.Consignors.Add(provider);
@@ -789,11 +789,11 @@ public class RegistrationService : IRegistrationService
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("[PROVIDER_INVITATION] Consignor record created successfully with number {ConsignorNumber} for {Email}",
-                providerNumber, request.Email);
+                consignorNumber, request.Email);
 
             // Send welcome email to provider
             _logger.LogInformation("[PROVIDER_INVITATION] Sending welcome email to new provider {Email}", request.Email);
-            var providerEmailBody = $@"
+            var consignorEmailBody = $@"
                 <h2>Welcome to {validation.ShopName}! 🎉</h2>
                 <p>Hi {request.FullName},</p>
                 <p>Your provider account has been successfully created for {validation.ShopName}.</p>
@@ -806,12 +806,12 @@ public class RegistrationService : IRegistrationService
                 <p>Welcome aboard!</p>
                 <p>- The ConsignmentGenie Team</p>";
 
-            var providerEmailResult = await _emailService.SendSimpleEmailAsync(
+            var consignorEmailResult = await _emailService.SendSimpleEmailAsync(
                 request.Email,
                 "Welcome to ConsignmentGenie! 🎉",
-                providerEmailBody);
+                consignorEmailBody);
             _logger.LogInformation("[PROVIDER_INVITATION] Welcome email sent to provider {Email}: {EmailResult}",
-                request.Email, providerEmailResult);
+                request.Email, consignorEmailResult);
 
             // Notify the shop owner
             _logger.LogDebug("[PROVIDER_INVITATION] Looking up shop owner (ID: {InvitedById}) to notify about new provider",
@@ -850,7 +850,7 @@ public class RegistrationService : IRegistrationService
             }
 
             _logger.LogInformation("[PROVIDER_INVITATION] Consignor registration from invitation completed successfully for {Email} - provider number {ConsignorNumber}",
-                request.Email, providerNumber);
+                request.Email, consignorNumber);
 
             return new RegistrationResultDto
             {

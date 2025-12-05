@@ -8,7 +8,7 @@ public class InventoryOverviewDto
     public decimal AveragePrice { get; set; }
     public decimal TotalInventoryValue { get; set; }
     public List<CategoryBreakdownDto> CategoryBreakdown { get; set; } = new();
-    public List<ProviderBreakdownDto> ProviderBreakdown { get; set; } = new();
+    public List<ConsignorBreakdownDto> ConsignorBreakdown { get; set; } = new();
 }
 
 public class CategoryBreakdownDto
@@ -19,7 +19,7 @@ public class CategoryBreakdownDto
     public int SoldCount { get; set; }
 }
 
-public class ProviderBreakdownDto
+public class ConsignorBreakdownDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorName { get; set; } = string.Empty;

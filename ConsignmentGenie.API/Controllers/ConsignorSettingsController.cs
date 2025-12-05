@@ -11,12 +11,12 @@ namespace ConsignmentGenie.API.Controllers;
 [ApiController]
 [Route("api/consignors")]
 [Authorize(Roles = "Owner")]
-public class ProviderSettingsController : ControllerBase
+public class ConsignorSettingsController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
-    private readonly ILogger<ProviderSettingsController> _logger;
+    private readonly ILogger<ConsignorSettingsController> _logger;
 
-    public ProviderSettingsController(ConsignmentGenieContext context, ILogger<ProviderSettingsController> logger)
+    public ConsignorSettingsController(ConsignmentGenieContext context, ILogger<ConsignorSettingsController> logger)
     {
         _context = context;
         _logger = logger;
@@ -161,7 +161,7 @@ public class ProviderSettingsController : ControllerBase
 
     // GET SETTINGS SUMMARY - Get overview of provider-related settings
     [HttpGet("settings")]
-    public async Task<ActionResult<ApiResponse<ProviderSettingsSummaryDto>>> GetSettingsSummary()
+    public async Task<ActionResult<ApiResponse<ConsignorSettingsSummaryDto>>> GetSettingsSummary()
     {
         try
         {
@@ -173,7 +173,7 @@ public class ProviderSettingsController : ControllerBase
 
             if (organization == null)
             {
-                return NotFound(ApiResponse<ProviderSettingsSummaryDto>.ErrorResult("Organization not found"));
+                return NotFound(ApiResponse<ConsignorSettingsSummaryDto>.ErrorResult("Organization not found"));
             }
 
             // Get provider stats for context
@@ -185,7 +185,7 @@ public class ProviderSettingsController : ControllerBase
                 .Where(p => p.OrganizationId == organizationId && p.Status == Core.Enums.ConsignorStatus.Pending)
                 .CountAsync();
 
-            var settings = new ProviderSettingsSummaryDto
+            var settings = new ConsignorSettingsSummaryDto
             {
                 AllowSelfRegistration = organization.StoreCodeEnabled,
                 RegistrationCode = organization.StoreCode ?? "",
@@ -195,12 +195,12 @@ public class ProviderSettingsController : ControllerBase
                 DefaultCommissionRate = organization.DefaultSplitPercentage / 100m // Convert percentage to decimal
             };
 
-            return Ok(ApiResponse<ProviderSettingsSummaryDto>.SuccessResult(settings));
+            return Ok(ApiResponse<ConsignorSettingsSummaryDto>.SuccessResult(settings));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting settings summary for organization {OrganizationId}", GetOrganizationId());
-            return StatusCode(500, ApiResponse<ProviderSettingsSummaryDto>.ErrorResult("Failed to retrieve settings summary"));
+            return StatusCode(500, ApiResponse<ConsignorSettingsSummaryDto>.ErrorResult("Failed to retrieve settings summary"));
         }
     }
 

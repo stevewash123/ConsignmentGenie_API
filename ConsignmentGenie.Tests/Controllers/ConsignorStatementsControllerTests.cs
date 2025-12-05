@@ -11,23 +11,23 @@ using Xunit;
 
 namespace ConsignmentGenie.Tests.Controllers;
 
-public class ProviderStatementsControllerTests
+public class ConsignorStatementsControllerTests
 {
     private readonly Mock<IStatementService> _mockStatementService;
-    private readonly Mock<ILogger<ProviderStatementsController>> _mockLogger;
-    private readonly ProviderStatementsController _controller;
-    private readonly Guid _testProviderId = Guid.NewGuid();
+    private readonly Mock<ILogger<ConsignorStatementsController>> _mockLogger;
+    private readonly ConsignorStatementsController _controller;
+    private readonly Guid _testConsignorId = Guid.NewGuid();
 
-    public ProviderStatementsControllerTests()
+    public ConsignorStatementsControllerTests()
     {
         _mockStatementService = new Mock<IStatementService>();
-        _mockLogger = new Mock<ILogger<ProviderStatementsController>>();
-        _controller = new ProviderStatementsController(_mockStatementService.Object, _mockLogger.Object);
+        _mockLogger = new Mock<ILogger<ConsignorStatementsController>>();
+        _controller = new ConsignorStatementsController(_mockStatementService.Object, _mockLogger.Object);
 
-        // Setup the controller's HttpContext with provider claim
+        // Setup the controller's HttpContext with consignor claim
         var claims = new List<Claim>
         {
-            new Claim("ConsignorId", _testProviderId.ToString()),
+            new Claim("ConsignorId", _testConsignorId.ToString()),
             new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
         };
         var identity = new ClaimsIdentity(claims, "test");
@@ -40,7 +40,7 @@ public class ProviderStatementsControllerTests
     }
 
     [Fact]
-    public async Task GetStatements_WithValidProvider_ReturnsOkResult()
+    public async Task GetStatements_WithValidConsignor_ReturnsOkResult()
     {
         // Arrange
         var expectedStatements = new List<StatementListDto>
@@ -62,7 +62,7 @@ public class ProviderStatementsControllerTests
         };
 
         _mockStatementService
-            .Setup(x => x.GetStatementsAsync(_testProviderId))
+            .Setup(x => x.GetStatementsAsync(_testConsignorId))
             .ReturnsAsync(expectedStatements);
 
         // Act
@@ -80,7 +80,7 @@ public class ProviderStatementsControllerTests
     }
 
     [Fact]
-    public async Task GetStatements_WithoutProviderContext_ReturnsUnauthorized()
+    public async Task GetStatements_WithoutConsignorContext_ReturnsUnauthorized()
     {
         // Arrange
         var claims = new List<Claim>
@@ -131,11 +131,11 @@ public class ProviderStatementsControllerTests
         };
 
         _mockStatementService
-            .Setup(x => x.GetStatementAsync(statementId, _testProviderId))
+            .Setup(x => x.GetStatementAsync(statementId, _testConsignorId))
             .ReturnsAsync(expectedStatement);
 
         _mockStatementService
-            .Setup(x => x.MarkAsViewedAsync(statementId, _testProviderId))
+            .Setup(x => x.MarkAsViewedAsync(statementId, _testConsignorId))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -152,7 +152,7 @@ public class ProviderStatementsControllerTests
         Assert.Equal(300.00m, response.Data.TotalEarnings);
 
         // Verify that MarkAsViewed was called
-        _mockStatementService.Verify(x => x.MarkAsViewedAsync(statementId, _testProviderId), Times.Once);
+        _mockStatementService.Verify(x => x.MarkAsViewedAsync(statementId, _testConsignorId), Times.Once);
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public class ProviderStatementsControllerTests
         var statementId = Guid.NewGuid();
 
         _mockStatementService
-            .Setup(x => x.GetStatementAsync(statementId, _testProviderId))
+            .Setup(x => x.GetStatementAsync(statementId, _testConsignorId))
             .ReturnsAsync((StatementDto)null);
 
         // Act
@@ -193,13 +193,13 @@ public class ProviderStatementsControllerTests
 
         _mockStatementService
             .Setup(x => x.GetStatementByPeriodAsync(
-                _testProviderId,
+                _testConsignorId,
                 new DateOnly(year, month, 1),
                 new DateOnly(year, month, 30)))
             .ReturnsAsync(expectedStatement);
 
         _mockStatementService
-            .Setup(x => x.MarkAsViewedAsync(expectedStatement.Id, _testProviderId))
+            .Setup(x => x.MarkAsViewedAsync(expectedStatement.Id, _testConsignorId))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -241,7 +241,7 @@ public class ProviderStatementsControllerTests
 
         _mockStatementService
             .Setup(x => x.GetStatementByPeriodAsync(
-                _testProviderId,
+                _testConsignorId,
                 new DateOnly(year, month, 1),
                 new DateOnly(year, month, 30)))
             .ReturnsAsync((StatementDto)null);
@@ -271,11 +271,11 @@ public class ProviderStatementsControllerTests
         var pdfContent = System.Text.Encoding.UTF8.GetBytes("PDF content");
 
         _mockStatementService
-            .Setup(x => x.GetStatementAsync(statementId, _testProviderId))
+            .Setup(x => x.GetStatementAsync(statementId, _testConsignorId))
             .ReturnsAsync(expectedStatement);
 
         _mockStatementService
-            .Setup(x => x.GeneratePdfAsync(statementId, _testProviderId))
+            .Setup(x => x.GeneratePdfAsync(statementId, _testConsignorId))
             .ReturnsAsync(pdfContent);
 
         // Act
@@ -294,7 +294,7 @@ public class ProviderStatementsControllerTests
         var statementId = Guid.NewGuid();
 
         _mockStatementService
-            .Setup(x => x.GetStatementAsync(statementId, _testProviderId))
+            .Setup(x => x.GetStatementAsync(statementId, _testConsignorId))
             .ReturnsAsync((StatementDto)null);
 
         // Act
@@ -320,13 +320,13 @@ public class ProviderStatementsControllerTests
 
         _mockStatementService
             .Setup(x => x.GetStatementByPeriodAsync(
-                _testProviderId,
+                _testConsignorId,
                 new DateOnly(year, month, 1),
                 new DateOnly(year, month, 30)))
             .ReturnsAsync(expectedStatement);
 
         _mockStatementService
-            .Setup(x => x.GeneratePdfAsync(expectedStatement.Id, _testProviderId))
+            .Setup(x => x.GeneratePdfAsync(expectedStatement.Id, _testConsignorId))
             .ReturnsAsync(pdfContent);
 
         // Act
@@ -352,7 +352,7 @@ public class ProviderStatementsControllerTests
         };
 
         _mockStatementService
-            .Setup(x => x.RegenerateStatementAsync(statementId, _testProviderId))
+            .Setup(x => x.RegenerateStatementAsync(statementId, _testConsignorId))
             .ReturnsAsync(regeneratedStatement);
 
         // Act
@@ -373,7 +373,7 @@ public class ProviderStatementsControllerTests
     {
         // Arrange
         _mockStatementService
-            .Setup(x => x.GetStatementsAsync(_testProviderId))
+            .Setup(x => x.GetStatementsAsync(_testConsignorId))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act
@@ -394,7 +394,7 @@ public class ProviderStatementsControllerTests
         // Arrange
         var statementId = Guid.NewGuid();
         _mockStatementService
-            .Setup(x => x.GetStatementAsync(statementId, _testProviderId))
+            .Setup(x => x.GetStatementAsync(statementId, _testConsignorId))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act
@@ -415,7 +415,7 @@ public class ProviderStatementsControllerTests
         // Arrange
         var statementId = Guid.NewGuid();
         _mockStatementService
-            .Setup(x => x.GetStatementAsync(statementId, _testProviderId))
+            .Setup(x => x.GetStatementAsync(statementId, _testConsignorId))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act

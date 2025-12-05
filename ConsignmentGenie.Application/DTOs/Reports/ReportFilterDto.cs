@@ -9,7 +9,7 @@ public class SalesReportFilterDto
     public List<string>? PaymentMethods { get; set; }
 }
 
-public class ProviderPerformanceFilterDto
+public class ConsignorPerformanceFilterDto
 {
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }

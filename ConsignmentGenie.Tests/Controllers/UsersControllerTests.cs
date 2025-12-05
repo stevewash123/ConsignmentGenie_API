@@ -50,16 +50,16 @@ namespace ConsignmentGenie.Tests.Controllers
                 {
                     UserId = Guid.NewGuid(),
                     FullName = "John Consignor",
-                    Email = "john@provider.com",
+                    Email = "john@consignor.com",
                     Phone = "555-123-4567",
                     PreferredPaymentMethod = "Venmo",
-                    PaymentDetails = "@johnprovider",
+                    PaymentDetails = "@johnconsignor",
                     RequestedAt = DateTime.UtcNow.AddDays(-1)
                 }
             };
 
             _mockRegistrationService
-                .Setup(s => s.GetPendingProvidersAsync(_organizationId))
+                .Setup(s => s.GetPendingConsignorsAsync(_organizationId))
                 .ReturnsAsync(pendingApprovals);
 
             // Act
@@ -71,9 +71,9 @@ namespace ConsignmentGenie.Tests.Controllers
 
             Assert.Single(actualResult);
             Assert.Equal("John Consignor", actualResult[0].FullName);
-            Assert.Equal("john@provider.com", actualResult[0].Email);
+            Assert.Equal("john@consignor.com", actualResult[0].Email);
 
-            _mockRegistrationService.Verify(s => s.GetPendingProvidersAsync(_organizationId), Times.Once);
+            _mockRegistrationService.Verify(s => s.GetPendingConsignorsAsync(_organizationId), Times.Once);
         }
 
         [Fact]

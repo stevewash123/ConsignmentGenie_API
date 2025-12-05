@@ -10,24 +10,24 @@ using Xunit;
 
 namespace ConsignmentGenie.Tests.Services;
 
-public class ProviderInvitationServiceTests : IDisposable
+public class ConsignorInvitationServiceTests : IDisposable
 {
     private readonly Mock<IEmailService> _mockEmailService;
     private readonly Mock<IConfiguration> _mockConfiguration;
-    private readonly Mock<ILogger<ProviderInvitationService>> _mockLogger;
-    private readonly ProviderInvitationService _service;
+    private readonly Mock<ILogger<ConsignorInvitationService>> _mockLogger;
+    private readonly ConsignorInvitationService _service;
     private readonly Infrastructure.Data.ConsignmentGenieContext _context;
     private readonly Guid _organizationId = Guid.NewGuid();
     private readonly Guid _userId = Guid.NewGuid();
 
-    public ProviderInvitationServiceTests()
+    public ConsignorInvitationServiceTests()
     {
         _context = TestDbContextFactory.CreateInMemoryContext();
         _mockEmailService = new Mock<IEmailService>();
         _mockConfiguration = new Mock<IConfiguration>();
-        _mockLogger = new Mock<ILogger<ProviderInvitationService>>();
+        _mockLogger = new Mock<ILogger<ConsignorInvitationService>>();
         _mockConfiguration.Setup(x => x["ClientUrl"]).Returns("http://localhost:4200");
-        _service = new ProviderInvitationService(_context, _mockEmailService.Object, _mockConfiguration.Object, _mockLogger.Object);
+        _service = new ConsignorInvitationService(_context, _mockEmailService.Object, _mockConfiguration.Object, _mockLogger.Object);
         SeedTestData();
     }
 
@@ -57,13 +57,13 @@ public class ProviderInvitationServiceTests : IDisposable
     public async Task CreateInvitationAsync_ValidRequest_ReturnsSuccessResult()
     {
         // Arrange
-        var request = new CreateProviderInvitationDto
+        var request = new CreateConsignorInvitationDto
         {
             Name = "John Doe",
             Email = "john.doe@example.com"
         };
 
-        _mockEmailService.Setup(x => x.SendProviderInvitationAsync(
+        _mockEmailService.Setup(x => x.SendConsignorInvitationAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(true);
 

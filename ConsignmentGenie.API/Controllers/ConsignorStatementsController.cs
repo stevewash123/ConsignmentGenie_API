@@ -8,16 +8,16 @@ using System.Security.Claims;
 namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
-[Route("api/provider/statements")]
+[Route("api/consignor/statements")]
 [Authorize]
-public class ProviderStatementsController : ControllerBase
+public class ConsignorStatementsController : ControllerBase
 {
     private readonly IStatementService _statementService;
-    private readonly ILogger<ProviderStatementsController> _logger;
+    private readonly ILogger<ConsignorStatementsController> _logger;
 
-    public ProviderStatementsController(
+    public ConsignorStatementsController(
         IStatementService statementService,
-        ILogger<ProviderStatementsController> logger)
+        ILogger<ConsignorStatementsController> logger)
     {
         _statementService = statementService;
         _logger = logger;
@@ -31,11 +31,11 @@ public class ProviderStatementsController : ControllerBase
     {
         try
         {
-            var providerId = GetCurrentProviderId();
-            if (providerId == null)
+            var consignorId = GetCurrentConsignorId();
+            if (consignorId == null)
                 return Unauthorized(ApiResponse<List<StatementListDto>>.ErrorResult("Consignor context required"));
 
-            var statements = await _statementService.GetStatementsAsync(providerId.Value);
+            var statements = await _statementService.GetStatementsAsync(consignorId.Value);
             return Ok(ApiResponse<List<StatementListDto>>.SuccessResult(statements));
         }
         catch (Exception ex)
@@ -53,16 +53,16 @@ public class ProviderStatementsController : ControllerBase
     {
         try
         {
-            var providerId = GetCurrentProviderId();
-            if (providerId == null)
+            var consignorId = GetCurrentConsignorId();
+            if (consignorId == null)
                 return Unauthorized(ApiResponse<StatementDto>.ErrorResult("Consignor context required"));
 
-            var statement = await _statementService.GetStatementAsync(id, providerId.Value);
+            var statement = await _statementService.GetStatementAsync(id, consignorId.Value);
             if (statement == null)
                 return NotFound(ApiResponse<StatementDto>.ErrorResult("Statement not found"));
 
             // Mark as viewed
-            await _statementService.MarkAsViewedAsync(id, providerId.Value);
+            await _statementService.MarkAsViewedAsync(id, consignorId.Value);
 
             return Ok(ApiResponse<StatementDto>.SuccessResult(statement));
         }
@@ -81,8 +81,8 @@ public class ProviderStatementsController : ControllerBase
     {
         try
         {
-            var providerId = GetCurrentProviderId();
-            if (providerId == null)
+            var consignorId = GetCurrentConsignorId();
+            if (consignorId == null)
                 return Unauthorized(ApiResponse<StatementDto>.ErrorResult("Consignor context required"));
 
             if (month < 1 || month > 12)
@@ -91,12 +91,12 @@ public class ProviderStatementsController : ControllerBase
             var periodStart = new DateOnly(year, month, 1);
             var periodEnd = periodStart.AddMonths(1).AddDays(-1);
 
-            var statement = await _statementService.GetStatementByPeriodAsync(providerId.Value, periodStart, periodEnd);
+            var statement = await _statementService.GetStatementByPeriodAsync(consignorId.Value, periodStart, periodEnd);
             if (statement == null)
                 return NotFound(ApiResponse<StatementDto>.ErrorResult("Statement not found"));
 
             // Mark as viewed
-            await _statementService.MarkAsViewedAsync(statement.Id, providerId.Value);
+            await _statementService.MarkAsViewedAsync(statement.Id, consignorId.Value);
 
             return Ok(ApiResponse<StatementDto>.SuccessResult(statement));
         }
@@ -115,15 +115,15 @@ public class ProviderStatementsController : ControllerBase
     {
         try
         {
-            var providerId = GetCurrentProviderId();
-            if (providerId == null)
+            var consignorId = GetCurrentConsignorId();
+            if (consignorId == null)
                 return Unauthorized("Consignor context required");
 
-            var statement = await _statementService.GetStatementAsync(id, providerId.Value);
+            var statement = await _statementService.GetStatementAsync(id, consignorId.Value);
             if (statement == null)
                 return NotFound();
 
-            var pdfBytes = await _statementService.GeneratePdfAsync(id, providerId.Value);
+            var pdfBytes = await _statementService.GeneratePdfAsync(id, consignorId.Value);
             var fileName = $"{statement.StatementNumber}.pdf";
 
             return File(pdfBytes, "application/pdf", fileName);
@@ -143,8 +143,8 @@ public class ProviderStatementsController : ControllerBase
     {
         try
         {
-            var providerId = GetCurrentProviderId();
-            if (providerId == null)
+            var consignorId = GetCurrentConsignorId();
+            if (consignorId == null)
                 return Unauthorized("Consignor context required");
 
             if (month < 1 || month > 12)
@@ -153,11 +153,11 @@ public class ProviderStatementsController : ControllerBase
             var periodStart = new DateOnly(year, month, 1);
             var periodEnd = periodStart.AddMonths(1).AddDays(-1);
 
-            var statement = await _statementService.GetStatementByPeriodAsync(providerId.Value, periodStart, periodEnd);
+            var statement = await _statementService.GetStatementByPeriodAsync(consignorId.Value, periodStart, periodEnd);
             if (statement == null)
                 return NotFound();
 
-            var pdfBytes = await _statementService.GeneratePdfAsync(statement.Id, providerId.Value);
+            var pdfBytes = await _statementService.GeneratePdfAsync(statement.Id, consignorId.Value);
             var fileName = $"{statement.StatementNumber}.pdf";
 
             return File(pdfBytes, "application/pdf", fileName);
@@ -177,11 +177,11 @@ public class ProviderStatementsController : ControllerBase
     {
         try
         {
-            var providerId = GetCurrentProviderId();
-            if (providerId == null)
+            var consignorId = GetCurrentConsignorId();
+            if (consignorId == null)
                 return Unauthorized(ApiResponse<StatementDto>.ErrorResult("Consignor context required"));
 
-            var statement = await _statementService.RegenerateStatementAsync(id, providerId.Value);
+            var statement = await _statementService.RegenerateStatementAsync(id, consignorId.Value);
             return Ok(ApiResponse<StatementDto>.SuccessResult(statement));
         }
         catch (Exception ex)
@@ -191,13 +191,13 @@ public class ProviderStatementsController : ControllerBase
         }
     }
 
-    private Guid? GetCurrentProviderId()
+    private Guid? GetCurrentConsignorId()
     {
         // This assumes the provider ID is available in claims
         // You may need to adjust based on how authentication is implemented
-        var providerIdClaim = User.FindFirst("ConsignorId")?.Value;
-        if (Guid.TryParse(providerIdClaim, out var providerId))
-            return providerId;
+        var consignorIdClaim = User.FindFirst("ConsignorId")?.Value;
+        if (Guid.TryParse(consignorIdClaim, out var consignorId))
+            return consignorId;
 
         // Fallback: look up provider by user ID
         // This would require injecting the context or a service to do the lookup

@@ -9,12 +9,12 @@ using Xunit;
 
 namespace ConsignmentGenie.Tests.Controllers
 {
-    public class ProviderAutoApprovalTests
+    public class ConsignorAutoApprovalTests
     {
         private readonly RegistrationController _controller;
         private readonly Mock<IRegistrationService> _mockRegistrationService;
 
-        public ProviderAutoApprovalTests()
+        public ConsignorAutoApprovalTests()
         {
             _mockRegistrationService = new Mock<IRegistrationService>();
             var mockLogger = new Mock<ILogger<RegistrationController>>();
@@ -22,10 +22,10 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task RegisterProvider_WithAutoApproveEnabled_CallsServiceAndReturnsSuccess()
+        public async Task RegisterConsignor_WithAutoApproveEnabled_CallsServiceAndReturnsSuccess()
         {
             // Arrange
-            var request = new RegisterProviderRequest
+            var request = new RegisterConsignorRequest
             {
                 StoreCode = "TEST",
                 FullName = "John Doe",
@@ -42,7 +42,7 @@ namespace ConsignmentGenie.Tests.Controllers
             };
 
             _mockRegistrationService
-                .Setup(x => x.RegisterProviderAsync(It.IsAny<RegisterProviderRequest>()))
+                .Setup(x => x.RegisterConsignorAsync(It.IsAny<RegisterConsignorRequest>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -56,8 +56,8 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.Contains("Welcome to Test Shop", response.Message);
 
             // ✅ Verify service was called with correct data
-            _mockRegistrationService.Verify(x => x.RegisterProviderAsync(
-                It.Is<RegisterProviderRequest>(r =>
+            _mockRegistrationService.Verify(x => x.RegisterConsignorAsync(
+                It.Is<RegisterConsignorRequest>(r =>
                     r.Email == "john.doe@test.com" &&
                     r.StoreCode == "TEST"
                 )
@@ -65,10 +65,10 @@ namespace ConsignmentGenie.Tests.Controllers
         }
 
         [Fact]
-        public async Task RegisterProvider_WithAutoApproveDisabled_CallsServiceAndReturnsPending()
+        public async Task RegisterConsignor_WithAutoApproveDisabled_CallsServiceAndReturnsPending()
         {
             // Arrange
-            var request = new RegisterProviderRequest
+            var request = new RegisterConsignorRequest
             {
                 StoreCode = "TEST",
                 FullName = "Jane Smith",
@@ -85,7 +85,7 @@ namespace ConsignmentGenie.Tests.Controllers
             };
 
             _mockRegistrationService
-                .Setup(x => x.RegisterProviderAsync(It.IsAny<RegisterProviderRequest>()))
+                .Setup(x => x.RegisterConsignorAsync(It.IsAny<RegisterConsignorRequest>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -99,8 +99,8 @@ namespace ConsignmentGenie.Tests.Controllers
             Assert.Contains("pending approval", response.Message);
 
             // ✅ Verify service was called with correct data
-            _mockRegistrationService.Verify(x => x.RegisterProviderAsync(
-                It.Is<RegisterProviderRequest>(r =>
+            _mockRegistrationService.Verify(x => x.RegisterConsignorAsync(
+                It.Is<RegisterConsignorRequest>(r =>
                     r.Email == "jane.smith@test.com" &&
                     r.StoreCode == "TEST"
                 )
