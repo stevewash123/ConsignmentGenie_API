@@ -29,4 +29,8 @@
     <ProjectReference Include="..\ConsignmentGenie.Infrastructure\ConsignmentGenie.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Templates\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -34,7 +34,7 @@ public class ResendEmailService : IEmailService
             _logger.LogDebug("[EMAIL] Welcome email subject: {Subject}", subject);
 
             // Load HTML template
-            var htmlTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.html";
+            var htmlTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Email", "welcome-email.html");
             _logger.LogDebug("[EMAIL] Loading HTML template from {HtmlTemplatePath}", htmlTemplatePath);
 
             if (!File.Exists(htmlTemplatePath))
@@ -47,7 +47,7 @@ public class ResendEmailService : IEmailService
             _logger.LogDebug("[EMAIL] HTML template loaded, length: {TemplateLength} characters", htmlTemplate.Length);
 
             // Load plain text template
-            var textTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.txt";
+            var textTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Email", "welcome-email.txt");
             _logger.LogDebug("[EMAIL] Loading text template from {TextTemplatePath}", textTemplatePath);
 
             if (!File.Exists(textTemplatePath))
@@ -110,7 +110,7 @@ public class ResendEmailService : IEmailService
             _logger.LogDebug("[EMAIL] Enhanced welcome email subject: {Subject}", subject);
 
             // Load HTML template
-            var htmlTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.html";
+            var htmlTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Email", "welcome-email.html");
             _logger.LogDebug("[EMAIL] Loading HTML template from {HtmlTemplatePath}", htmlTemplatePath);
 
             if (!File.Exists(htmlTemplatePath))
@@ -123,7 +123,7 @@ public class ResendEmailService : IEmailService
             _logger.LogDebug("[EMAIL] HTML template loaded, length: {TemplateLength} characters", htmlTemplate.Length);
 
             // Load plain text template
-            var textTemplatePath = "/mnt/c/Projects/ConsignmentGenie/Documents/welcome-email.txt";
+            var textTemplatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Email", "welcome-email.txt");
             _logger.LogDebug("[EMAIL] Loading text template from {TextTemplatePath}", textTemplatePath);
 
             if (!File.Exists(textTemplatePath))
