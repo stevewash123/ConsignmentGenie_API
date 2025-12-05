@@ -8,7 +8,7 @@ public class ClerkPermissions : BaseEntity
     public Guid OrganizationId { get; set; }
 
     // What clerks can see
-    public bool ShowProviderNames { get; set; } = false;
+    public bool ShowConsignorNames { get; set; } = false;
     public bool ShowItemCost { get; set; } = false;
 
     // What clerks can do without PIN

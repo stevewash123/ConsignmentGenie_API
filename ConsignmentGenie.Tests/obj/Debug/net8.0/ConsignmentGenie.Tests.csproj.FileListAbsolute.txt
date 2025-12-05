@@ -432,3 +432,5 @@ C:/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/obj/Deb
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/obj/Debug/net8.0/Consignm.F4138167.Up2Date
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/obj/Debug/net8.0/ConsignmentGenie.Tests.genruntimeconfig.cache
 /mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/obj/Debug/net8.0/ref/ConsignmentGenie.Tests.dll
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/bin/Debug/net8.0/Templates/Email/welcome-email.html
+/mnt/c/Projects/ConsignmentGenie/ConsignmentGenie_API/ConsignmentGenie.Tests/bin/Debug/net8.0/Templates/Email/welcome-email.txt

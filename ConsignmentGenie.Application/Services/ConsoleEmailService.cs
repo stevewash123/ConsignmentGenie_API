@@ -136,7 +136,7 @@ public class ConsoleEmailService : IEmailService
         return true;
     }
 
-    public async Task<bool> SendProviderInvitationAsync(string email, string providerName, string shopName, string inviteLink, string expirationDate)
+    public async Task<bool> SendConsignorInvitationAsync(string email, string consignorName, string shopName, string inviteLink, string expirationDate)
     {
         _logger.LogInformation(
             "[CONSOLE EMAIL] Consignor Invitation Email\n" +
@@ -146,7 +146,7 @@ public class ConsoleEmailService : IEmailService
             "  Shop: {ShopName}\n" +
             "  Invite Link: {InviteLink}\n" +
             "  Expires: {ExpirationDate}",
-            email, shopName, providerName, shopName, inviteLink, expirationDate
+            email, shopName, consignorName, shopName, inviteLink, expirationDate
         );
 
         await Task.Delay(100);

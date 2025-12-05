@@ -173,7 +173,7 @@ public class RegistrationService : IRegistrationService
         }
     }
 
-    public async Task<RegistrationResultDto> RegisterProviderAsync(RegisterConsignorRequest request)
+    public async Task<RegistrationResultDto> RegisterConsignorAsync(RegisterConsignorRequest request)
     {
         _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration for email {Email} with store code {StoreCode}",
             request.Email, request.StoreCode);
@@ -357,7 +357,7 @@ public class RegistrationService : IRegistrationService
         }
     }
 
-    public async Task<List<PendingApprovalDto>> GetPendingProvidersAsync(Guid organizationId)
+    public async Task<List<PendingApprovalDto>> GetPendingConsignorsAsync(Guid organizationId)
     {
         var pendingUsers = await _context.Users
             .Where(u => u.OrganizationId == organizationId
@@ -698,7 +698,7 @@ public class RegistrationService : IRegistrationService
         };
     }
 
-    public async Task<RegistrationResultDto> RegisterProviderFromInvitationAsync(RegisterConsignorFromInvitationRequest request)
+    public async Task<RegistrationResultDto> RegisterConsignorFromInvitationAsync(RegisterConsignorFromInvitationRequest request)
     {
         _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration from invitation for email {Email}", request.Email);
         _logger.LogDebug("[PROVIDER_INVITATION] Invitation registration details: FullName={FullName}, Phone={Phone}, Address={Address}",

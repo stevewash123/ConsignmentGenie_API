@@ -40,7 +40,7 @@ public class UsersController : ControllerBase
         try
         {
             var organizationId = GetOrganizationId();
-            var pendingApprovals = await _registrationService.GetPendingProvidersAsync(organizationId);
+            var pendingApprovals = await _registrationService.GetPendingConsignorsAsync(organizationId);
             return Ok(pendingApprovals);
         }
         catch (UnauthorizedAccessException ex)

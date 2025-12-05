@@ -566,9 +566,9 @@ ConsignmentGenie Suggestion System
         }
     }
 
-    public async Task<bool> SendProviderInvitationAsync(string email, string providerName, string shopName, string inviteLink, string expirationDate)
+    public async Task<bool> SendConsignorInvitationAsync(string email, string consignorName, string shopName, string inviteLink, string expirationDate)
     {
-        _logger.LogInformation("[EMAIL] Starting provider invitation email to {Email} for provider {ConsignorName} from shop {ShopName}", email, providerName, shopName);
+        _logger.LogInformation("[EMAIL] Starting provider invitation email to {Email} for provider {ConsignorName} from shop {ShopName}", email, consignorName, shopName);
         _logger.LogDebug("[EMAIL] Consignor invitation details: InviteLink={InviteLink}, ExpirationDate={ExpirationDate}", inviteLink, expirationDate);
 
         try
@@ -589,7 +589,7 @@ ConsignmentGenie Suggestion System
     </div>
 
     <div style=""background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;"">
-        <h2 style=""color: #047857; margin-top: 0;"">Hello {providerName}!</h2>
+        <h2 style=""color: #047857; margin-top: 0;"">Hello {consignorName}!</h2>
 
         <p>You've been invited to join <strong>{shopName}</strong> as a consignment provider on our ConsignmentGenie platform.</p>
 
@@ -651,7 +651,7 @@ ConsignmentGenie Suggestion System
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[EMAIL] Failed to send provider invitation email to {Email} for provider {ConsignorName} from shop {ShopName}", email, providerName, shopName);
+            _logger.LogError(ex, "[EMAIL] Failed to send provider invitation email to {Email} for provider {ConsignorName} from shop {ShopName}", email, consignorName, shopName);
             return false;
         }
     }

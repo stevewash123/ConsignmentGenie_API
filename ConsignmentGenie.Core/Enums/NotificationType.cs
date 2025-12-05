@@ -3,14 +3,14 @@ namespace ConsignmentGenie.Core.Enums;
 public enum NotificationType
 {
     // Consignor notifications
-    ProviderApproved,
-    ProviderRejected,
+    ConsignorApproved,
+    ConsignorRejected,
     ItemSold,
     PayoutReady,
     PayoutProcessed,
 
     // Owner notifications
-    NewProviderRequest,
+    NewConsignorRequest,
     LowInventoryAlert,
     DailySalesSummary,
     SuggestionSubmitted,

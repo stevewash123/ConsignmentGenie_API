@@ -52,7 +52,7 @@ public class RegistrationController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<RegistrationResultDto>> RegisterConsignor([FromBody] RegisterConsignorRequest request)
     {
-        var result = await _registrationService.RegisterProviderAsync(request);
+        var result = await _registrationService.RegisterConsignorAsync(request);
 
         if (!result.Success)
         {
@@ -74,7 +74,7 @@ public class RegistrationController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<RegistrationResultDto>> RegisterProviderFromInvitation([FromBody] RegisterConsignorFromInvitationRequest request)
     {
-        var result = await _registrationService.RegisterProviderFromInvitationAsync(request);
+        var result = await _registrationService.RegisterConsignorFromInvitationAsync(request);
 
         if (!result.Success)
         {

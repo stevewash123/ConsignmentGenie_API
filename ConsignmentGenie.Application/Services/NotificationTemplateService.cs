@@ -52,7 +52,7 @@ public class NotificationTemplateService : INotificationTemplateService
         return new Dictionary<NotificationType, NotificationTemplate>
         {
             // Consignor Notifications
-            [NotificationType.ProviderApproved] = new NotificationTemplate
+            [NotificationType.ConsignorApproved] = new NotificationTemplate
             {
                 Subject = "Welcome to {ShopName} - Consignor Application Approved!",
                 Body = @"
@@ -74,7 +74,7 @@ public class NotificationTemplateService : INotificationTemplateService
                 IsHtml = true
             },
 
-            [NotificationType.ProviderRejected] = new NotificationTemplate
+            [NotificationType.ConsignorRejected] = new NotificationTemplate
             {
                 Subject = "Consignor Application Update - {ShopName}",
                 Body = @"
@@ -146,7 +146,7 @@ public class NotificationTemplateService : INotificationTemplateService
             },
 
             // Owner Notifications
-            [NotificationType.NewProviderRequest] = new NotificationTemplate
+            [NotificationType.NewConsignorRequest] = new NotificationTemplate
             {
                 Subject = "New Consignor Application - {ConsignorName}",
                 Body = @"

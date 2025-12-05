@@ -116,7 +116,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpPut("organization/settings/auto-approve")]
-    public async Task<ActionResult<object>> UpdateAutoApproveProviders([FromBody] UpdateAutoApproveRequest request)
+    public async Task<ActionResult<object>> UpdateAutoApproveConsignors([FromBody] UpdateAutoApproveRequest request)
     {
         var organizationId = GetOrganizationId();
 

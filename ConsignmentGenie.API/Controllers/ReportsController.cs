@@ -130,9 +130,9 @@ public class ReportsController : ControllerBase
         }
     }
 
-    [HttpGet("provider-performance")]
+    [HttpGet("consignor-performance")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<ActionResult<object>> GetProviderPerformanceReport(
+    public async Task<ActionResult<object>> GetConsignorPerformanceReport(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] bool includeInactive = false,
@@ -166,9 +166,9 @@ public class ReportsController : ControllerBase
         }
     }
 
-    [HttpGet("provider-performance/export")]
+    [HttpGet("consignor-performance/export")]
     [RequiresTier(SubscriptionTier.Pro)]
-    public async Task<ActionResult<object>> ExportProviderPerformanceReport(
+    public async Task<ActionResult<object>> ExportConsignorPerformanceReport(
         [FromQuery] string format = "csv",
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,

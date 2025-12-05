@@ -57,7 +57,7 @@ public class InventoryController : ControllerBase
         [FromQuery] int limit = 20,
         [FromQuery] string? category = null,
         [FromQuery] string? status = null,
-        [FromQuery] string? provider = null)
+        [FromQuery] string? consignor = null)
     {
         // Stubbed inventory items
         var items = new[]

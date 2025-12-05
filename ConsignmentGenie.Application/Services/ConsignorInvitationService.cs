@@ -88,7 +88,7 @@ public class ConsignorInvitationService : IConsignorInvitationService
             _logger.LogInformation("Generated provider invitation link: '{InviteLink}' for email: '{Email}'", inviteLink, invitation.Email);
 
             // Send invitation email
-            var emailSent = await _emailService.SendProviderInvitationAsync(
+            var emailSent = await _emailService.SendConsignorInvitationAsync(
                 invitation.Email,
                 invitation.Name,
                 organization?.Name ?? "ConsignmentGenie Shop",
@@ -197,7 +197,7 @@ public class ConsignorInvitationService : IConsignorInvitationService
 
         _logger.LogInformation("Generated provider resend invitation link: '{InviteLink}' for email: '{Email}'", inviteLink, invitation.Email);
 
-        var emailSent = await _emailService.SendProviderInvitationAsync(
+        var emailSent = await _emailService.SendConsignorInvitationAsync(
             invitation.Email,
             invitation.Name,
             invitation.Organization?.Name ?? "ConsignmentGenie Shop",

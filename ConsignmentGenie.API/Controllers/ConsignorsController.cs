@@ -30,7 +30,7 @@ public class ConsignorsController : ControllerBase
 
     // LIST - Get consignors with filtering/pagination
     [HttpGet]
-    public async Task<ActionResult<PagedResult<ConsignorListDto>>> GetProviders([FromQuery] ConsignorQueryParams queryParams)
+    public async Task<ActionResult<PagedResult<ConsignorListDto>>> GetConsignors([FromQuery] ConsignorQueryParams queryParams)
     {
         try
         {
