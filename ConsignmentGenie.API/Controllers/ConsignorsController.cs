@@ -86,6 +86,14 @@ public class ConsignorsController : ControllerBase
                     .ToList();
             }
 
+            // Apply contract on file filter
+            if (queryParams.ContractOnFile.HasValue)
+            {
+                consignorsWithMetrics = consignorsWithMetrics
+                    .Where(p => ((Consignor)p.Consignor).ContractOnFile == queryParams.ContractOnFile.Value)
+                    .ToList();
+            }
+
             // Apply sorting
             consignorsWithMetrics = ApplySorting(consignorsWithMetrics, queryParams);
 
@@ -110,6 +118,7 @@ public class ConsignorsController : ControllerBase
                 PendingBalance = (decimal)p.PendingBalance,
                 TotalEarnings = (decimal)p.TotalEarnings,
                 HasPortalAccess = ((Consignor)p.Consignor).UserId != null,
+                ContractOnFile = ((Consignor)p.Consignor).ContractOnFile,
                 CreatedAt = ((Consignor)p.Consignor).CreatedAt
             }).ToList();
 
@@ -182,6 +191,7 @@ public class ConsignorsController : ControllerBase
                 RejectedReason = consignor.RejectedReason,
                 Notes = consignor.Notes,
                 HasPortalAccess = consignor.UserId != null,
+                ContractOnFile = consignor.ContractOnFile,
                 Metrics = metrics,
                 CreatedAt = consignor.CreatedAt,
                 UpdatedAt = consignor.UpdatedAt ?? consignor.CreatedAt
@@ -326,6 +336,7 @@ public class ConsignorsController : ControllerBase
             consignor.PreferredPaymentMethod = request.PreferredPaymentMethod?.Trim();
             consignor.PaymentDetails = request.PaymentDetails?.Trim();
             consignor.Notes = request.Notes?.Trim();
+            consignor.ContractOnFile = request.ContractOnFile;
             consignor.UpdatedAt = DateTime.UtcNow;
             consignor.UpdatedBy = userId;
 

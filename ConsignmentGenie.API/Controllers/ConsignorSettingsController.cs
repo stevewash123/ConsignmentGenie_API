@@ -110,6 +110,54 @@ public class ConsignorSettingsController : ControllerBase
         }
     }
 
+    // TOGGLE AGREEMENT REQUIREMENT - Enable/disable agreement requirement for item submission
+    [HttpPost("agreement-requirement/toggle")]
+    public async Task<ActionResult<ApiResponse<ConsignorSettingsSummaryDto>>> ToggleAgreementRequirement([FromBody] ToggleAgreementRequirementRequest request)
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+            var organization = await _context.Organizations
+                .Where(o => o.Id == organizationId)
+                .FirstOrDefaultAsync();
+
+            if (organization == null)
+            {
+                return NotFound(ApiResponse<ConsignorSettingsSummaryDto>.ErrorResult("Organization not found"));
+            }
+
+            organization.RequireAgreementOnFile = request.RequireAgreementOnFile;
+            await _context.SaveChangesAsync();
+
+            // Get updated settings to return
+            var totalProviders = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId)
+                .CountAsync();
+
+            var pendingRegistrations = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId && p.Status == Core.Enums.ConsignorStatus.Pending)
+                .CountAsync();
+
+            var settings = new ConsignorSettingsSummaryDto
+            {
+                AllowSelfRegistration = organization.StoreCodeEnabled,
+                RegistrationCode = organization.StoreCode ?? "",
+                RegistrationUrl = $"{Request.Scheme}://{Request.Host}/provider-register/{organization.StoreCode}",
+                TotalProviders = totalProviders,
+                PendingRegistrations = pendingRegistrations,
+                DefaultCommissionRate = organization.DefaultSplitPercentage / 100m,
+                RequireAgreementOnFile = organization.RequireAgreementOnFile
+            };
+
+            return Ok(ApiResponse<ConsignorSettingsSummaryDto>.SuccessResult(settings));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error toggling agreement requirement for organization {OrganizationId}", GetOrganizationId());
+            return StatusCode(500, ApiResponse<ConsignorSettingsSummaryDto>.ErrorResult("Failed to toggle agreement requirement"));
+        }
+    }
+
     // REGENERATE STORE CODE - Generate new store code
     [HttpPost("store-code/regenerate")]
     public async Task<ActionResult<ApiResponse<StoreCodeDto>>> RegenerateStoreCode()
@@ -192,7 +240,8 @@ public class ConsignorSettingsController : ControllerBase
                 RegistrationUrl = $"{Request.Scheme}://{Request.Host}/provider-register/{organization.StoreCode}",
                 TotalProviders = totalProviders,
                 PendingRegistrations = pendingRegistrations,
-                DefaultCommissionRate = organization.DefaultSplitPercentage / 100m // Convert percentage to decimal
+                DefaultCommissionRate = organization.DefaultSplitPercentage / 100m, // Convert percentage to decimal
+                RequireAgreementOnFile = organization.RequireAgreementOnFile
             };
 
             return Ok(ApiResponse<ConsignorSettingsSummaryDto>.SuccessResult(settings));

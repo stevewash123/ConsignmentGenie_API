@@ -71,6 +71,9 @@ public class Organization : BaseEntity
 
     public bool AutoApproveConsignors { get; set; } = true;  // MVP: auto-approve by default
 
+    // Agreement Management
+    public bool RequireAgreementOnFile { get; set; } = false;  // Whether consignors must have signed agreements before submitting items
+
     // Trial & Subscription Status
     [MaxLength(20)]
     public string Status { get; set; } = "pending";  // pending, trial, active, suspended, cancelled

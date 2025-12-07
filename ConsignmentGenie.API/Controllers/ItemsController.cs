@@ -228,6 +228,15 @@ public class ItemsController : ControllerBase
                 return BadRequest(ApiResponse<object>.ErrorResult("Invalid consignor"));
             }
 
+            // Check if organization requires agreement on file and consignor doesn't have one
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization?.RequireAgreementOnFile == true && !consignor.ContractOnFile)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResult("Consignor must have a signed agreement on file before submitting items"));
+            }
+
             // Generate SKU if not provided
             var sku = !string.IsNullOrEmpty(request.Sku) ? request.Sku : await GenerateSkuAsync(organizationId);
 

@@ -113,6 +113,9 @@ public class Consignor : BaseEntity
 
     public DateTime? InviteExpiry { get; set; } // When the invite code expires
 
+    // Contract Tracking
+    public bool ContractOnFile { get; set; } = false; // Whether a signed agreement is on file
+
     // Audit fields (inherited from BaseEntity: Id, CreatedAt, UpdatedAt)
     public Guid? CreatedBy { get; set; }
     public Guid? UpdatedBy { get; set; }

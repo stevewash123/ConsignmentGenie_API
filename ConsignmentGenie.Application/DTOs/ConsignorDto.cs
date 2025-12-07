@@ -8,6 +8,7 @@ public class ConsignorQueryParams
     public string? Search { get; set; }              // Search name, email, number
     public string? Status { get; set; }              // Active, Deactivated, Pending, or null for all
     public bool? HasPendingBalance { get; set; }     // Filter to providers with unpaid earnings
+    public bool? ContractOnFile { get; set; }        // Filter by contract status - true: with contracts, false: without contracts, null: all
     public string? SortBy { get; set; } = "Name";    // Name, CreatedAt, ItemCount, Balance
     public string? SortDirection { get; set; } = "asc";
     public int Page { get; set; } = 1;
@@ -33,6 +34,7 @@ public class ConsignorListDto
 
     // Flags
     public bool HasPortalAccess { get; set; }
+    public bool ContractOnFile { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -112,6 +114,9 @@ public class ConsignorDetailDto
     // Portal Access
     public bool HasPortalAccess { get; set; }
     public DateTime? LastPortalLogin { get; set; }
+
+    // Contract Tracking
+    public bool ContractOnFile { get; set; }
 
     // Stats
     public ConsignorMetricsDto? Metrics { get; set; }
@@ -293,6 +298,9 @@ public class UpdateConsignorRequest
 
     // Notes
     public string? Notes { get; set; }
+
+    // Contract Tracking
+    public bool ContractOnFile { get; set; }
 }
 
 // Status Change Requests
@@ -321,6 +329,12 @@ public class ToggleStoreCodeRequest
     public bool IsEnabled { get; set; }
 }
 
+// Toggle Agreement Requirement Request
+public class ToggleAgreementRequirementRequest
+{
+    public bool RequireAgreementOnFile { get; set; }
+}
+
 // Settings Summary DTO
 public class ConsignorSettingsSummaryDto
 {
@@ -330,6 +344,7 @@ public class ConsignorSettingsSummaryDto
     public int TotalProviders { get; set; }
     public int PendingRegistrations { get; set; }
     public decimal DefaultCommissionRate { get; set; }
+    public bool RequireAgreementOnFile { get; set; }
 }
 
 // Payment Methods Lookup
