@@ -47,6 +47,7 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<OwnerInvitation> OwnerInvitations { get; set; }
     public DbSet<ClerkInvitation> ClerkInvitations { get; set; }
     public DbSet<ClerkPermissions> ClerkPermissions { get; set; }
+    public DbSet<SupportTicket> SupportTickets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -558,6 +559,21 @@ public class ConsignmentGenieContext : DbContext
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
+        // SupportTicket configuration
+        modelBuilder.Entity<SupportTicket>(entity =>
+        {
+            entity.HasIndex(st => st.Category);
+            entity.HasIndex(st => st.Status);
+            entity.HasIndex(st => st.AssignedTo);
+            entity.HasIndex(st => st.SubmittedById);
+            entity.HasIndex(st => st.CreatedAt);
+
+            entity.HasOne(st => st.SubmittedBy)
+                  .WithMany()
+                  .HasForeignKey(st => st.SubmittedById)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Seed Data
         SeedData(modelBuilder);
     }
@@ -750,6 +766,23 @@ public class ConsignmentGenieContext : DbContext
             if (entity != null)
             {
                 entity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        // Handle SupportTicket auto-routing logic
+        var supportTickets = ChangeTracker.Entries<SupportTicket>()
+            .Where(x => x.State == EntityState.Added)
+            .Select(x => x.Entity);
+
+        foreach (var supportTicket in supportTickets)
+        {
+            // Auto-routing logic: content → owner, others → admin
+            // Only apply auto-routing if AssignedTo is not explicitly set
+            if (supportTicket.AssignedTo == SupportTicketAssignedTo.NotAssigned)
+            {
+                supportTicket.AssignedTo = supportTicket.Category == SupportTicketCategory.Content
+                    ? SupportTicketAssignedTo.Owner
+                    : SupportTicketAssignedTo.Admin;
             }
         }
     }
