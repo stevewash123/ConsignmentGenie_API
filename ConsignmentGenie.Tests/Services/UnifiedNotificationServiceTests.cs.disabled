@@ -1,0 +1,200 @@
+using ConsignmentGenie.Application.Services;
+using ConsignmentGenie.Core.DTOs.Notifications;
+using ConsignmentGenie.Core.Entities;
+using ConsignmentGenie.Core.Interfaces;
+using ConsignmentGenie.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+namespace ConsignmentGenie.Tests.Services;
+
+public class UnifiedNotificationServiceTests : IDisposable
+{
+    private readonly ConsignmentGenieContext _context;
+    private readonly UnifiedNotificationService _service;
+    private readonly Mock<ILogger<UnifiedNotificationService>> _mockLogger;
+
+    public UnifiedNotificationServiceTests()
+    {
+        var options = new DbContextOptionsBuilder<ConsignmentGenieContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new ConsignmentGenieContext(options);
+        _mockLogger = new Mock<ILogger<UnifiedNotificationService>>();
+        _service = new UnifiedNotificationService(_context, _mockLogger.Object);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithValidRequest_CreatesNotification()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var organizationId = Guid.NewGuid();
+        var request = new CreateNotificationRequest
+        {
+            ToUserId =userId,
+            ToType = "owner",
+            OrganizationId = organizationId,
+            Type = "test_notification",
+            Title = "Test Title",
+            Message = "Test Message",
+            Payload = new { testData = "value" }
+        };
+
+        // Act
+        var result = await _service.CreateAsync(request);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(userId, result.UserId);
+        Assert.Equal("owner", result.Role);
+        Assert.Equal(organizationId, result.OrganizationId);
+        Assert.Equal("test_notification", result.Type);
+        Assert.Equal("Test Title", result.Title);
+        Assert.Equal("Test Message", result.Message);
+        Assert.False(result.IsRead);
+        Assert.NotNull(result.Payload);
+    }
+
+    [Fact]
+    public async Task GetNotificationsAsync_ReturnsPagedResults()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var role = "consignor";
+
+        // Create test notifications
+        var notifications = new List<Notification>
+        {
+            new()
+            {
+                ToUserId =userId,
+                Role = role,
+                Type = "test1",
+                Title = "Test 1",
+                Message = "Message 1",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
+                IsRead = false
+            },
+            new()
+            {
+                ToUserId =userId,
+                Role = role,
+                Type = "test2",
+                Title = "Test 2",
+                Message = "Message 2",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-5),
+                IsRead = true
+            }
+        };
+
+        _context.Notifications.AddRange(notifications);
+        await _context.SaveChangesAsync();
+
+        var queryParams = new NotificationQueryParams
+        {
+            Page = 1,
+            PageSize = 10,
+            UnreadOnly = false
+        };
+
+        // Act
+        var result = await _service.GetNotificationsAsync(userId, role, queryParams);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.Data.Count);
+        Assert.Equal("Test 2", result.Data[0].Title); // Most recent first
+        Assert.Equal("Test 1", result.Data[1].Title);
+    }
+
+    [Fact]
+    public async Task GetUnreadCountAsync_ReturnsCorrectCount()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var role = "owner";
+
+        var notifications = new List<Notification>
+        {
+            new() { ToUserId =userId, Role = role, Type = "test", Title = "Read", Message = "M", IsRead = true },
+            new() { ToUserId =userId, Role = role, Type = "test", Title = "Unread 1", Message = "M", IsRead = false },
+            new() { ToUserId =userId, Role = role, Type = "test", Title = "Unread 2", Message = "M", IsRead = false },
+            new() { ToUserId =Guid.NewGuid(), Role = role, Type = "test", Title = "Other User", Message = "M", IsRead = false }
+        };
+
+        _context.Notifications.AddRange(notifications);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var count = await _service.GetUnreadCountAsync(userId, role);
+
+        // Assert
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
+    public async Task MarkAsReadAsync_MarksNotificationAsRead()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var notification = new Notification
+        {
+            ToUserId =userId,
+            ToType = "consignor",
+            Type = "test",
+            Title = "Test",
+            Message = "Message",
+            IsRead = false
+        };
+
+        _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync();
+        var notificationId = notification.Id;
+
+        // Act
+        await _service.MarkAsReadAsync(notificationId, userId);
+
+        // Assert
+        var updated = await _context.Notifications.FindAsync(notificationId);
+        Assert.NotNull(updated);
+        Assert.True(updated.IsRead);
+        Assert.NotNull(updated.ReadAt);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_SoftDeletesNotification()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var notification = new Notification
+        {
+            ToUserId =userId,
+            ToType = "owner",
+            Type = "test",
+            Title = "Test",
+            Message = "Message"
+        };
+
+        _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync();
+        var notificationId = notification.Id;
+
+        // Act
+        await _service.DeleteAsync(notificationId, userId);
+
+        // Assert
+        var updated = await _context.Notifications.FindAsync(notificationId);
+        Assert.NotNull(updated);
+        Assert.NotNull(updated.DeletedAt);
+    }
+
+    public void Dispose()
+    {
+        _context?.Dispose();
+    }
+}

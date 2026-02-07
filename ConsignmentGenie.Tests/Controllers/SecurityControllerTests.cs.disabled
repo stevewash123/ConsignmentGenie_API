@@ -1,0 +1,209 @@
+using ConsignmentGenie.API.Controllers;
+using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Core.DTOs.Settings;
+using ConsignmentGenie.Core.Enums;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
+using System.Security.Claims;
+using Xunit;
+
+namespace ConsignmentGenie.Tests.Controllers;
+
+public class SecurityControllerTests
+{
+    private readonly Mock<IOwnerApprovalService> _mockApprovalService;
+    private readonly Mock<ILogger<SecurityController>> _mockLogger;
+    private readonly SecurityController _controller;
+    private readonly Guid _testOrganizationId = Guid.NewGuid();
+    private readonly Guid _testToUserId =Guid.NewGuid();
+
+    public SecurityControllerTests()
+    {
+        _mockApprovalService = new Mock<IOwnerApprovalService>();
+        _mockLogger = new Mock<ILogger<SecurityController>>();
+        _controller = new SecurityController(_mockApprovalService.Object, _mockLogger.Object);
+
+        // Set up authenticated user context
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, _testUserId.ToString()),
+            new("OrganizationId", _testOrganizationId.ToString()),
+            new(ClaimTypes.Role, "Owner")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+        };
+    }
+
+    [Fact]
+    public async Task SetPin_ValidRequest_ReturnsOk()
+    {
+        // Arrange
+        var request = new SetPinRequest { Pin = "1234", CurrentPassword = "password123" };
+        _mockApprovalService.Setup(x => x.SetPinAsync(_testOrganizationId, request.Pin, request.CurrentPassword, _testUserId))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.SetPin(request);
+
+        // Assert
+        Assert.IsType<OkResult>(result);
+    }
+
+    [Fact]
+    public async Task SetPin_InvalidRequest_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new SetPinRequest { Pin = "1234", CurrentPassword = "wrongpassword" };
+        _mockApprovalService.Setup(x => x.SetPinAsync(_testOrganizationId, request.Pin, request.CurrentPassword, _testUserId))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.SetPin(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task ValidatePin_ValidPin_ReturnsOkWithValidResponse()
+    {
+        // Arrange
+        var request = new ValidatePinRequest { Pin = "1234" };
+        var approvalResult = new ApprovalResult { Approved = true };
+        _mockApprovalService.Setup(x => x.ValidatePinAsync(_testOrganizationId, request.Pin, ApprovalAction.TaxExempt))
+            .ReturnsAsync(approvalResult);
+
+        // Act
+        var result = await _controller.ValidatePin(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ValidatePinResponse>(okResult.Value);
+        Assert.True(response.Valid);
+    }
+
+    [Fact]
+    public async Task ValidatePin_InvalidPin_ReturnsOkWithInvalidResponse()
+    {
+        // Arrange
+        var request = new ValidatePinRequest { Pin = "9999" };
+        var approvalResult = new ApprovalResult { Approved = false, Reason = "Invalid PIN" };
+        _mockApprovalService.Setup(x => x.ValidatePinAsync(_testOrganizationId, request.Pin, ApprovalAction.TaxExempt))
+            .ReturnsAsync(approvalResult);
+
+        // Act
+        var result = await _controller.ValidatePin(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ValidatePinResponse>(okResult.Value);
+        Assert.False(response.Valid);
+    }
+
+    [Fact]
+    public async Task GetPinRequirements_ReturnsOkWithRequirements()
+    {
+        // Arrange
+        var securitySettings = new SecuritySettingsDto
+        {
+            HasPin = true,
+            PinRequirements = new PinRequirementsDto
+            {
+                TaxExempt = true,
+                ReturnsOver = 100.00M,
+                Void = true,
+                DrawerOpen = false
+            }
+        };
+        _mockApprovalService.Setup(x => x.GetSecuritySettingsAsync(_testOrganizationId))
+            .ReturnsAsync(securitySettings);
+
+        // Act
+        var result = await _controller.GetPinRequirements();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var requirements = Assert.IsType<PinRequirementsDto>(okResult.Value);
+        Assert.True(requirements.TaxExempt);
+        Assert.Equal(100.00M, requirements.ReturnsOver);
+        Assert.True(requirements.Void);
+        Assert.False(requirements.DrawerOpen);
+    }
+
+    [Fact]
+    public async Task UpdatePinRequirements_ValidRequest_ReturnsOk()
+    {
+        // Arrange
+        var request = new UpdatePinRequirementsRequest
+        {
+            TaxExempt = false,
+            ReturnsOver = 200.00M,
+            Void = false,
+            DrawerOpen = true
+        };
+        _mockApprovalService.Setup(x => x.UpdatePinRequirementsAsync(_testOrganizationId, request))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.UpdatePinRequirements(request);
+
+        // Assert
+        Assert.IsType<OkResult>(result);
+    }
+
+    [Fact]
+    public async Task UpdatePinRequirements_InvalidRequest_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new UpdatePinRequirementsRequest
+        {
+            TaxExempt = false,
+            ReturnsOver = 200.00M,
+            Void = false,
+            DrawerOpen = true
+        };
+        _mockApprovalService.Setup(x => x.UpdatePinRequirementsAsync(_testOrganizationId, request))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.UpdatePinRequirements(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task GetSecuritySettings_ReturnsOkWithSettings()
+    {
+        // Arrange
+        var securitySettings = new SecuritySettingsDto
+        {
+            HasPin = true,
+            PinRequirements = new PinRequirementsDto
+            {
+                TaxExempt = true,
+                ReturnsOver = 100.00M,
+                Void = true,
+                DrawerOpen = false
+            }
+        };
+        _mockApprovalService.Setup(x => x.GetSecuritySettingsAsync(_testOrganizationId))
+            .ReturnsAsync(securitySettings);
+
+        // Act
+        var result = await _controller.GetSecuritySettings();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var settings = Assert.IsType<SecuritySettingsDto>(okResult.Value);
+        Assert.True(settings.HasPin);
+        Assert.True(settings.PinRequirements.TaxExempt);
+    }
+}

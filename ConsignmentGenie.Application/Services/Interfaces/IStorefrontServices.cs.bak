@@ -1,0 +1,59 @@
+using ConsignmentGenie.Core.DTOs.Storefront;
+
+namespace ConsignmentGenie.Application.Services.Interfaces;
+
+/// <summary>
+/// Interface for product catalog management operations
+/// Implementations: SquareCatalogService, ShopifyCatalogService, InternalCatalogService
+/// </summary>
+public interface IStorefrontCatalog
+{
+    Task PublishProductsAsync(IEnumerable<ProductDto> products);
+    Task UpdateProductAsync(string productId, ProductDto updates);
+    Task RemoveProductAsync(string productId);
+    Task UpdateInventoryAsync(IEnumerable<InventoryUpdateDto> updates);
+    Task SyncInventoryAsync();
+    string GetStorefrontUrl();
+    Task<IEnumerable<ProductDto>> GetPublishedProductsAsync();
+}
+
+/// <summary>
+/// Interface for order management operations
+/// Implementations: SquareOrderService, ShopifyOrderService, InternalOrderService
+/// </summary>
+public interface IStorefrontOrders
+{
+    Task<IEnumerable<OrderDto>> GetOrdersAsync(DateTime? startDate = null, DateTime? endDate = null);
+    Task<OrderDto?> GetOrderAsync(string orderId);
+    Task UpdateOrderStatusAsync(string orderId, OrderStatus status);
+    Task UpdatePaymentStatusAsync(string orderId, PaymentStatus status);
+    Task<string> ProcessRefundAsync(string orderId, decimal amount);
+    Task CancelOrderAsync(string orderId, string reason);
+    Task<byte[]> ExportOrdersAsync(DateTime startDate, DateTime endDate);
+}
+
+/// <summary>
+/// Interface for storefront analytics and reporting operations
+/// Implementations: SquareAnalyticsService, ShopifyAnalyticsService, InternalAnalyticsService
+/// </summary>
+public interface IStorefrontAnalytics
+{
+    Task<TrafficStatsDto> GetTrafficStatsAsync(DateTime startDate, DateTime endDate);
+    Task<ConversionMetricsDto> GetConversionMetricsAsync(DateTime startDate, DateTime endDate);
+    Task<IEnumerable<ProductDto>> GetTopSellingProductsAsync(DateTime startDate, DateTime endDate, int limit = 10);
+    Task<CustomerAnalyticsDto> GetCustomerAnalyticsAsync(DateTime startDate, DateTime endDate);
+    Task<StorefrontPerformanceDto> GeneratePerformanceReportAsync(DateTime startDate, DateTime endDate);
+}
+
+/// <summary>
+/// Interface for storefront configuration and customization
+/// Implementations: SquareConfigService, ShopifyConfigService, InternalConfigService
+/// </summary>
+public interface IStorefrontConfiguration
+{
+    Task UpdateThemeAsync(ThemeConfigDto themeConfig);
+    Task SetBusinessHoursAsync(IEnumerable<BusinessHoursDto> hours);
+    Task ConfigurePaymentMethodsAsync(IEnumerable<PaymentMethodConfigDto> methods);
+    Task UpdateStoreSettingsAsync(StoreSettingsDto settings);
+    Task<StoreConfigurationDto> GetStoreConfigurationAsync();
+}

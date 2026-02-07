@@ -1,0 +1,41 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ConsignmentGenie.Core.Entities;
+
+public class PayoutSettings
+{
+    [Key]
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    [Required]
+    public Guid OrganizationId { get; set; }
+
+    [ForeignKey(nameof(OrganizationId))]
+    public Organization Organization { get; set; } = null!;
+
+    // === Clearance Days (How customer pays → days until funds clear) ===
+    public int ClearanceDaysCash { get; set; } = 0;
+    public int ClearanceDaysDebitCard { get; set; } = 1;
+    public int ClearanceDaysCreditCard { get; set; } = 2;
+    public int ClearanceDaysCheck { get; set; } = 7;
+    public int ClearanceDaysStoreCredit { get; set; } = 0;
+    public int ClearanceDaysGiftCard { get; set; } = 0;
+    public int ClearanceDaysSquare { get; set; } = 2;
+    public int ClearanceDaysVenmo { get; set; } = 0;
+    public int ClearanceDaysPayPal { get; set; } = 0;
+    public int ClearanceDaysOther { get; set; } = 3;
+
+    // === Minimum Thresholds (How owner pays consignor → minimum amount) ===
+    public decimal MinimumPayoutCheck { get; set; } = 25.00m;
+    public decimal MinimumPayoutCash { get; set; } = 25.00m;
+    public decimal MinimumPayoutVenmo { get; set; } = 0.00m;
+    public decimal MinimumPayoutPayPal { get; set; } = 0.00m;
+    public decimal MinimumPayoutStoreCredit { get; set; } = 0.00m;
+    public decimal MinimumPayoutBankTransfer { get; set; } = 0.00m;
+    public decimal MinimumPayoutZelle { get; set; } = 0.00m;
+
+    // === Audit Fields ===
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}

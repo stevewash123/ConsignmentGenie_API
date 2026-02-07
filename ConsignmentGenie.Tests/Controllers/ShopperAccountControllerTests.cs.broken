@@ -1,0 +1,432 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
+using System.Security.Claims;
+using Xunit;
+using ConsignmentGenie.API.Controllers;
+using ConsignmentGenie.Application.DTOs.Shopper;
+using ConsignmentGenie.Application.Services.Interfaces;
+
+namespace ConsignmentGenie.Tests.Controllers
+{
+    public class ShopperAccountControllerTests
+    {
+        private readonly Mock<IShopperAuthService> _mockShopperAuthService;
+        private readonly Mock<ISlugService> _mockSlugService;
+        private readonly Mock<ILogger<ShopperAccountController>> _mockLogger;
+        private readonly ShopperAccountController _controller;
+
+        public ShopperAccountControllerTests()
+        {
+            _mockShopperAuthService = new Mock<IShopperAuthService>();
+            _mockSlugService = new Mock<ISlugService>();
+            _mockLogger = new Mock<ILogger<ShopperAccountController>>();
+
+            _controller = new ShopperAccountController(
+                _mockShopperAuthService.Object,
+                _mockSlugService.Object,
+                _mockLogger.Object
+            );
+
+            // Set up controller context with authenticated user
+            SetupAuthenticatedUser();
+        }
+
+        private void SetupAuthenticatedUser()
+        {
+            var shopperId = Guid.NewGuid().ToString();
+            var organizationId = Guid.NewGuid().ToString();
+            var storeSlug = "test-store";
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                new Claim("ShopperId", shopperId),
+                new Claim("OrganizationId", organizationId),
+                new Claim("StoreSlug", storeSlug),
+                new Claim(ClaimTypes.Role, "Customer")
+            };
+
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            _controller.ControllerContext = new ControllerContext()
+            {
+                HttpContext = new DefaultHttpContext()
+                {
+                    User = claimsPrincipal
+                }
+            };
+        }
+
+        #region GetProfile Tests
+
+        [Fact]
+        public async Task GetProfile_ValidRequest_ReturnsOkResult()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+            var organizationId = Guid.NewGuid();
+            var shopperId = Guid.NewGuid();
+
+            var expectedProfile = new ShopperDto
+            {
+                Id = shopperId,
+                FullName = "John Doe",
+                Email = "john@example.com",
+                Phone = "555-123-4567",
+                Address = "123 Main St",
+                City = "Springfield",
+                State = "IL",
+                ZipCode = "62701"
+            };
+
+            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
+                .ReturnsAsync(organizationId);
+
+            _mockShopperAuthService.Setup(s => s.GetShopperProfileAsync(organizationId, shopperId))
+                .ReturnsAsync(expectedProfile);
+
+            // Act
+            var result = await _controller.GetProfile(storeSlug);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var profile = Assert.IsType<ShopperDto>(okResult.Value);
+            Assert.Equal("John Doe", profile.FullName);
+            Assert.Equal("john@example.com", profile.Email);
+        }
+
+        [Fact]
+        public async Task GetProfile_InvalidStoreSlug_ReturnsBadRequest()
+        {
+            // Arrange
+            var storeSlug = "invalid-store";
+
+            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
+                .ReturnsAsync((Guid?)null);
+
+            // Act
+            var result = await _controller.GetProfile(storeSlug);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var errorMessage = Assert.IsType<string>(badRequestResult.Value);
+            Assert.Equal("Store not found", errorMessage);
+        }
+
+        [Fact]
+        public async Task GetProfile_ProfileNotFound_ReturnsNotFound()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+            var organizationId = Guid.NewGuid();
+            var shopperId = Guid.NewGuid();
+
+            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
+                .ReturnsAsync(organizationId);
+
+            _mockShopperAuthService.Setup(s => s.GetShopperProfileAsync(organizationId, shopperId))
+                .ReturnsAsync((ShopperDto)null);
+
+            // Act
+            var result = await _controller.GetProfile(storeSlug);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var errorMessage = Assert.IsType<string>(notFoundResult.Value);
+            Assert.Equal("Profile not found", errorMessage);
+        }
+
+        #endregion
+
+        #region UpdateProfile Tests
+
+        [Fact]
+        public async Task UpdateProfile_ValidRequest_ReturnsOkResult()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+            var organizationId = Guid.NewGuid();
+            var shopperId = Guid.NewGuid();
+
+            var request = new UpdateShopperProfileRequest
+            {
+                FullName = "John Updated",
+                Phone = "555-999-8888",
+                Address = "456 New St",
+                City = "New City",
+                State = "CA",
+                ZipCode = "90210"
+            };
+
+            var updatedProfile = new ShopperDto
+            {
+                Id = shopperId,
+                FullName = "John Updated",
+                Email = "john@example.com",
+                Phone = "555-999-8888"
+            };
+
+            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
+                .ReturnsAsync(organizationId);
+
+            _mockShopperAuthService.Setup(s => s.UpdateShopperProfileAsync(organizationId, shopperId, request))
+                .ReturnsAsync(updatedProfile);
+
+            // Act
+            var result = await _controller.UpdateProfile(storeSlug, request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var profile = Assert.IsType<ShopperDto>(okResult.Value);
+            Assert.Equal("John Updated", profile.FullName);
+            Assert.Equal("555-999-8888", profile.Phone);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_InvalidStoreSlug_ReturnsBadRequest()
+        {
+            // Arrange
+            var storeSlug = "invalid-store";
+            var request = new UpdateShopperProfileRequest
+            {
+                FullName = "John Updated"
+            };
+
+            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
+                .ReturnsAsync((Guid?)null);
+
+            // Act
+            var result = await _controller.UpdateProfile(storeSlug, request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var errorMessage = Assert.IsType<string>(badRequestResult.Value);
+            Assert.Equal("Store not found", errorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_ServiceThrowsException_ReturnsInternalServerError()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+            var organizationId = Guid.NewGuid();
+            var shopperId = Guid.NewGuid();
+
+            var request = new UpdateShopperProfileRequest
+            {
+                FullName = "John Updated"
+            };
+
+            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
+                .ReturnsAsync(organizationId);
+
+            _mockShopperAuthService.Setup(s => s.UpdateShopperProfileAsync(organizationId, shopperId, request))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _controller.UpdateProfile(storeSlug, request);
+
+            // Assert
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var errorMessage = Assert.IsType<string>(statusCodeResult.Value);
+            Assert.Equal("An error occurred while updating profile", errorMessage);
+        }
+
+        #endregion
+
+        #region ChangePassword Tests
+
+        [Fact]
+        public async Task ChangePassword_ValidRequest_ReturnsOkResult()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+            var organizationId = Guid.NewGuid();
+            var shopperId = Guid.NewGuid();
+
+            var request = new ChangePasswordRequest
+            {
+                CurrentPassword = "OldPassword123!",
+                NewPassword = "NewPassword123!"
+            };
+
+            var expectedResponse = new BaseResponse
+            {
+                Success = true,
+                Message = "Password changed successfully"
+            };
+
+            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
+                .ReturnsAsync(organizationId);
+
+            _mockShopperAuthService.Setup(s => s.ChangeShopperPasswordAsync(organizationId, shopperId, request))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.ChangePassword(storeSlug, request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<BaseResponse>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal("Password changed successfully", response.Message);
+        }
+
+        [Fact]
+        public async Task ChangePassword_InvalidCurrentPassword_ReturnsBadRequest()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+            var organizationId = Guid.NewGuid();
+            var shopperId = Guid.NewGuid();
+
+            var request = new ChangePasswordRequest
+            {
+                CurrentPassword = "WrongPassword",
+                NewPassword = "NewPassword123!"
+            };
+
+            var expectedResponse = new BaseResponse
+            {
+                Success = false,
+                Message = "Current password is incorrect"
+            };
+
+            _mockSlugService.Setup(s => s.GetOrganizationBySlugAsync(storeSlug))
+                .ReturnsAsync(organizationId);
+
+            _mockShopperAuthService.Setup(s => s.ChangeShopperPasswordAsync(organizationId, shopperId, request))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.ChangePassword(storeSlug, request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var response = Assert.IsType<BaseResponse>(badRequestResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Current password is incorrect", response.Message);
+        }
+
+        #endregion
+
+        #region Helper Claims Tests
+
+        [Fact]
+        public async Task GetProfile_MissingShopperIdClaim_ReturnsUnauthorized()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+
+            // Remove ShopperId claim
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                new Claim("OrganizationId", Guid.NewGuid().ToString()),
+                new Claim("StoreSlug", storeSlug),
+                new Claim(ClaimTypes.Role, "Customer")
+            };
+
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            _controller.ControllerContext = new ControllerContext()
+            {
+                HttpContext = new DefaultHttpContext()
+                {
+                    User = claimsPrincipal
+                }
+            };
+
+            // Act
+            var result = await _controller.GetProfile(storeSlug);
+
+            // Assert
+            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+            var errorMessage = Assert.IsType<string>(unauthorizedResult.Value);
+            Assert.Equal("Invalid authentication", errorMessage);
+        }
+
+        [Fact]
+        public async Task GetProfile_MissingOrganizationIdClaim_ReturnsUnauthorized()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+
+            // Remove OrganizationId claim
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                new Claim("ShopperId", Guid.NewGuid().ToString()),
+                new Claim("StoreSlug", storeSlug),
+                new Claim(ClaimTypes.Role, "Customer")
+            };
+
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            _controller.ControllerContext = new ControllerContext()
+            {
+                HttpContext = new DefaultHttpContext()
+                {
+                    User = claimsPrincipal
+                }
+            };
+
+            // Act
+            var result = await _controller.GetProfile(storeSlug);
+
+            // Assert
+            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+            var errorMessage = Assert.IsType<string>(unauthorizedResult.Value);
+            Assert.Equal("Invalid authentication", errorMessage);
+        }
+
+        #endregion
+
+        #region Validation Tests
+
+        [Fact]
+        public async Task UpdateProfile_NullRequest_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                () => _controller.UpdateProfile(storeSlug, null));
+        }
+
+        [Fact]
+        public async Task ChangePassword_NullRequest_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var storeSlug = "test-store";
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                () => _controller.ChangePassword(storeSlug, null));
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(null)]
+        [InlineData("   ")]
+        public async Task GetProfile_EmptyStoreSlug_ReturnsBadRequest(string storeSlug)
+        {
+            // Act
+            var result = await _controller.GetProfile(storeSlug);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var errorMessage = Assert.IsType<string>(badRequestResult.Value);
+            Assert.Equal("Store not found", errorMessage);
+        }
+
+        #endregion
+    }
+}

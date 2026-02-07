@@ -1,0 +1,319 @@
+using ConsignmentGenie.Application.Services;
+using ConsignmentGenie.Core.Entities;
+using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Tests.Helpers;
+using Xunit;
+
+namespace ConsignmentGenie.Tests.Services;
+
+public class SplitCalculationServiceTests : IDisposable
+{
+    private readonly SplitCalculationService _service;
+    private readonly Infrastructure.Data.ConsignmentGenieContext _context;
+
+    public SplitCalculationServiceTests()
+    {
+        _context = TestDbContextFactory.CreateInMemoryContext();
+        _service = new SplitCalculationService(_context);
+    }
+
+    [Theory]
+    [InlineData(100.00, 50.00, 50.00, 50.00)]
+    [InlineData(99.99, 60.00, 59.99, 40.00)]
+    [InlineData(150.00, 40.00, 60.00, 90.00)]
+    [InlineData(25.75, 30.00, 7.72, 18.03)]
+    public void CalculateSplit_VariousInputs_ReturnsCorrectSplit(
+        decimal salePrice,
+        decimal splitPercentage,
+        decimal expectedConsignorAmount,
+        decimal expectedShopAmount)
+    {
+        // Act
+        var result = _service.CalculateSplit(salePrice, splitPercentage);
+
+        // Assert
+        Assert.Equal(expectedConsignorAmount, result.ConsignorAmount);
+        Assert.Equal(expectedShopAmount, result.ShopAmount);
+        Assert.Equal(splitPercentage, result.SplitPercentage);
+        Assert.Equal(salePrice, result.ConsignorAmount + result.ShopAmount);
+    }
+
+    [Fact]
+    public async Task CalculatePayoutsAsync_WithTransactions_ReturnsCorrectSummary()
+    {
+        // Arrange
+        var organization = new Organization
+        {
+            Name = "Test Shop",
+            VerticalType = VerticalType.Consignment
+        };
+        _context.Organizations.Add(organization);
+
+        var consignor = new Consignor
+        {
+            OrganizationId = organization.Id,
+            FirstName = "Test",
+            LastName = "Consignor",
+            Email = "consignor@test.com",
+            DefaultSplitPercentage = 50.00m
+        };
+        _context.Consignors.Add(consignor);
+
+        var item1 = new Item
+        {
+            OrganizationId = organization.Id,
+            ConsignorId = consignor.Id,
+            Sku = "ITEM001",
+            Title = "Test Item 1",
+            Price = 100.00m
+        };
+        var item2 = new Item
+        {
+            OrganizationId = organization.Id,
+            ConsignorId = consignor.Id,
+            Sku = "ITEM002",
+            Title = "Test Item 2",
+            Price = 75.00m
+        };
+        _context.Items.AddRange(item1, item2);
+
+        var periodStart = DateTime.UtcNow.AddDays(-30);
+        var periodEnd = DateTime.UtcNow;
+
+        var transaction1 = new Transaction
+        {
+            OrganizationId = organization.Id,
+            TransactionDate = DateTime.UtcNow.AddDays(-15),
+            Subtotal = 100.00m,
+            TaxAmount = 0,
+            TaxRate = 0,
+            Total = 100.00m,
+            PaymentType = "Cash",
+            Items = new List<TransactionItem>
+            {
+                new TransactionItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = organization.Id,
+                    ItemId = item1.Id,
+                    ConsignorId = consignor.Id,
+                    UnitPrice = 100.00m,
+                    Quantity = 1,
+                    ConsignorSplitPercentage = 0.50m,
+                    ConsignorAmount = 50.00m,
+                    StoreAmount = 50.00m
+                }
+            }
+        };
+        var transaction2 = new Transaction
+        {
+            OrganizationId = organization.Id,
+            TransactionDate = DateTime.UtcNow.AddDays(-10),
+            Subtotal = 75.00m,
+            TaxAmount = 0,
+            TaxRate = 0,
+            Total = 75.00m,
+            PaymentType = "Cash",
+            Items = new List<TransactionItem>
+            {
+                new TransactionItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = organization.Id,
+                    ItemId = item2.Id,
+                    ConsignorId = consignor.Id,
+                    UnitPrice = 75.00m,
+                    Quantity = 1,
+                    ConsignorSplitPercentage = 0.60m,
+                    ConsignorAmount = 45.00m,
+                    StoreAmount = 30.00m
+                }
+            }
+        };
+        _context.Transactions.AddRange(transaction1, transaction2);
+
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _service.CalculatePayoutsAsync(consignor.Id, periodStart, periodEnd);
+
+        // Assert
+        Assert.Equal(consignor.Id, result.ConsignorId);
+        Assert.Equal("Test Consignor", result.ConsignorName);
+        Assert.Equal(periodStart, result.PeriodStart);
+        Assert.Equal(periodEnd, result.PeriodEnd);
+        Assert.Equal(95.00m, result.TotalAmount); // 50.00 + 45.00
+        Assert.Equal(2, result.TransactionCount);
+        Assert.Equal(2, result.Transactions.Count);
+
+        var firstTransaction = result.Transactions.First(t => t.ItemSku == "ITEM001");
+        Assert.Equal(100.00m, firstTransaction.SalePrice);
+        Assert.Equal(50.00m, firstTransaction.ConsignorAmount);
+
+        var secondTransaction = result.Transactions.First(t => t.ItemSku == "ITEM002");
+        Assert.Equal(75.00m, secondTransaction.SalePrice);
+        Assert.Equal(45.00m, secondTransaction.ConsignorAmount);
+    }
+
+    [Fact]
+    public async Task CalculatePayoutsAsync_NoTransactions_ReturnsEmptySummary()
+    {
+        // Arrange
+        var organization = new Organization
+        {
+            Name = "Test Shop",
+            VerticalType = VerticalType.Consignment
+        };
+        _context.Organizations.Add(organization);
+
+        var consignor = new Consignor
+        {
+            OrganizationId = organization.Id,
+            FirstName = "Empty",
+            LastName = "Consignor",
+            Email = "empty@test.com",
+            DefaultSplitPercentage = 50.00m
+        };
+        _context.Consignors.Add(consignor);
+
+        await _context.SaveChangesAsync();
+
+        var periodStart = DateTime.UtcNow.AddDays(-30);
+        var periodEnd = DateTime.UtcNow;
+
+        // Act
+        var result = await _service.CalculatePayoutsAsync(consignor.Id, periodStart, periodEnd);
+
+        // Assert
+        Assert.Equal(consignor.Id, result.ConsignorId);
+        Assert.Equal("Empty Consignor", result.ConsignorName);
+        Assert.Equal(0m, result.TotalAmount);
+        Assert.Equal(0, result.TransactionCount);
+        Assert.Empty(result.Transactions);
+    }
+
+    [Fact]
+    public async Task CalculatePayoutsAsync_NonExistentConsignor_ThrowsArgumentException()
+    {
+        // Arrange
+        var nonExistentConsignorId = Guid.NewGuid();
+        var periodStart = DateTime.UtcNow.AddDays(-30);
+        var periodEnd = DateTime.UtcNow;
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.CalculatePayoutsAsync(nonExistentConsignorId, periodStart, periodEnd));
+    }
+
+    [Fact]
+    public async Task CalculatePayoutsAsync_TransactionsOutsidePeriod_ExcludesFromSummary()
+    {
+        // Arrange
+        var organization = new Organization
+        {
+            Name = "Test Shop",
+            VerticalType = VerticalType.Consignment
+        };
+
+        var consignor = new Consignor
+        {
+            Organization = organization,
+            FirstName = "Test",
+            LastName = "Consignor",
+            Email = "consignor@test.com",
+            DefaultSplitPercentage = 50.00m
+        };
+
+        var item = new Item
+        {
+            Organization = organization,
+            Consignor = consignor,
+            Sku = "ITEM001",
+            Title = "Test Item",
+            Price = 100.00m
+        };
+
+        // Add all entities at once
+        _context.Organizations.Add(organization);
+        _context.Consignors.Add(consignor);
+        _context.Items.Add(item);
+
+        // Single save - EF handles all relationships together
+        await _context.SaveChangesAsync();
+
+        var periodStart = DateTime.UtcNow.AddDays(-30);
+        var periodEnd = DateTime.UtcNow.AddDays(-10);
+
+        // Create a new context to avoid tracking issues
+        _context.ChangeTracker.Clear();
+
+        // Transaction inside period
+        _context.Transactions.Add(new Transaction
+        {
+            OrganizationId = organization.Id,
+            TransactionDate = DateTime.UtcNow.AddDays(-20), // Inside period
+            Subtotal = 100.00m,
+            TaxAmount = 0,
+            TaxRate = 0,
+            Total = 100.00m,
+            PaymentType = "Cash",
+            Items = new List<TransactionItem>
+            {
+                new TransactionItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = organization.Id,
+                    ItemId = item.Id,
+                    ConsignorId = consignor.Id,
+                    UnitPrice = 100.00m,
+                    Quantity = 1,
+                    ConsignorSplitPercentage = 0.50m,
+                    ConsignorAmount = 50.00m,
+                    StoreAmount = 50.00m
+                }
+            }
+        });
+
+        // Transaction outside period
+        _context.Transactions.Add(new Transaction
+        {
+            OrganizationId = organization.Id,
+            TransactionDate = DateTime.UtcNow.AddDays(-5), // Outside period (after periodEnd)
+            Subtotal = 200.00m,
+            TaxAmount = 0,
+            TaxRate = 0,
+            Total = 200.00m,
+            PaymentType = "Cash",
+            Items = new List<TransactionItem>
+            {
+                new TransactionItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = organization.Id,
+                    ItemId = item.Id,
+                    ConsignorId = consignor.Id,
+                    UnitPrice = 200.00m,
+                    Quantity = 1,
+                    ConsignorSplitPercentage = 0.50m,
+                    ConsignorAmount = 100.00m,
+                    StoreAmount = 100.00m
+                }
+            }
+        });
+
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _service.CalculatePayoutsAsync(consignor.Id, periodStart, periodEnd);
+
+        // Assert
+        Assert.Equal(50.00m, result.TotalAmount); // Only the transaction inside the period
+        Assert.Equal(1, result.TransactionCount);
+        Assert.Single(result.Transactions);
+    }
+
+    public void Dispose()
+    {
+        _context?.Dispose();
+    }
+}

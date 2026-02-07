@@ -1,0 +1,349 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using ConsignmentGenie.Infrastructure.Data;
+using ConsignmentGenie.Core.Entities;
+using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Application.DTOs;
+using System.Security.Claims;
+using ConsignmentGenie.Core.Extensions;
+
+namespace ConsignmentGenie.API.Controllers;
+
+[ApiController]
+[Route("api/consignors/metrics")]
+[Authorize(Roles = "Owner")]
+public class ConsignorMetricsController : ControllerBase
+{
+    private readonly ConsignmentGenieContext _context;
+    private readonly ILogger<ConsignorMetricsController> _logger;
+
+    public ConsignorMetricsController(ConsignmentGenieContext context, ILogger<ConsignorMetricsController> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    // GET PROVIDER METRICS - Get detailed metrics for specific provider
+    [HttpGet("{id:guid}/metrics")]
+    [Obsolete("This endpoint is not used by the current UI and may be removed in a future version")]
+    public async Task<ActionResult<ApiResponse<ConsignorMetricsDto>>> GetProviderMetrics(Guid id)
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+
+            // Verify provider exists
+            var providerExists = await _context.Consignors
+                .AnyAsync(p => p.Id == id && p.OrganizationId == organizationId);
+
+            if (!providerExists)
+            {
+                return NotFound(ApiResponse<ConsignorMetricsDto>.ErrorResult("Consignor not found"));
+            }
+
+            var metrics = await CalculateProviderMetrics(id, organizationId);
+            return Ok(ApiResponse<ConsignorMetricsDto>.SuccessResult(metrics));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting metrics for provider {ConsignorId}", id);
+            return StatusCode(500, ApiResponse<ConsignorMetricsDto>.ErrorResult("Failed to retrieve provider metrics"));
+        }
+    }
+
+    // GET PROVIDER DASHBOARD - Get summary metrics for dashboard
+    [HttpGet("dashboard")]
+    [Obsolete("This endpoint is not used by the current UI and may be removed in a future version")]
+    public async Task<ActionResult<ApiResponse<ConsignorDashboardMetricsDto>>> GetProviderDashboard()
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+
+            var totalProviders = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId)
+                .CountAsync();
+
+            var activeProviders = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId && p.Status == ConsignorStatus.Active)
+                .CountAsync();
+
+            var pendingProviders = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId && p.Status == ConsignorStatus.Pending)
+                .CountAsync();
+
+            var deactivatedProviders = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId && p.Status == ConsignorStatus.Deactivated)
+                .CountAsync();
+
+            // Get providers with highest pending balances
+            var topProvidersData = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId && p.Status == ConsignorStatus.Active)
+                .Include(p => p.Transactions)
+                .Include(p => p.Items)
+                .ToListAsync();
+
+            var topProviders = new List<ConsignorTopPerformerDto>();
+
+            foreach (var provider in topProvidersData.Take(5))
+            {
+                var pendingBalance = await CalculatePendingBalance(provider.Id, organizationId);
+                var totalEarnings = provider.Transactions.Sum(t => t.ConsignorAmount());
+
+                topProviders.Add(new ConsignorTopPerformerDto
+                {
+                    ConsignorId = provider.Id,
+                    ConsignorName = $"{provider.FirstName} {provider.LastName}",
+                    PendingBalance = pendingBalance,
+                    TotalEarnings = totalEarnings,
+                    ActiveItems = provider.Items.Count(i => i.Status == ItemStatus.Available),
+                    TotalItems = provider.Items.Count
+                });
+            }
+
+            // Sort by pending balance descending
+            topProviders = topProviders.OrderByDescending(p => p.PendingBalance).Take(5).ToList();
+
+            // Calculate monthly growth
+            var now = DateTime.UtcNow;
+            var startOfThisMonth = new DateTime(now.Year, now.Month, 1);
+            var startOfLastMonth = startOfThisMonth.AddMonths(-1);
+
+            var thisMonthNewProviders = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId && p.CreatedAt >= startOfThisMonth)
+                .CountAsync();
+
+            var lastMonthNewProviders = await _context.Consignors
+                .Where(p => p.OrganizationId == organizationId &&
+                           p.CreatedAt >= startOfLastMonth && p.CreatedAt < startOfThisMonth)
+                .CountAsync();
+
+            var providerGrowthRate = lastMonthNewProviders > 0
+                ? ((decimal)(thisMonthNewProviders - lastMonthNewProviders) / lastMonthNewProviders) * 100
+                : 0;
+
+            var dashboardMetrics = new ConsignorDashboardMetricsDto
+            {
+                TotalProviders = totalProviders,
+                ActiveProviders = activeProviders,
+                PendingProviders = pendingProviders,
+                DeactivatedProviders = deactivatedProviders,
+                NewProvidersThisMonth = thisMonthNewProviders,
+                ProviderGrowthRate = providerGrowthRate,
+                TopProvidersByBalance = topProviders
+            };
+
+            return Ok(ApiResponse<ConsignorDashboardMetricsDto>.SuccessResult(dashboardMetrics));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting provider dashboard for organization {OrganizationId}", GetOrganizationId());
+            return StatusCode(500, ApiResponse<ConsignorDashboardMetricsDto>.ErrorResult("Failed to retrieve provider dashboard"));
+        }
+    }
+
+    // GET PROVIDER ACTIVITY - Get recent activity for provider
+    [HttpGet("{id:guid}/activity")]
+    [Obsolete("This endpoint is not used by the current UI and may be removed in a future version")]
+    public async Task<ActionResult<ApiResponse<ConsignorActivityDto>>> GetProviderActivity(
+        Guid id,
+        [FromQuery] int days = 30)
+    {
+        try
+        {
+            var organizationId = GetOrganizationId();
+
+            // Verify provider exists
+            var provider = await _context.Consignors
+                .Where(p => p.Id == id && p.OrganizationId == organizationId)
+                .FirstOrDefaultAsync();
+
+            if (provider == null)
+            {
+                return NotFound(ApiResponse<ConsignorActivityDto>.ErrorResult("Consignor not found"));
+            }
+
+            var cutoffDate = DateTime.UtcNow.AddDays(-days);
+
+            // Get recent transactions - materialize first due to extension methods
+            var allTransactions = await _context.Transactions
+                .Include(t => t.Items)
+                    .ThenInclude(ti => ti.Consignor)
+                .Include(t => t.Items)
+                    .ThenInclude(ti => ti.Item)
+                .Where(t => t.OrganizationId == organizationId)
+                .ToListAsync();
+
+            var recentTransactions = allTransactions
+                .Where(t => t.ConsignorId() == id && t.SaleDate() >= cutoffDate)
+                .OrderByDescending(t => t.SaleDate())
+                .Select(t => new ConsignorActivityTransactionDto
+                {
+                    TransactionId = t.Id,
+                    SaleDate = t.SaleDate(),
+                    ItemName = t.Item()?.Title,
+                    SalePrice = t.SalePrice(),
+                    ConsignorAmount = t.ConsignorAmount(),
+                    PaymentMethod = t.PaymentMethod() ?? ""
+                })
+                .ToList();
+
+            // Get recent items added
+            var recentItems = await _context.Items
+                .Where(i => i.ConsignorId == id && i.OrganizationId == organizationId && i.CreatedAt >= cutoffDate)
+                .OrderByDescending(i => i.CreatedAt)
+                .Select(i => new ConsignorActivityItemDto
+                {
+                    ItemId = i.Id,
+                    ItemName = i.Title,
+                    Price = i.Price,
+                    Status = i.Status.ToString(),
+                    CreatedAt = i.CreatedAt
+                })
+                .ToListAsync();
+
+            // Get recent payouts
+            var recentPayouts = await _context.Payouts
+                .Where(p => p.ConsignorId == id && p.OrganizationId == organizationId && p.CreatedAt >= cutoffDate)
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new ConsignorActivityPayoutDto
+                {
+                    PayoutId = p.Id,
+                    Amount = p.Amount,
+                    PayoutDate = p.PayoutDate,
+                    Method = p.PaymentMethod ?? "",
+                    CreatedAt = p.CreatedAt
+                })
+                .ToListAsync();
+
+            var activity = new ConsignorActivityDto
+            {
+                ConsignorId = id,
+                ConsignorName = $"{provider.FirstName} {provider.LastName}",
+                DaysRange = days,
+                RecentTransactions = recentTransactions,
+                RecentItems = recentItems,
+                RecentPayouts = recentPayouts,
+                TotalTransactions = recentTransactions.Count(),
+                TotalItemsAdded = recentItems.Count(),
+                TotalPayouts = recentPayouts.Count()
+            };
+
+            return Ok(ApiResponse<ConsignorActivityDto>.SuccessResult(activity));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting activity for provider {ConsignorId}", id);
+            return StatusCode(500, ApiResponse<ConsignorActivityDto>.ErrorResult("Failed to retrieve provider activity"));
+        }
+    }
+
+    #region Private Helper Methods
+
+    private async Task<ConsignorMetricsDto> CalculateProviderMetrics(Guid providerId, Guid organizationId)
+    {
+        var items = await _context.Items
+            .Where(i => i.ConsignorId == providerId && i.OrganizationId == organizationId)
+            .ToListAsync();
+
+        var transactions = await _context.Transactions
+            .Where(t => t.ConsignorId() == providerId && t.OrganizationId == organizationId)
+            .ToListAsync();
+
+        var payouts = await _context.Payouts
+            .Where(p => p.ConsignorId == providerId && p.OrganizationId == organizationId)
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var startOfLastMonth = startOfMonth.AddMonths(-1);
+
+        var totalEarnings = transactions.Sum(t => t.ConsignorAmount());
+        var totalPaid = payouts.Sum(p => p.Amount);
+
+        var thisMonthTransactions = transactions.Where(t => t.SaleDate() >= startOfMonth).ToList();
+        var lastMonthTransactions = transactions
+            .Where(t => t.SaleDate() >= startOfLastMonth && t.SaleDate() < startOfMonth)
+            .ToList();
+
+        return new ConsignorMetricsDto
+        {
+            TotalItems = items.Count,
+            AvailableItems = items.Count(i => i.Status == ItemStatus.Available),
+            SoldItems = items.Count(i => i.Status == ItemStatus.Sold),
+            RemovedItems = items.Count(i => i.Status == ItemStatus.Removed),
+            InventoryValue = items.Where(i => i.Status == ItemStatus.Available).Sum(i => i.Price),
+            PendingBalance = await CalculatePendingBalance(providerId, organizationId),
+            TotalEarnings = totalEarnings,
+            TotalPaid = totalPaid,
+            EarningsThisMonth = thisMonthTransactions.Sum(t => t.ConsignorAmount()),
+            EarningsLastMonth = lastMonthTransactions.Sum(t => t.ConsignorAmount()),
+            SalesThisMonth = thisMonthTransactions.Count,
+            SalesLastMonth = lastMonthTransactions.Count,
+            LastSaleDate = transactions.OrderByDescending(t => t.SaleDate()).FirstOrDefault()?.SaleDate,
+            LastPayoutDate = payouts.OrderByDescending(p => p.CreatedAt).FirstOrDefault()?.CreatedAt,
+            LastPayoutAmount = payouts.OrderByDescending(p => p.CreatedAt).FirstOrDefault()?.Amount ?? 0,
+            AverageItemPrice = items.Count > 0 ? items.Average(i => i.Price) : 0,
+            AverageDaysToSell = CalculateAverageDaysToSell(items, transactions)
+        };
+    }
+
+    private async Task<decimal> CalculatePendingBalance(Guid providerId, Guid organizationId)
+    {
+        var transactions = await _context.Transactions
+            .Include(t => t.Items)
+                .ThenInclude(ti => ti.Consignor)
+            .Where(t => t.OrganizationId == organizationId)
+            .ToListAsync();
+
+        var totalEarnings = transactions
+            .Where(t => t.ConsignorId() == providerId)
+            .Sum(t => t.ConsignorAmount());
+
+        var totalPaid = await _context.Payouts
+            .Where(p => p.ConsignorId == providerId && p.OrganizationId == organizationId)
+            .SumAsync(p => p.Amount);
+
+        return totalEarnings - totalPaid;
+    }
+
+    private static decimal CalculateAverageDaysToSell(List<Item> items, List<Transaction> transactions)
+    {
+        var soldItems = items.Where(i => i.Status == ItemStatus.Sold).ToList();
+        if (!soldItems.Any()) return 0;
+
+        var totalDays = 0m;
+        var count = 0;
+
+        foreach (var item in soldItems)
+        {
+            var transaction = transactions.FirstOrDefault(t => t.ItemId() == item.Id);
+            if (transaction != null)
+            {
+                var days = (decimal)(transaction.SaleDate - item.CreatedAt).TotalDays;
+                if (days >= 0)
+                {
+                    totalDays += days;
+                    count++;
+                }
+            }
+        }
+
+        return count > 0 ? totalDays / count : 0;
+    }
+
+    private Guid GetOrganizationId()
+    {
+        var orgIdClaim = User.FindFirst("organizationId")?.Value;
+        return orgIdClaim != null ? Guid.Parse(orgIdClaim) : Guid.Empty;
+    }
+
+    private Guid GetUserId()
+    {
+        var userIdClaim = User.FindFirst("userId")?.Value;
+        return userIdClaim != null ? Guid.Parse(userIdClaim) : Guid.Empty;
+    }
+
+    #endregion
+}

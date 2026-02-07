@@ -1,0 +1,223 @@
+using ConsignmentGenie.Application.Services;
+using ConsignmentGenie.Core.DTOs;
+using ConsignmentGenie.Core.DTOs.Notifications;
+using ConsignmentGenie.Core.Entities;
+using ConsignmentGenie.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+namespace ConsignmentGenie.Tests.Services;
+
+public class NotificationServiceTests : IDisposable
+{
+    private readonly Mock<ILogger<NotificationService>> _mockLogger;
+    private readonly ConsignmentGenieContext _context;
+
+    public NotificationServiceTests()
+    {
+        _mockLogger = new Mock<ILogger<NotificationService>>();
+
+        // Setup in-memory database for testing
+        var options = new DbContextOptionsBuilder<ConsignmentGenieContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _context = new ConsignmentGenieContext(options);
+    }
+
+    [Fact]
+    public void NotificationService_Constructor_InitializesCorrectly()
+    {
+        // Act
+        var service = new NotificationService(
+            _context,
+            _mockLogger.Object);
+
+        // Assert
+        Assert.NotNull(service);
+    }
+
+    [Fact]
+    public async Task CreateAsync_CreatesNotificationSuccessfully()
+    {
+        // Arrange
+        var service = new NotificationService(_context, _mockLogger.Object);
+
+        var request = new CreateNotificationRequest
+        {
+            FromUserId = null,
+            FromType = "system",
+            ToUserId = Guid.NewGuid(),
+            ToType = "owner",
+            Type = "TestNotification",
+            Title = "Test Title",
+            Message = "Test Message",
+            OrganizationId = Guid.NewGuid()
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(request.UserId, result.UserId);
+        Assert.Equal(request.Type, result.Type);
+        Assert.Equal(request.Title, result.Title);
+        Assert.Equal(request.Message, result.Message);
+        Assert.False(result.IsRead);
+        Assert.False(result.EmailSent);
+        Assert.False(result.SmsSent);
+    }
+
+    [Fact]
+    public async Task GetUnreadCountAsync_ReturnsCorrectCount()
+    {
+        // Arrange
+        var service = new NotificationService(_context, _mockLogger.Object);
+        var userId = Guid.NewGuid();
+        var role = "Owner";
+
+        // Create test notifications
+        var notification1 = new Notification
+        {
+            Id = Guid.NewGuid(),
+            ToUserId = userId,
+            ToType = role,
+            Type = "Test1",
+            Title = "Test 1",
+            Message = "Message 1",
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var notification2 = new Notification
+        {
+            Id = Guid.NewGuid(),
+            ToUserId = userId,
+            ToType = role,
+            Type = "Test2",
+            Title = "Test 2",
+            Message = "Message 2",
+            IsRead = true, // Read notification
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Notifications.AddRange(notification1, notification2);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var count = await service.GetUnreadCountAsync(userId, role);
+
+        // Assert
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public async Task MarkAsReadAsync_MarksNotificationAsRead()
+    {
+        // Arrange
+        var service = new NotificationService(_context, _mockLogger.Object);
+        var userId = Guid.NewGuid();
+        var notificationId = Guid.NewGuid();
+
+        var notification = new Notification
+        {
+            Id = notificationId,
+            ToUserId = userId,
+            ToType = "owner",
+            Type = "Test",
+            Title = "Test",
+            Message = "Test Message",
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync();
+
+        // Act
+        await service.MarkAsReadAsync(notificationId, userId);
+
+        // Assert
+        var updatedNotification = await _context.Notifications.FindAsync(notificationId);
+        Assert.True(updatedNotification.IsRead);
+        Assert.NotNull(updatedNotification.ReadAt);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_SoftDeletesNotification()
+    {
+        // Arrange
+        var service = new NotificationService(_context, _mockLogger.Object);
+        var userId = Guid.NewGuid();
+        var notificationId = Guid.NewGuid();
+
+        var notification = new Notification
+        {
+            Id = notificationId,
+            ToUserId = userId,
+            ToType = "owner",
+            Type = "Test",
+            Title = "Test",
+            Message = "Test Message",
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync();
+
+        // Act
+        await service.DeleteAsync(notificationId, userId);
+
+        // Assert
+        var deletedNotification = await _context.Notifications.FindAsync(notificationId);
+        Assert.NotNull(deletedNotification.DeletedAt);
+    }
+
+    [Fact]
+    public async Task CreateBulkAsync_CreatesMultipleNotifications()
+    {
+        // Arrange
+        var service = new NotificationService(_context, _mockLogger.Object);
+        var userId1 = Guid.NewGuid();
+        var userId2 = Guid.NewGuid();
+
+        var requests = new List<CreateNotificationRequest>
+        {
+            new CreateNotificationRequest
+            {
+                UserId = userId1,
+                Role = "Owner",
+                Type = "Test1",
+                Title = "Test 1",
+                Message = "Message 1",
+                OrganizationId = Guid.NewGuid()
+            },
+            new CreateNotificationRequest
+            {
+                UserId = userId2,
+                Role = "Owner",
+                Type = "Test2",
+                Title = "Test 2",
+                Message = "Message 2",
+                OrganizationId = Guid.NewGuid()
+            }
+        };
+
+        // Act
+        var results = await service.CreateBulkAsync(requests);
+
+        // Assert
+        Assert.Equal(2, results.Count());
+        var resultsList = results.ToList();
+        Assert.Equal(userId1, resultsList[0].UserId);
+        Assert.Equal(userId2, resultsList[1].UserId);
+    }
+
+    public void Dispose()
+    {
+        _context.Dispose();
+    }
+}

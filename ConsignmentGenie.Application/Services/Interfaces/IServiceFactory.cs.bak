@@ -1,0 +1,111 @@
+namespace ConsignmentGenie.Application.Services.Interfaces;
+
+/// <summary>
+/// Factory interface for creating service instances with fallback support
+/// Allows switching between primary services (QuickBooks, Square, Stripe) and fallbacks (Spreadsheets, Internal)
+/// </summary>
+public interface IServiceFactory
+{
+    // Accounting service factories with fallback support
+    IAccountingInvoices GetAccountingInvoicesService(bool useFallback = false);
+    IAccountingPayments GetAccountingPaymentsService(bool useFallback = false);
+    IAccountingReports GetAccountingReportsService(bool useFallback = false);
+
+    // Storefront service factories with fallback support
+    IStorefrontCatalog GetStorefrontCatalogService(bool useFallback = false);
+    IStorefrontOrders GetStorefrontOrdersService(bool useFallback = false);
+    IStorefrontAnalytics GetStorefrontAnalyticsService(bool useFallback = false);
+    IStorefrontConfiguration GetStorefrontConfigurationService(bool useFallback = false);
+
+    // Payment service factories (limited fallback options due to Stripe's uniqueness)
+    IPaymentProcessor GetPaymentProcessorService(bool useFallback = false);
+    IPaymentAnalytics GetPaymentAnalyticsService(bool useFallback = false);
+    IPaymentConfiguration GetPaymentConfigurationService(bool useFallback = false);
+
+    // Service health checking
+    Task<bool> IsServiceHealthyAsync(ServiceType serviceType, bool checkFallback = false);
+    Task<ServiceHealthStatus> GetServiceHealthStatusAsync();
+}
+
+public enum ServiceType
+{
+    // Accounting services
+    QuickBooksInvoices,
+    QuickBooksPayments,
+    QuickBooksReports,
+    SpreadsheetInvoices,
+    SpreadsheetPayments,
+    SpreadsheetReports,
+
+    // Storefront services
+    SquareCatalog,
+    SquareOrders,
+    SquareAnalytics,
+    ShopifyCatalog,
+    ShopifyOrders,
+    ShopifyAnalytics,
+    InternalCatalog,
+    InternalOrders,
+    InternalAnalytics,
+
+    // Payment services
+    StripePayment,
+    StripeAnalytics,
+    InternalPayment
+}
+
+public class ServiceHealthStatus
+{
+    public Dictionary<ServiceType, bool> ServiceStatuses { get; set; } = new();
+    public DateTime LastChecked { get; set; }
+    public bool AllPrimaryServicesHealthy => GetPrimaryServices().All(s => ServiceStatuses.GetValueOrDefault(s, false));
+    public bool HasAvailableFallbacks => GetFallbackServices().Any(s => ServiceStatuses.GetValueOrDefault(s, false));
+
+    private ServiceType[] GetPrimaryServices() => new[]
+    {
+        ServiceType.QuickBooksInvoices,
+        ServiceType.QuickBooksPayments,
+        ServiceType.QuickBooksReports,
+        ServiceType.SquareCatalog,
+        ServiceType.SquareOrders,
+        ServiceType.SquareAnalytics,
+        ServiceType.StripePayment,
+        ServiceType.StripeAnalytics
+    };
+
+    private ServiceType[] GetFallbackServices() => new[]
+    {
+        ServiceType.SpreadsheetInvoices,
+        ServiceType.SpreadsheetPayments,
+        ServiceType.SpreadsheetReports,
+        ServiceType.InternalCatalog,
+        ServiceType.InternalOrders,
+        ServiceType.InternalAnalytics,
+        ServiceType.InternalPayment
+    };
+}
+
+/// <summary>
+/// Configuration interface for service preferences and fallback rules
+/// </summary>
+public interface IServiceConfiguration
+{
+    Task<bool> GetUseFallbackPreferenceAsync(ServiceType serviceType);
+    Task SetUseFallbackPreferenceAsync(ServiceType serviceType, bool useFallback);
+    Task<int> GetRetryCountAsync(ServiceType serviceType);
+    Task<TimeSpan> GetTimeoutAsync(ServiceType serviceType);
+    Task<bool> GetAutoFallbackEnabledAsync();
+    Task SetAutoFallbackEnabledAsync(bool enabled);
+}
+
+/// <summary>
+/// Decorator pattern for automatic fallback handling
+/// Wraps primary services and automatically falls back to secondary when primary fails
+/// </summary>
+public interface IServiceWithFallback<T> where T : class
+{
+    T PrimaryService { get; }
+    T FallbackService { get; }
+    Task<TResult> ExecuteWithFallbackAsync<TResult>(Func<T, Task<TResult>> operation);
+    Task ExecuteWithFallbackAsync(Func<T, Task> operation);
+}
