@@ -483,6 +483,17 @@ ConsignmentGenie Suggestion System
             var fromEmail = _configuration["Resend:FromEmail"] ?? "noreply@microsaasbuilders.com";
             var fromName = _configuration["Resend:FromName"] ?? "ConsignmentGenie";
 
+            // Get BCC emails from configuration (semicolon separated)
+            var bccEmailsConfig = _configuration["Resend:BccEmail"];
+            string[]? bccEmails = null;
+            if (!string.IsNullOrWhiteSpace(bccEmailsConfig))
+            {
+                bccEmails = bccEmailsConfig.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                                         .Select(e => e.Trim())
+                                         .Where(e => !string.IsNullOrWhiteSpace(e))
+                                         .ToArray();
+            }
+
             // TEMPORARY WORKAROUND: Redirect all emails to verified address due to Resend domain restrictions
             var actualRecipient = toEmail;
             var redirectEmail = "stevewash123@gmail.com";
@@ -519,10 +530,12 @@ ConsignmentGenie Suggestion System
                 $"[ORIGINAL RECIPIENT: {actualRecipient}]\n[NOTE: Redirected due to domain verification]\n\n{textBody}" :
                 null;
 
+            // Create email data object with optional BCC
             var emailData = new
             {
                 from = $"{fromName} <{fromEmail}>",
                 to = new[] { redirectEmail },
+                bcc = bccEmails,
                 subject = modifiedSubject,
                 html = modifiedHtmlBody,
                 text = modifiedTextBody
@@ -539,8 +552,9 @@ ConsignmentGenie Suggestion System
                 var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent);
                 var messageId = responseData.TryGetProperty("id", out var id) ? id.GetString() : "unknown";
 
-                _logger.LogInformation("Email sent successfully to {Email} (redirected from {OriginalEmail}) via Resend. Message ID: {MessageId}",
-                    redirectEmail, actualRecipient, messageId);
+                var bccInfo = bccEmails?.Length > 0 ? $" with BCC to {string.Join(", ", bccEmails)}" : "";
+                _logger.LogInformation("Email sent successfully to {Email} (redirected from {OriginalEmail}) via Resend{BccInfo}. Message ID: {MessageId}",
+                    redirectEmail, actualRecipient, bccInfo, messageId);
                 return true;
             }
             else

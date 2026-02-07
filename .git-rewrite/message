@@ -1,0 +1,15 @@
+Complete AdminDashboard backend implementation with invitation system
+
+- Add AdminController with metrics, owner invitations, and pending approvals endpoints
+- Create OwnerInvitation and ProviderInvitation entities with full CRUD support
+- Add OwnerInvitationService and ProviderInvitationService with email integration
+- Implement provider invitation system with validation and registration flow
+- Add migrations for invitation tables and user name columns
+- Create comprehensive unit tests for AdminController and ProviderController
+- Update RegistrationController with enhanced provider registration from invitations
+- Add DTOs for invitation management and validation
+- Integrate Resend email service for invitation notifications
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>

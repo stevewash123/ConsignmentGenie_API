@@ -1,0 +1,32 @@
+tree 1dbdb93f886aae3ef938ae2f6944593c40f228ef
+author Claude Code <noreply@anthropic.com> 1763550037 -0500
+committer Claude Code <noreply@anthropic.com> 1763550037 -0500
+
+Initial ConsignmentGenie implementation - Phase 1
+
+✨ Features implemented:
+• Complete N-tier backend (.NET 8 Web API)
+• JWT authentication and authorization
+• Multi-tenant data model with PostgreSQL
+• Provider management with CRUD operations
+• Split calculation service for automated payouts
+• Angular frontend structure with authentication
+• Launch scripts for development
+
+🏗️ Architecture:
+• Backend: C# ASP.NET Core Web API (.NET 8)
+• Frontend: Angular with standalone components
+• Database: PostgreSQL with Entity Framework Core
+• Authentication: JWT tokens with role-based access
+• Pattern: N-tier (API, Core, Infrastructure, Application)
+
+🎯 Phase 1 Value:
+• Multi-tenant consignment management platform
+• Shop owner registration and authentication
+• Provider (consigner/artist/vendor) management
+• Foundation for item tracking and transaction processing
+• Ready for Phase 2 (Stripe payments, photo uploads)
+
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude <noreply@anthropic.com>
