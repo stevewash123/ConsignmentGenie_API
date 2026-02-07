@@ -168,7 +168,6 @@ public class ItemsController : ControllerBase
             var organizationId = GetOrganizationId();
             var item = await _context.Items
                 .Include(i => i.Consignor)
-                .Include(i => i.Images.OrderBy(img => img.DisplayOrder))
                 .Include(i => i.Transaction)
                 .FirstOrDefaultAsync(i => i.Id == id && i.OrganizationId == organizationId);
 
@@ -207,21 +206,31 @@ public class ItemsController : ControllerBase
                 ListedDate = item.ListedDate?.ToDateTime(TimeOnly.MinValue),
                 ExpirationDate = item.ExpirationDate?.ToDateTime(TimeOnly.MinValue),
                 SoldDate = item.SoldDate?.ToDateTime(TimeOnly.MinValue),
-                Images = item.Images.Select(img => new ItemImageDto
-                {
-                    ItemImageId = img.Id,
-                    ImageUrl = img.ImageUrl,
-                    DisplayOrder = img.DisplayOrder,
-                    IsPrimary = img.IsPrimary
-                }).ToList(),
-                Photos = item.Images.Select(img => new PhotoInfoDto
-                {
-                    Url = img.ImageUrl,
-                    PublicId = img.Id.ToString(),
-                    IsPrimary = img.IsPrimary,
-                    Order = img.DisplayOrder,
-                    UploadedAt = img.CreatedAt.ToString("O")
-                }).ToList(),
+                Images = !string.IsNullOrEmpty(item.PrimaryImageUrl)
+                    ? new List<ItemImageDto>
+                    {
+                        new ItemImageDto
+                        {
+                            ItemImageId = Guid.NewGuid(), // Temporary ID for compatibility
+                            ImageUrl = item.PrimaryImageUrl,
+                            DisplayOrder = 0,
+                            IsPrimary = true
+                        }
+                    }
+                    : new List<ItemImageDto>(),
+                Photos = !string.IsNullOrEmpty(item.PrimaryImageUrl)
+                    ? new List<PhotoInfoDto>
+                    {
+                        new PhotoInfoDto
+                        {
+                            Url = item.PrimaryImageUrl,
+                            PublicId = "primary",
+                            IsPrimary = true,
+                            Order = 0,
+                            UploadedAt = item.CreatedAt.ToString("O")
+                        }
+                    }
+                    : new List<PhotoInfoDto>(),
                 Location = item.Location,
                 Notes = item.Notes,
                 InternalNotes = item.InternalNotes,
