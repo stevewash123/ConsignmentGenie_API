@@ -5,7 +5,7 @@ namespace ConsignmentGenie.Core.DTOs.Organization;
 
 public class ConsignorOnboardingDto
 {
-    public AgreementRequirement AgreementRequirement { get; set; } = AgreementRequirement.None;
+    public AgreementRequirement AgreementRequirement { get; set; } = AgreementRequirement.Upload;
 
     public Guid? AgreementTemplateId { get; set; }
 

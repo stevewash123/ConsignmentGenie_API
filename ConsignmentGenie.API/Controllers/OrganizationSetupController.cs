@@ -251,7 +251,7 @@ public class OrganizationSetupController : ControllerBase
     {
         return new ConsignorOnboardingDto
         {
-            AgreementRequirement = AgreementRequirement.Acknowledge,
+            AgreementRequirement = AgreementRequirement.Upload,
             AgreementTemplateId = null,
             AcknowledgeTermsText = "I acknowledge that I have read and agree to the terms and conditions.",
             ApprovalMode = ApprovalMode.Auto

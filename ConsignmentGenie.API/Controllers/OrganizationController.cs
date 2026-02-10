@@ -2427,7 +2427,7 @@ startxref
     {
         return new ConsignorOnboardingDto
         {
-            AgreementRequirement = AgreementRequirement.None,
+            AgreementRequirement = AgreementRequirement.Upload,
             AgreementTemplateId = null,
             AcknowledgeTermsText = null,
             ApprovalMode = ApprovalMode.Manual,

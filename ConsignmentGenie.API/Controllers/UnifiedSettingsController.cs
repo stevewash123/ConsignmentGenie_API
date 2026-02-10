@@ -170,7 +170,7 @@ public class UnifiedSettingsController : ControllerBase
             {
                 "acknowledge" => AgreementRequirement.Acknowledge,
                 "upload" => AgreementRequirement.Upload,
-                _ => AgreementRequirement.None
+                _ => AgreementRequirement.Upload
             };
         }
 
@@ -227,7 +227,7 @@ public class UnifiedSettingsController : ControllerBase
     {
         return new ConsignorOnboardingDto
         {
-            AgreementRequirement = AgreementRequirement.None,
+            AgreementRequirement = AgreementRequirement.Upload,
             AgreementTemplateId = null,
             AcknowledgeTermsText = null,
             ApprovalMode = ApprovalMode.Manual,

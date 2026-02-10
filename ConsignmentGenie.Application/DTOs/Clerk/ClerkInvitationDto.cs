@@ -14,8 +14,6 @@ public class CreateClerkInvitationDto
     [MaxLength(254)]
     public string Email { get; set; } = string.Empty;
 
-    [MaxLength(20)]
-    public string? Phone { get; set; }
 }
 
 public class ClerkInvitationDto

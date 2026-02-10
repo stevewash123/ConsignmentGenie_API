@@ -9,4 +9,5 @@ public class InvitationValidationDto
     public string? InvitedLastName { get; set; }
     public string? InvitedEmail { get; set; }
     public DateTime? ExpirationDate { get; set; }
+    public string? Role { get; set; }
 }

@@ -17,7 +17,7 @@ namespace ConsignmentGenie.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "owner")]
+[Authorize(Roles = "owner,clerk")]
 public class ItemsController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;

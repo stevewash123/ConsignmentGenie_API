@@ -183,6 +183,7 @@ builder.Services.AddScoped<ConsolidatedNotificationService>();
 builder.Services.AddScoped<ConsolidatedNotificationJob>();
 builder.Services.AddScoped<IConsignorInvitationService, ConsignorInvitationService>();
 builder.Services.AddScoped<IOwnerInvitationService, OwnerInvitationService>();
+builder.Services.AddScoped<IClerkInvitationService, ClerkInvitationService>();
 builder.Services.AddScoped<IStatementService, StatementService>();
 builder.Services.AddScoped<ISuggestionService, SuggestionService>();
 // Report services (focused single-responsibility services)

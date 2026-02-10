@@ -13,8 +13,8 @@ using System.Text.Json;
 namespace ConsignmentGenie.API.Controllers.Settings;
 
 [ApiController]
-[Route("api/owner/settings/consignor")]
-[Authorize(Roles = "Owner")]
+[Route("api/settings/consignor")]
+[Authorize(Roles = "Owner,Clerk,Consignor")]
 public class OrganizationConsignorSettingsController : ControllerBase
 {
     private readonly ConsignmentGenieContext _context;
@@ -79,6 +79,7 @@ public class OrganizationConsignorSettingsController : ControllerBase
 
     // TOGGLE STORE CODE - Enable/disable provider self-registration
     [HttpPost("consignor-onboarding/store-code/toggle")]
+    [Authorize(Roles = "Owner")]
     [Obsolete("This endpoint is not used by the current UI and may be removed in a future version")]
     public async Task<ActionResult<ApiResponse<StoreCodeDto>>> ToggleStoreCode([FromBody] ToggleStoreCodeRequest request)
     {
@@ -119,6 +120,7 @@ public class OrganizationConsignorSettingsController : ControllerBase
 
     // TOGGLE AGREEMENT REQUIREMENT - Enable/disable agreement requirement for item submission
     [HttpPost("consignor-agreement/agreement-requirement/toggle")]
+    [Authorize(Roles = "Owner")]
     [Obsolete("This endpoint is not used by the current UI and may be removed in a future version")]
     public async Task<ActionResult<ApiResponse<ConsignorSettingsSummaryDto>>> ToggleAgreementRequirement([FromBody] ToggleAgreementRequirementRequest request)
     {
@@ -173,6 +175,7 @@ public class OrganizationConsignorSettingsController : ControllerBase
 
     // REGENERATE STORE CODE - Generate new store code
     [HttpPost("consignor-onboarding/store-code/regenerate")]
+    [Authorize(Roles = "Owner")]
     public async Task<ActionResult<ApiResponse<StoreCodeDto>>> RegenerateStoreCode()
     {
         try
@@ -377,7 +380,7 @@ public class OrganizationConsignorSettingsController : ControllerBase
                 {
                     "acknowledge" => AgreementRequirement.Acknowledge,
                     "upload" => AgreementRequirement.Upload,
-                    _ => AgreementRequirement.None
+                    _ => AgreementRequirement.Upload
                 };
             }
 
@@ -404,6 +407,7 @@ public class OrganizationConsignorSettingsController : ControllerBase
 
     [HttpPut("consignor-onboarding")]
     [HttpPatch("consignor-onboarding")]
+    [Authorize(Roles = "Owner")]
     public async Task<ActionResult<object>> UpdateConsignorOnboarding([FromBody] UpdateConsignorOnboardingRequest request)
     {
         var organizationId = GetOrganizationId();
@@ -551,6 +555,7 @@ public class OrganizationConsignorSettingsController : ControllerBase
     }
 
     [HttpPut("default-terms")]
+    [Authorize(Roles = "Owner")]
     public async Task<ActionResult> UpdateConsignorDefaults([FromBody] ConsignorDefaultsDto defaultsDto)
     {
         var organizationId = GetOrganizationId();
@@ -621,7 +626,7 @@ public class OrganizationConsignorSettingsController : ControllerBase
     {
         return new ConsignorOnboardingDto
         {
-            AgreementRequirement = AgreementRequirement.None,
+            AgreementRequirement = AgreementRequirement.Upload,
             AgreementTemplateId = null,
             AcknowledgeTermsText = null,
             ApprovalMode = ApprovalMode.Manual,
