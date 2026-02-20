@@ -295,13 +295,7 @@ if (app.Environment.IsDevelopment())
 // Middleware order is important
 app.UseCors();
 
-// Static file serving for uploads
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
-    RequestPath = "/uploads"
-});
+// Static file serving removed - using Cloudinary for all file uploads
 
 app.UseAuthentication();
 app.UseAuthorization();
