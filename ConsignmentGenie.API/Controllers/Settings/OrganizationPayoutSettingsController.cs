@@ -258,6 +258,11 @@ public class OrganizationPayoutSettingsController : ControllerBase
             _logger.LogError(ex, "PostgreSQL JSONB operator error in payout settings patch for organization {OrganizationId}: {Message}", GetOrganizationId(), ex.Message);
             return StatusCode(500, new { success = false, message = "Database operation error. Please try again." });
         }
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == "23502")
+        {
+            _logger.LogError(ex, "Null constraint violation in payout settings patch for organization {OrganizationId}: {Message}", GetOrganizationId(), ex.Message);
+            return StatusCode(500, new { success = false, message = "Invalid data provided. Required fields cannot be null." });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error patching payout settings for organization {OrganizationId}", GetOrganizationId());
@@ -517,8 +522,21 @@ public class OrganizationPayoutSettingsController : ControllerBase
     {
         var entityType = typeof(PayoutSettings);
 
+        // Protected fields that should never be updated via JSON patch
+        var protectedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Id", "OrganizationId", "CreatedAt", "Organization"
+        };
+
         foreach (var property in updates.EnumerateObject())
         {
+            // Skip protected fields
+            if (protectedFields.Contains(property.Name))
+            {
+                _logger.LogWarning("Attempt to update protected field {PropertyName} ignored", property.Name);
+                continue;
+            }
+
             var entityProp = entityType.GetProperty(property.Name, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
             if (entityProp != null && entityProp.CanWrite)
             {
