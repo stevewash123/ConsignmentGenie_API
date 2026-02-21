@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Reflection;
+using Npgsql;
 
 namespace ConsignmentGenie.API.Controllers.Settings;
 
@@ -198,57 +199,70 @@ public class OrganizationPayoutSettingsController : ControllerBase
     [HttpPatch("general")]
     public async Task<IActionResult> PatchPayoutSettings([FromBody] JsonElement updates)
     {
-        var organizationId = GetOrganizationId();
-
-        var settings = await _context.PayoutSettings
-            .FirstOrDefaultAsync(s => s.OrganizationId == organizationId);
-
-        if (settings == null)
+        try
         {
-            // Create with defaults first
-            settings = new PayoutSettings
+            var organizationId = GetOrganizationId();
+
+            var settings = await _context.PayoutSettings
+                .FirstOrDefaultAsync(s => s.OrganizationId == organizationId);
+
+            if (settings == null)
             {
-                Id = Guid.NewGuid(),
-                OrganizationId = organizationId,
-                PayoutMethodCheck = true,
-                PayoutMethodCash = true,
-                PayoutMethodACH = false,
-                PayoutMethodVenmo = false,
-                PayoutMethodPayPal = false,
-                PayoutMethodStoreCredit = false,
-                PayoutMethodZelle = false,
-                HoldPeriodDays = 7,
-                MinimumPayoutThreshold = 25.00m,
-                MinimumBalanceProtection = 100.00m,
-                BankAccountConnected = false,
-                PlaidAccessToken = string.Empty,
-                PlaidAccountId = string.Empty,
-                BankName = string.Empty,
-                BankAccountLast4 = string.Empty,
-                AutoPayEnabled = false,
-                AutoPayMonday = false,
-                AutoPayTuesday = false,
-                AutoPayWednesday = false,
-                AutoPayThursday = false,
-                AutoPayFriday = false,
-                AutoPaySaturday = false,
-                AutoPaySunday = false,
-                ExtendedSettings = "{}",
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.PayoutSettings.Add(settings);
+                // Create with defaults first
+                settings = new PayoutSettings
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = organizationId,
+                    PayoutMethodCheck = true,
+                    PayoutMethodCash = true,
+                    PayoutMethodACH = false,
+                    PayoutMethodVenmo = false,
+                    PayoutMethodPayPal = false,
+                    PayoutMethodStoreCredit = false,
+                    PayoutMethodZelle = false,
+                    HoldPeriodDays = 7,
+                    MinimumPayoutThreshold = 25.00m,
+                    MinimumBalanceProtection = 100.00m,
+                    BankAccountConnected = false,
+                    PlaidAccessToken = string.Empty,
+                    PlaidAccountId = string.Empty,
+                    BankName = string.Empty,
+                    BankAccountLast4 = string.Empty,
+                    AutoPayEnabled = false,
+                    AutoPayMonday = false,
+                    AutoPayTuesday = false,
+                    AutoPayWednesday = false,
+                    AutoPayThursday = false,
+                    AutoPayFriday = false,
+                    AutoPaySaturday = false,
+                    AutoPaySunday = false,
+                    ExtendedSettings = "{}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.PayoutSettings.Add(settings);
+            }
+
+            // Apply JSON patch-like updates
+            ApplyJsonUpdates(settings, updates);
+            settings.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Patched new payout settings for organization {OrganizationId}", organizationId);
+
+            var settingsDto = MapToDto(settings);
+            return Ok(settingsDto);
         }
-
-        // Apply JSON patch-like updates
-        ApplyJsonUpdates(settings, updates);
-        settings.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Patched new payout settings for organization {OrganizationId}", organizationId);
-
-        var settingsDto = MapToDto(settings);
-        return Ok(settingsDto);
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == "42883")
+        {
+            _logger.LogError(ex, "PostgreSQL JSONB operator error in payout settings patch for organization {OrganizationId}: {Message}", GetOrganizationId(), ex.Message);
+            return StatusCode(500, new { success = false, message = "Database operation error. Please try again." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error patching payout settings for organization {OrganizationId}", GetOrganizationId());
+            return StatusCode(500, new { success = false, message = "An error occurred while updating settings." });
+        }
     }
 
     [HttpDelete("general")]
