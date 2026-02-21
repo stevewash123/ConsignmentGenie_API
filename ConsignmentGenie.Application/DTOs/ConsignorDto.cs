@@ -20,7 +20,8 @@ public class ConsignorListDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorNumber { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? PreferredName { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public decimal CommissionRate { get; set; }
@@ -49,7 +50,8 @@ public class ConsignorApprovalSummaryDto
 {
     public Guid ConsignorId { get; set; }
     public string ConsignorNumber { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? PreferredName { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public decimal CommissionRate { get; set; }
@@ -81,7 +83,8 @@ public class ConsignorDetailDto
     // Contact Info
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? PreferredName { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }
 

@@ -839,8 +839,8 @@ public class ConsignmentGenieContext : DbContext
                 OrganizationId = orgId,
                 UserId = consignorUserId,
                 ConsignorNumber = "PRV-00001",
-                FirstName = "Demo",
-                LastName = "Artist",
+                Name = "Demo Artist",
+                PreferredName = "Demo",
                 Email = "consignor1@microsaasbuilders.com",
                 Phone = "(555) 123-4567",
                 CommissionRate = 0.6000m, // 60%

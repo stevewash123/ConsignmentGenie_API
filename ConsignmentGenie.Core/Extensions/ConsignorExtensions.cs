@@ -6,7 +6,12 @@ public static class ConsignorExtensions
 {
     public static string GetDisplayName(this Consignor consignor)
     {
-        return $"{consignor.FirstName} {consignor.LastName}".Trim();
+        return consignor.Name;
+    }
+
+    public static string GetGreetingName(this Consignor consignor)
+    {
+        return consignor.PreferredName ?? consignor.Name;
     }
 
     public static string GetFullAddress(this Consignor consignor)

@@ -35,14 +35,11 @@ public class User : BaseEntity
 
     public string? RejectedReason { get; set; }
 
-    [MaxLength(50)]
-    public string? FirstName { get; set; }
-
-    [MaxLength(50)]
-    public string? LastName { get; set; }
+    [MaxLength(200)]
+    public string? Name { get; set; }
 
     [MaxLength(100)]
-    public string? FullName { get; set; }
+    public string? PreferredName { get; set; }
 
     [MaxLength(20)]
     public string? Phone { get; set; }
