@@ -64,8 +64,8 @@ public class TransactionService : ITransactionService
         // Consignor search - searches consignor first/last name
         if (!string.IsNullOrEmpty(queryParams.ConsignorSearch))
             query = query.Where(t => t.Items.Any(ti =>
-                EF.Functions.ILike(ti.Consignor.FirstName, $"%{queryParams.ConsignorSearch}%") ||
-                EF.Functions.ILike(ti.Consignor.LastName, $"%{queryParams.ConsignorSearch}%")));
+                EF.Functions.ILike(ti.Consignor.Name, $"%{queryParams.ConsignorSearch}%") ||
+                EF.Functions.ILike(ti.Consignor.PreferredName ?? "", $"%{queryParams.ConsignorSearch}%")));
 
         // Source filtering removed for MVP - Phase 2+ feature
 
@@ -508,7 +508,7 @@ public class TransactionService : ITransactionService
 
         var topConsignors = transactions
             .SelectMany(t => t.Items)
-            .GroupBy(ti => new { ti.ConsignorId, ConsignorName = ti.Consignor.FirstName + " " + ti.Consignor.LastName })
+            .GroupBy(ti => new { ti.ConsignorId, ConsignorName = ti.Consignor.Name + " " + ti.Consignor })
             .Select(g => new ConsignorSalesDto
             {
                 ConsignorId = g.Key.ConsignorId,

@@ -97,10 +97,10 @@ public static class NotificationHelper
             OrganizationId = organizationId,
             Type = NotificationTypes.NEW_CONSIGNOR_REQUEST,
             Title = "New Consignor Request",
-            Message = $"{consignor.FirstName} {consignor.LastName} wants to join your shop",
+            Message = $"{consignor.Name} wants to join your shop",
             Payload = new
             {
-                consignorName = $"{consignor.FirstName} {consignor.LastName}",
+                consignorName = consignor.Name,
                 consignorEmail = consignor.Email,
                 requestedAt = DateTime.UtcNow
             },
@@ -113,7 +113,7 @@ public static class NotificationHelper
     public static CreateNotificationRequest CreateNewConsignorPendingRequestNotification(
         User pendingConsignorUser, User owner, Guid organizationId)
     {
-        var nameParts = pendingConsignorUser.FullName?.Split(' ', 2) ?? new[] { pendingConsignorUser.Email, "" };
+        var nameParts = pendingConsignorUser.Name?.Split(' ', 2) ?? new[] { pendingConsignorUser.Email, "" };
         var firstName = nameParts[0];
         var lastName = nameParts.Length > 1 ? nameParts[1] : "";
 
@@ -129,7 +129,7 @@ public static class NotificationHelper
             Message = $"{firstName} {lastName} wants to join your shop",
             Payload = new
             {
-                consignorName = pendingConsignorUser.FullName ?? pendingConsignorUser.Email,
+                consignorName = pendingConsignorUser.Name ?? pendingConsignorUser.Email,
                 consignorEmail = pendingConsignorUser.Email,
                 requestedAt = DateTime.UtcNow
             },
@@ -151,11 +151,11 @@ public static class NotificationHelper
             OrganizationId = itemRequest.OrganizationId,
             Type = NotificationTypes.NEW_ITEM_REQUEST,
             Title = "New Item Request",
-            Message = $"{consignor.FirstName} {consignor.LastName} submitted \"{itemRequest.Name}\" for review",
+            Message = $"{consignor.Name} submitted \"{itemRequest.Name}\" for review",
             Payload = new
             {
                 itemName = itemRequest.Name,
-                consignorName = $"{consignor.FirstName} {consignor.LastName}",
+                consignorName = consignor.Name,
                 suggestedPrice = itemRequest.SuggestedPrice,
                 submittedAt = itemRequest.CreatedAt
             },
@@ -242,7 +242,7 @@ public static class NotificationHelper
             Message = welcomeMessage,
             Payload = new
             {
-                firstName = user.FirstName,
+                firstName = user.Name,
                 welcomedAt = DateTime.UtcNow
             },
             ActionUrl = $"/{role}/dashboard"
@@ -283,10 +283,10 @@ public static class NotificationHelper
             OrganizationId = null, // Admin notifications don't have org scope
             Type = NotificationTypes.NEW_OWNER_REQUEST,
             Title = "New Shop Registration",
-            Message = $"{owner.FirstName} {owner.LastName} registered shop \"{organization.Name}\"",
+            Message = $"{owner.Name} registered shop \"{organization.Name}\"",
             Payload = new
             {
-                ownerName = $"{owner.FirstName} {owner.LastName}",
+                ownerName = owner.Name,
                 shopName = organization.Name,
                 ownerEmail = owner.Email,
                 registeredAt = organization.CreatedAt

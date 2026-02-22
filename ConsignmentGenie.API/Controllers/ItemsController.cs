@@ -138,7 +138,7 @@ public class ItemsController : ControllerBase
                     ReceivedDate = i.ReceivedDate.ToDateTime(TimeOnly.MinValue),
                     SoldDate = i.SoldDate.HasValue ? i.SoldDate.Value.ToDateTime(TimeOnly.MinValue) : null,
                     ConsignorId = i.ConsignorId,
-                    ConsignorName = (i.Consignor.FirstName + " " + i.Consignor.LastName).Trim(),
+                    ConsignorName = (i.Consignor.Name + " " + i.Consignor).Trim(),
                     CommissionRate = i.Consignor.CommissionRate
                 })
                 .ToListAsync();
@@ -180,7 +180,7 @@ public class ItemsController : ControllerBase
             {
                 ItemId = item.Id,
                 ConsignorId = item.ConsignorId,
-                ConsignorName = (item.Consignor.FirstName + " " + item.Consignor.LastName).Trim(),
+                ConsignorName = (item.Consignor.Name + " " + item.Consignor).Trim(),
                 CommissionRate = item.Consignor.CommissionRate,
                 Sku = item.Sku,
                 Barcode = item.Barcode,
@@ -342,7 +342,7 @@ public class ItemsController : ControllerBase
             {
                 ItemId = savedItem.Id,
                 ConsignorId = savedItem.ConsignorId,
-                ConsignorName = (savedItem.Consignor.FirstName + " " + savedItem.Consignor.LastName).Trim(),
+                ConsignorName = (savedItem.Consignor.Name + " " + savedItem.Consignor).Trim(),
                 CommissionRate = savedItem.Consignor.CommissionRate,
                 Sku = savedItem.Sku,
                 Barcode = savedItem.Barcode,
@@ -769,7 +769,7 @@ public class ItemsController : ControllerBase
 
             // Consignor breakdown
             metrics.ByProvider = availableItems
-                .GroupBy(i => new { i.ConsignorId, ConsignorName = (i.Consignor.FirstName + " " + i.Consignor.LastName).Trim() })
+                .GroupBy(i => new { i.ConsignorId, ConsignorName = (i.Consignor.Name + " " + i.Consignor).Trim() })
                 .Select(g => new ConsignorBreakdownDto
                 {
                     ConsignorId = g.Key.ConsignorId,

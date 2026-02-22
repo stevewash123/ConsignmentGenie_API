@@ -144,7 +144,7 @@ public class RegistrationService : IRegistrationService
             {
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                FullName = request.FullName,
+                Name = request.Name,
                 Phone = request.Phone,
                 Role = UserRole.Owner,
                 ApprovalStatus = ApprovalStatus.Approved, // Auto-approve for immediate access
@@ -185,8 +185,8 @@ public class RegistrationService : IRegistrationService
                 OrganizationId = organization.Id,
                 UserId = null, // No user association for shop consignor
                 ConsignorNumber = "SHOP-001", // Special number for shop consignor
-                FirstName = organization.ShopName ?? organization.Name,
-                LastName = "(Shop)",
+                Name = organization.ShopName ?? organization.Name,
+                PreferredName = "(Shop)",
                 Email = request.Email, // Use shop owner's email
                 Phone = request.Phone,
                 CommissionRate = 1.0000m, // Shop keeps 100% of shop-owned item sales
@@ -203,7 +203,7 @@ public class RegistrationService : IRegistrationService
             await _emailService.SendWelcomeEmailAsync(
                 request.Email,
                 request.ShopName,
-                request.FullName,
+                request.Name,
                 organization.StoreCode);
 
             // Send welcome notification to owner
@@ -253,7 +253,7 @@ public class RegistrationService : IRegistrationService
         _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration for email {Email} with store code {StoreCode}",
             request.Email, request.StoreCode);
         _logger.LogDebug("[PROVIDER_INVITATION] Consignor registration details: FullName={FullName}, Phone={Phone}, PreferredPayment={PreferredPaymentMethod}",
-            request.FullName, request.Phone, request.PreferredPaymentMethod);
+            request.Name, request.Phone, request.PreferredPaymentMethod);
 
         try
         {
@@ -316,7 +316,7 @@ public class RegistrationService : IRegistrationService
             {
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                FullName = request.FullName,
+                Name = request.Name,
                 Phone = request.Phone,
                 Role = UserRole.Consignor,
                 ApprovalStatus = organization.ApprovalMode == ApprovalMode.Auto ? ApprovalStatus.Approved : ApprovalStatus.Pending,
@@ -335,8 +335,8 @@ public class RegistrationService : IRegistrationService
                 {
                     OrganizationId = organization.Id,
                     UserId = user.Id,
-                    FirstName = GetFirstName(request.FullName),
-                    LastName = GetLastName(request.FullName),
+                    Name = GetFirstName(request.Name),
+                    PreferredName = GetLastName(request.Name),
                     Email = request.Email,
                     Phone = request.Phone,
                     PreferredPaymentMethod = request.PreferredPaymentMethod ?? "Check",
@@ -351,7 +351,7 @@ public class RegistrationService : IRegistrationService
                 _logger.LogInformation("[PROVIDER_INVITATION] Consignor record created for {Email} with ID {ConsignorId}", request.Email, consignor.Id);
 
                 // Create ConsignorAgreement if organization has agreement requirements
-                await CreateConsignorAgreementIfRequiredAsync(consignor, organization, request.FullName, request.Email);
+                await CreateConsignorAgreementIfRequiredAsync(consignor, organization, request.Name, request.Email);
 
                 // Send welcome notification to the new consignor
                 try
@@ -378,7 +378,7 @@ public class RegistrationService : IRegistrationService
             _logger.LogInformation("[PROVIDER_INVITATION] Sending confirmation email to provider {Email}", request.Email);
             var consignorEmailBody = $@"
                 <h2>Welcome to ConsignmentGenie</h2>
-                <p>Hi {request.FullName},</p>
+                <p>Hi {request.Name},</p>
                 <p>Thanks for registering with ConsignmentGenie!</p>
                 <p>Your request to join {validation.ShopName} is {(organization.ApprovalMode == ApprovalMode.Auto ? "approved" : "pending approval")}.</p>
                 {(organization.ApprovalMode == ApprovalMode.Auto
@@ -411,8 +411,8 @@ public class RegistrationService : IRegistrationService
                     var ownerEmailBody = $@"
                         <h2>New Consignor Request</h2>
                         <p>Hi {validation.ShopName},</p>
-                        <p>{request.FullName} has requested to join your shop as a provider.</p>
-                        <p><strong>Name:</strong> {request.FullName}</p>
+                        <p>{request.Name} has requested to join your shop as a provider.</p>
+                        <p><strong>Name:</strong> {request.Name}</p>
                         <p><strong>Email:</strong> {request.Email}</p>
                         <p><strong>Phone:</strong> {request.Phone ?? "Not provided"}</p>
                         <p><strong>Payment:</strong> {request.PreferredPaymentMethod ?? "Check"} ({request.PaymentDetails ?? "No details"})</p>
@@ -421,7 +421,7 @@ public class RegistrationService : IRegistrationService
 
                     var ownerEmailResult = await _emailService.SendSimpleEmailAsync(
                         owner.Email,
-                        $"New Consignor Request - {request.FullName}",
+                        $"New Consignor Request - {request.Name}",
                         ownerEmailBody);
                     _logger.LogInformation("[PROVIDER_INVITATION] Owner notification sent to {OwnerEmail}: {EmailResult}",
                         owner.Email, ownerEmailResult);
@@ -474,7 +474,7 @@ public class RegistrationService : IRegistrationService
             .Select(u => new PendingApprovalDto
             {
                 UserId = u.Id,
-                FullName = u.FullName ?? string.Empty,
+                Name = u.Name ?? string.Empty,
                 Email = u.Email,
                 Phone = u.Phone,
                 // These would come from the registration request, but we need to store them on User entity
@@ -545,8 +545,8 @@ public class RegistrationService : IRegistrationService
             {
                 OrganizationId = user.OrganizationId,
                 UserId = user.Id,
-                FirstName = GetFirstName(user.FullName),
-                LastName = GetLastName(user.FullName),
+                Name = GetFirstName(user.Name),
+                PreferredName = GetLastName(user.Name),
                 Email = user.Email,
                 Phone = user.Phone,
                 PreferredPaymentMethod = "Check", // Default, can be updated later
@@ -571,7 +571,7 @@ public class RegistrationService : IRegistrationService
         var emailBody = user.Role == UserRole.Consignor
             ? $@"
                 <h2>Account Approved - You're In! 🎉</h2>
-                <p>Hi {user.FullName},</p>
+                <p>Hi {user.Name},</p>
                 <p>Great news! Your account has been approved by {user.Organization.ShopName}.</p>
                 <p>You can now log in to your Consignor Portal to:</p>
                 <ul>
@@ -583,7 +583,7 @@ public class RegistrationService : IRegistrationService
                 <p>- The ConsignmentGenie Team</p>"
             : $@"
                 <h2>Your Shop is Ready! 🎉</h2>
-                <p>Hi {user.FullName},</p>
+                <p>Hi {user.Name},</p>
                 <p>Great news! {user.Organization.ShopName} has been approved and is ready to go.</p>
                 <p>Your store code for providers is: <strong>{user.Organization.StoreCode}</strong></p>
                 <p>Share this with consigners so they can register and join your shop.</p>
@@ -619,7 +619,7 @@ public class RegistrationService : IRegistrationService
         // Send rejection email
         var emailBody = $@"
             <h2>Account Request Update</h2>
-            <p>Hi {user.FullName},</p>
+            <p>Hi {user.Name},</p>
             <p>Unfortunately, your request to join {user.Organization.ShopName} was not approved at this time.</p>
             {(!string.IsNullOrEmpty(reason) ? $"<p><strong>Reason:</strong> {reason}</p>" : "")}
             <p>If you have questions, please contact the shop directly.</p>
@@ -639,7 +639,7 @@ public class RegistrationService : IRegistrationService
             .Select(u => new PendingOwnerDto
             {
                 UserId = u.Id,
-                FullName = u.FullName ?? string.Empty,
+                Name = u.Name ?? string.Empty,
                 Email = u.Email,
                 Phone = u.Phone,
                 ShopName = u.Organization.ShopName ?? u.Organization.Name,
@@ -684,7 +684,7 @@ public class RegistrationService : IRegistrationService
         // Send approval email
         var emailBody = $@"
             <h2>Your Shop is Ready! 🎉</h2>
-            <p>Hi {user.FullName},</p>
+            <p>Hi {user.Name},</p>
             <p>Great news! {user.Organization?.ShopName} has been approved and is ready to go.</p>
             <p>Your store code for providers is: <strong>{user.Organization?.StoreCode}</strong></p>
             <p>Share this with consigners so they can register and join your shop.</p>
@@ -805,8 +805,8 @@ public class RegistrationService : IRegistrationService
         {
             IsValid = true,
             ShopName = invitation.Organization.ShopName ?? invitation.Organization.Name,
-            InvitedFirstName = firstName,
-            InvitedLastName = lastName,
+            InvitedName = firstName,
+            InvitedPreferredName = lastName,
             InvitedEmail = invitation.Email,
             ExpirationDate = invitation.ExpirationDate
         };
@@ -816,7 +816,7 @@ public class RegistrationService : IRegistrationService
     {
         _logger.LogInformation("[PROVIDER_INVITATION] Starting provider registration from invitation for email {Email}", request.Email);
         _logger.LogDebug("[PROVIDER_INVITATION] Invitation registration details: FirstName={FirstName}, LastName={LastName}, Phone={Phone}, Address={Address}",
-            request.FirstName, request.LastName, request.Phone, request.Address);
+            request.Name, request, request.Phone, request.Address);
 
         try
         {
@@ -862,7 +862,7 @@ public class RegistrationService : IRegistrationService
             {
                 Email = request.Email,
                 PasswordHash = hashedPassword,
-                FullName = $"{request.FirstName} {request.LastName}".Trim(),
+                Name = request.Name.Trim(),
                 Phone = request.Phone,
                 Role = UserRole.Consignor,
                 OrganizationId = invitation.OrganizationId,
@@ -882,8 +882,8 @@ public class RegistrationService : IRegistrationService
             {
                 OrganizationId = invitation.OrganizationId,
                 UserId = user.Id,
-                FirstName = request.FirstName.Trim(),
-                LastName = request.LastName.Trim(),
+                Name = request.Name.Trim(),
+                PreferredName = request.PreferredName?.Trim(),
                 Email = request.Email,
                 Phone = request.Phone,
                 Address = request.Address,
@@ -906,13 +906,13 @@ public class RegistrationService : IRegistrationService
                 consignorNumber, request.Email);
 
             // Create ConsignorAgreement if organization has agreement requirements
-            await CreateConsignorAgreementIfRequiredAsync(provider, invitation.Organization, $"{request.FirstName} {request.LastName}".Trim(), request.Email);
+            await CreateConsignorAgreementIfRequiredAsync(provider, invitation.Organization, $"{request.Name} {request}".Trim(), request.Email);
 
             // Send welcome email to provider
             _logger.LogInformation("[PROVIDER_INVITATION] Sending welcome email to new provider {Email}", request.Email);
             var consignorEmailBody = $@"
                 <h2>Welcome to {validation.ShopName}! 🎉</h2>
-                <p>Hi {request.FirstName} {request.LastName},</p>
+                <p>Hi {request.Name} {request},</p>
                 <p>Your provider account has been successfully created for {validation.ShopName}.</p>
                 <p>You can now log in to your Consignor Portal to:</p>
                 <ul>
@@ -948,10 +948,10 @@ public class RegistrationService : IRegistrationService
                 var ownerEmailBody = $@"
                     <h2>Consignor Joined Your Shop</h2>
                     <p>Hi {validation.ShopName},</p>
-                    <p>{request.FirstName} {request.LastName} has successfully completed their registration and joined your shop.</p>
+                    <p>{request.Name} {request} has successfully completed their registration and joined your shop.</p>
                     <p><strong>Consignor Details:</strong></p>
                     <ul>
-                        <li>Name: {request.FirstName} {request.LastName}</li>
+                        <li>Name: {request.Name} {request}</li>
                         <li>Email: {request.Email}</li>
                         <li>Phone: {request.Phone ?? "Not provided"}</li>
                     </ul>
@@ -960,7 +960,7 @@ public class RegistrationService : IRegistrationService
 
                 var ownerEmailResult = await _emailService.SendSimpleEmailAsync(
                     ownerUser.Email,
-                    $"New Consignor Joined - {request.FirstName} {request.LastName}",
+                    $"New Consignor Joined - {request.Name} {request}",
                     ownerEmailBody);
                 _logger.LogInformation("[PROVIDER_INVITATION] Shop owner notification sent to {OwnerEmail}: {EmailResult}",
                     ownerUser.Email, ownerEmailResult);

@@ -61,7 +61,7 @@ public class OwnerConsignorAgreementController : ControllerBase
             var documentUrl = agreement?.DocumentUrl;
             var markedBy = agreement?.MarkedByUser != null ? new {
                 id = agreement.MarkedByUser.Id.ToString(),
-                name = $"{agreement.MarkedByUser.FirstName} {agreement.MarkedByUser.LastName}".Trim()
+                name = $"{agreement.MarkedByUser.Name} {agreement.MarkedByUser}".Trim()
             } : null;
 
             return Ok(new ConsignorAgreementStatusDto
@@ -307,7 +307,7 @@ public class OwnerConsignorAgreementController : ControllerBase
             _logger.LogInformation("[OWNER_AGREEMENT] Auto-approved consignor {ConsignorId} after agreement completion", consignor.Id);
 
             // Could add notification here if needed
-            // await _notificationService.CreateNotification(organizationId, $"Consignor {consignor.FirstName} {consignor.LastName} has been auto-approved");
+            // await _notificationService.CreateNotification(organizationId, $"Consignor {consignor.Name} {consignor} has been auto-approved");
         }
     }
 

@@ -74,7 +74,7 @@ public class ShopperAuthService : IShopperAuthService
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     Role = UserRole.Customer, // Using Customer role as per the enum
                     OrganizationId = organization.Id,
-                    FullName = request.FullName,
+                    Name = request.Name,
                     Phone = request.Phone,
                     ApprovalStatus = ApprovalStatus.Approved // Shoppers don't require approval
                 };
@@ -88,7 +88,7 @@ public class ShopperAuthService : IShopperAuthService
             {
                 OrganizationId = organization.Id,
                 UserId = user.Id,
-                FullName = request.FullName,
+                Name = request.Name,
                 Email = request.Email,
                 Phone = request.Phone,
                 EmailNotifications = request.EmailNotifications
@@ -109,7 +109,7 @@ public class ShopperAuthService : IShopperAuthService
             var profile = new ShopperProfileDto
             {
                 ShopperId = shopper.Id,
-                FullName = shopper.FullName,
+                FullName = shopper.Name,
                 Email = shopper.Email,
                 Phone = shopper.Phone,
                 EmailNotifications = shopper.EmailNotifications,
@@ -196,7 +196,7 @@ public class ShopperAuthService : IShopperAuthService
             var profile = new ShopperProfileDto
             {
                 ShopperId = shopper.Id,
-                FullName = shopper.FullName,
+                FullName = shopper.Name,
                 Email = shopper.Email,
                 Phone = shopper.Phone,
                 EmailNotifications = shopper.EmailNotifications,
@@ -249,7 +249,7 @@ public class ShopperAuthService : IShopperAuthService
         {
             OrganizationId = organization.Id,
             Email = request.Email,
-            FullName = request.FullName,
+            FullName = request.Name,
             Phone = request.Phone,
             SessionToken = sessionToken,
             ExpiresAt = expiresAt
@@ -276,7 +276,7 @@ public class ShopperAuthService : IShopperAuthService
         return new ShopperProfileDto
         {
             ShopperId = shopper.Id,
-            FullName = shopper.FullName,
+            FullName = shopper.Name,
             Email = shopper.Email,
             Phone = shopper.Phone,
             EmailNotifications = shopper.EmailNotifications,
@@ -301,7 +301,7 @@ public class ShopperAuthService : IShopperAuthService
             return null;
 
         // Update shopper fields
-        shopper.FullName = request.FullName;
+        shopper.Name = request.Name;
         shopper.Phone = request.Phone;
         shopper.EmailNotifications = request.EmailNotifications;
 
@@ -319,7 +319,7 @@ public class ShopperAuthService : IShopperAuthService
         return new ShopperProfileDto
         {
             ShopperId = shopper.Id,
-            FullName = shopper.FullName,
+            FullName = shopper.Name,
             Email = shopper.Email,
             Phone = shopper.Phone,
             EmailNotifications = shopper.EmailNotifications,

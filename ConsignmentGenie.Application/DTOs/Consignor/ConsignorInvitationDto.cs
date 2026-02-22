@@ -13,6 +13,9 @@ public class CreateConsignorInvitationDto
     [EmailAddress]
     [MaxLength(254)]
     public string Email { get; set; } = string.Empty;
+
+    [MaxLength(500)]
+    public string? PersonalMessage { get; set; }
 }
 
 public class ConsignorInvitationDto

@@ -16,7 +16,8 @@ public class ConsignorProfileDto
 
 public class UpdateConsignorProfileRequest
 {
-    public string FullName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? PreferredName { get; set; }
     public string? Phone { get; set; }
     public string? PreferredPaymentMethod { get; set; }
     public string? PaymentDetails { get; set; }

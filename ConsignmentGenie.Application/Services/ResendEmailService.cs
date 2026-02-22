@@ -580,7 +580,7 @@ ConsignmentGenie Suggestion System
         }
     }
 
-    public async Task<bool> SendConsignorInvitationAsync(string email, string consignorName, string shopName, string inviteLink, string expirationDate)
+    public async Task<bool> SendConsignorInvitationAsync(string email, string consignorName, string shopName, string inviteLink, string expirationDate, string personalMessage = null)
     {
         _logger.LogInformation("[EMAIL] Starting consignor invitation email to {Email} for consignor {ConsignorName} from shop {ShopName}", email, consignorName, shopName);
         _logger.LogDebug("[EMAIL] Consignor invitation details: InviteLink={InviteLink}, ExpirationDate={ExpirationDate}", inviteLink, expirationDate);
@@ -606,6 +606,12 @@ ConsignmentGenie Suggestion System
         <h2 style=""color: #047857; margin-top: 0;"">Hello {consignorName}!</h2>
 
         <p>You've been invited to join <strong>{shopName}</strong> as a consignor on our ConsignmentGenie platform.</p>
+
+        {(string.IsNullOrWhiteSpace(personalMessage) ? "" : $@"
+        <div style=""background: #e1f5fe; border-left: 4px solid #0288d1; padding: 15px; margin: 20px 0; border-radius: 5px;"">
+            <h4 style=""color: #0288d1; margin-top: 0;"">Personal Message from {shopName}:</h4>
+            <p style=""margin-bottom: 0; font-style: italic;"">{personalMessage.Replace("\n", "<br/>")}</p>
+        </div>")}
 
         <p>As a consignor, you'll be able to:</p>
 

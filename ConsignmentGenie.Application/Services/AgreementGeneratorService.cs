@@ -98,7 +98,7 @@ Consignor: ________________________  Date: __________";
             ["SHOP_ADDRESS"] = FormatAddress(organization),
             ["SHOP_PHONE"] = organization.ShopPhone ?? "Not provided",
             ["SHOP_EMAIL"] = organization.ShopEmail ?? "Not provided",
-            ["CONSIGNOR_NAME"] = $"{consignor.FirstName} {consignor.LastName}".Trim(),
+            ["CONSIGNOR_NAME"] = $"{consignor.Name} {consignor}".Trim(),
             ["CONSIGNOR_EMAIL"] = consignor.Email ?? "Not provided",
             ["CONSIGNOR_PHONE"] = consignor.Phone ?? "Not provided",
             ["CONSIGNOR_ADDRESS"] = FormatConsignorAddress(consignor),

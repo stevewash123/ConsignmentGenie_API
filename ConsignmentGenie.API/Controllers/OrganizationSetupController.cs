@@ -34,6 +34,7 @@ public class OrganizationSetupController : ControllerBase
             var organization = await _context.Organizations
                 .Include(o => o.Consignors)
                 .Include(o => o.Items)
+                .Include(o => o.SquareConnection)
                 .FirstOrDefaultAsync(o => o.Id == organizationId);
 
             if (organization == null)
@@ -51,36 +52,80 @@ public class OrganizationSetupController : ControllerBase
             var hasInventory = organization.Items.Any();
             var quickBooksConnected = organization.QuickBooksConnected;
 
-            // Calculate showModal based on specification logic
-            var showModal = !organization.WelcomeGuideCompleted && (
-                !hasProviders ||
-                !storefrontConfigured ||
-                !hasInventory ||
-                !quickBooksConnected
-            );
+            // New checklist fields - agreement is "complete" if disabled OR uploaded
+            var agreementUploaded = organization.AgreementMethod == "none" || !string.IsNullOrEmpty(organization.AgreementTemplateCloudinaryUrl);
+            var squareConnected = organization.SquareConnection != null;
+            var payoutMethodConfigured = organization.StripeConnected; // Stripe handles both payment processing and payouts
+
+            // NEW RULE: Once agreement step is handled (disabled OR uploaded), Welcome modal stops showing
+            // The Setup Checklist card takes over for remaining optional steps
+            var showModal = !organization.WelcomeGuideCompleted && !agreementUploaded;
 
             var status = new OnboardingStatusDto
             {
                 Dismissed = organization.OnboardingDismissed,
                 WelcomeGuideCompleted = organization.WelcomeGuideCompleted,
                 ShowModal = showModal,
+                SetupChecklistDismissed = organization.SetupChecklistDismissed,
                 Steps = new OnboardingStepsDto
                 {
                     HasProviders = hasProviders,
                     StorefrontConfigured = storefrontConfigured,
                     HasInventory = hasInventory,
-                    QuickBooksConnected = quickBooksConnected
+                    QuickBooksConnected = quickBooksConnected,
+                    AgreementUploaded = agreementUploaded,
+                    SquareConnected = squareConnected,
+                    PayoutMethodConfigured = payoutMethodConfigured
                 }
             };
 
-            _logger.LogInformation("[SETUP] Setup status calculated for organization {OrganizationId}: WelcomeGuideCompleted={WelcomeGuideCompleted}, ShowModal={ShowModal}, HasProviders={HasProviders}, StorefrontConfigured={StorefrontConfigured}, HasInventory={HasInventory}, QuickBooksConnected={QuickBooksConnected}",
-                organizationId, status.WelcomeGuideCompleted, showModal, hasProviders, storefrontConfigured, hasInventory, quickBooksConnected);
+            _logger.LogInformation("[SETUP] Setup status calculated for organization {OrganizationId}: WelcomeGuideCompleted={WelcomeGuideCompleted}, ShowModal={ShowModal}, AgreementMethod={AgreementMethod}, AgreementUploaded={AgreementUploaded}, SetupChecklistDismissed={SetupChecklistDismissed}, SquareConnected={SquareConnected}, PayoutMethodConfigured={PayoutMethodConfigured}",
+                organizationId, status.WelcomeGuideCompleted, showModal, organization.AgreementMethod, agreementUploaded, organization.SetupChecklistDismissed, squareConnected, payoutMethodConfigured);
 
             return Ok(status);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[SETUP] Error getting setup status for organization {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpPost("dismiss-checklist")]
+    public async Task<ActionResult<object>> DismissSetupChecklist()
+    {
+        var organizationId = GetOrganizationId();
+        _logger.LogInformation("[SETUP] Dismissing setup checklist for organization {OrganizationId}", organizationId);
+
+        try
+        {
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[SETUP] Organization {OrganizationId} not found during dismiss checklist operation", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            var previousStatus = organization.SetupChecklistDismissed;
+            organization.SetupChecklistDismissed = true;
+            organization.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("[SETUP] Setup checklist dismissed for organization {OrganizationId}: {PreviousStatus} -> {NewStatus}",
+                organizationId, previousStatus, true);
+
+            return Ok(new {
+                success = true,
+                setupChecklistDismissed = true,
+                message = "Setup checklist dismissed successfully"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SETUP] Error dismissing setup checklist for organization {OrganizationId}", organizationId);
             return StatusCode(500, "Internal server error");
         }
     }

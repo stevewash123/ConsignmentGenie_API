@@ -48,7 +48,7 @@ public class PayoutNotificationService : IPayoutNotificationService
                         ToType = "owner",
                         Type = "PayoutReady",
                         Title = "Consignor Ready for Payout",
-                        Message = $"{summary.Consignor.FirstName} {summary.Consignor.LastName} has ${summary.ClearedAmount:F2} ready for payout.",
+                        Message = $"{summary.Consignor.Name} {summary.Consignor} has ${summary.ClearedAmount:F2} ready for payout.",
                         ActionUrl = $"/owner/payouts?consignorId={summary.ConsignorId}",
                         CreatedAt = DateTime.UtcNow,
                         IsRead = false
@@ -62,7 +62,7 @@ public class PayoutNotificationService : IPayoutNotificationService
                 summary.UpdatedAt = DateTime.UtcNow;
 
                 _logger.LogInformation("Created payout notification for consignor {ConsignorName} in organization {OrganizationId}",
-                    $"{summary.Consignor.FirstName} {summary.Consignor.LastName}",
+                    $"{summary.Consignor.Name} {summary.Consignor}",
                     summary.OrganizationId);
             }
             catch (Exception ex)

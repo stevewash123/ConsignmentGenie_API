@@ -55,8 +55,8 @@ public class OwnerController : ControllerBase
                     Consignor = new ConsignorSummaryDto
                     {
                         Id = dr.Consignor.Id,
-                        FirstName = dr.Consignor.FirstName,
-                        LastName = dr.Consignor.LastName,
+                        Name = dr.Consignor.Name,
+                        PreferredName = dr.Consignor.PreferredName,
                         Email = dr.Consignor.Email,
                         Phone = dr.Consignor.Phone
                     }
@@ -122,8 +122,8 @@ public class OwnerController : ControllerBase
                 Consignor = new ConsignorSummaryDto
                 {
                     Id = dropoffRequest.Consignor.Id,
-                    FirstName = dropoffRequest.Consignor.FirstName,
-                    LastName = dropoffRequest.Consignor.LastName,
+                    Name = dropoffRequest.Consignor.Name,
+                    PreferredName = dropoffRequest.Consignor.PreferredName,
                     Email = dropoffRequest.Consignor.Email,
                     Phone = dropoffRequest.Consignor.Phone
                 }

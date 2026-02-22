@@ -6,7 +6,9 @@ public class RegisterOwnerRequest
 {
     // Required for minimal signup
     [Required]
-    public string FullName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+
+    public string? PreferredName { get; set; }
 
     [Required, EmailAddress]
     public string Email { get; set; } = string.Empty;

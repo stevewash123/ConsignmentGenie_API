@@ -56,14 +56,14 @@ public class CloudinaryDocumentService : IDocumentService
                 throw new InvalidOperationException("Invalid file type. Only PDF, DOC, DOCX, and TXT files are supported");
             }
 
-            // Generate unique public ID for the agreement template
-            var publicId = $"agreements/templates/{organizationId}/{Guid.NewGuid()}";
+            // Generate unique public ID for the agreement template (just the filename part)
+            var fileId = Guid.NewGuid().ToString();
 
             // Upload to Cloudinary as raw file (not image)
             var uploadParams = new RawUploadParams()
             {
                 File = new FileDescription(fileName, fileStream),
-                PublicId = publicId,
+                PublicId = fileId,
                 Folder = $"agreements/templates/{organizationId}",
                 Tags = $"agreement,template,{organizationId}"
             };
@@ -105,14 +105,14 @@ public class CloudinaryDocumentService : IDocumentService
                 throw new InvalidOperationException("Invalid file type. Only PDF, DOC, DOCX, JPG, and PNG files are supported");
             }
 
-            // Generate unique public ID for the signed agreement
-            var publicId = $"agreements/signed/{organizationId}/{consignorId}/{Guid.NewGuid()}";
+            // Generate unique public ID for the signed agreement (just the filename part)
+            var fileId = Guid.NewGuid().ToString();
 
             // Upload to Cloudinary as raw file
             var uploadParams = new RawUploadParams()
             {
                 File = new FileDescription(fileName, fileStream),
-                PublicId = publicId,
+                PublicId = fileId,
                 Folder = $"agreements/signed/{organizationId}/{consignorId}",
                 Tags = $"agreement,signed,{organizationId},{consignorId}"
             };

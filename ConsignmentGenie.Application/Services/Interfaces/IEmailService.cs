@@ -17,7 +17,7 @@ public interface IEmailService
     Task<bool> SendSimpleEmailAsync(string toEmail, string subject, string body, bool isHtml = true);
 
     // Consignor invitation method
-    Task<bool> SendConsignorInvitationAsync(string email, string consignorName, string shopName, string inviteLink, string expirationDate);
+    Task<bool> SendConsignorInvitationAsync(string email, string consignorName, string shopName, string inviteLink, string expirationDate, string personalMessage = null);
 
     // Consignor welcome email for manual add
     Task<bool> SendConsignorWelcomeAsync(string email, string consignorName, string shopName, string storeCode, string ownerName);

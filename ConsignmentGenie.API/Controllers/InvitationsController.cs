@@ -76,17 +76,12 @@ public class InvitationsController : ControllerBase
             _logger.LogInformation("[INVITATION] Valid token: {Token}, Organization: {OrganizationName}",
                 token, invitation.Organization?.Name);
 
-            // Split the stored name into first and last names
-            var nameParts = invitation.Name?.Trim().Split(' ', 2) ?? Array.Empty<string>();
-            var firstName = nameParts.Length > 0 ? nameParts[0] : "";
-            var lastName = nameParts.Length > 1 ? nameParts[1] : "";
-
             return Ok(new InvitationValidationDto
             {
                 IsValid = true,
                 ShopName = invitation.Organization?.Name,
-                InvitedFirstName = firstName,
-                InvitedLastName = lastName,
+                InvitedName = invitation.Name,
+                InvitedPreferredName = "", // Don't split names - let user provide preferred name separately
                 InvitedEmail = invitation.Email,
                 ExpirationDate = invitation.ExpiresAt,
                 Message = "Valid invitation"

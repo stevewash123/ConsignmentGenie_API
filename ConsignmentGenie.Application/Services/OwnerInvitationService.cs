@@ -341,8 +341,8 @@ public class OwnerInvitationService : IOwnerInvitationService
                     PasswordHash = hashedPassword,
                     Role = UserRole.Owner,
                     OrganizationId = organization.Id,
-                    FirstName = request.Name.Split(' ')[0],
-                    LastName = request.Name.Contains(' ') ? request.Name.Substring(request.Name.IndexOf(' ') + 1) : ""
+                    Name = request.Name,
+                    PreferredName = request.Name.Split(' ')[0]
                 };
 
                 _logger.LogError("FLOW-9: About to save user: Email={Email}, OrganizationId={OrganizationId}",
@@ -367,7 +367,7 @@ public class OwnerInvitationService : IOwnerInvitationService
                 _logger.LogInformation("[OWNER_FLOW] Sending welcome email to {Email} for organization {OrganizationName} (ID: {OrganizationId})",
                     user.Email, organization.Name, organization.Id);
 
-                var emailResult = await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name, user.FirstName ?? "Owner", organization.StoreCode ?? "PENDING");
+                var emailResult = await _emailService.SendWelcomeEmailAsync(user.Email, organization.Name, user.Name ?? "Owner", organization.StoreCode ?? "PENDING");
                 _logger.LogInformation("[OWNER_FLOW] Welcome email send result for {Email}: {EmailResult}", user.Email, emailResult);
 
                 // Create welcome notification for the user to see in notification center

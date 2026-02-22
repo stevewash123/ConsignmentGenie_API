@@ -261,9 +261,8 @@ public class OrganizationProfileSettingsController : ControllerBase
 
             var ownerContact = new OwnerContactDto
             {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                FullName = user.FullName,
+                Name = user.Name,
+                PreferredName = user.PreferredName,
                 Email = user.Email,
                 Phone = user.Phone
             };

@@ -228,8 +228,8 @@ public class PayoutsController : ControllerBase
         var pendingPayouts = summaries.Select(s => new
         {
             ConsignorId = s.ConsignorId,
-            ConsignorName = !string.IsNullOrWhiteSpace($"{s.Consignor.FirstName} {s.Consignor.LastName}".Trim()) ?
-                $"{s.Consignor.FirstName} {s.Consignor.LastName}".Trim() :
+            ConsignorName = !string.IsNullOrWhiteSpace($"{s.Consignor.Name} {s.Consignor}".Trim()) ?
+                $"{s.Consignor.Name} {s.Consignor}".Trim() :
                 (s.Consignor.DisplayName ?? "Unknown Consignor"),
             ProviderEmail = s.Consignor.Email,
             PendingAmount = s.TotalPendingAmount,
@@ -960,7 +960,7 @@ public class PayoutsController : ControllerBase
             Payouts = payouts.Select(p => new PayoutBatchItemDto
             {
                 PayoutNumber = p.PayoutNumber,
-                ConsignorName = $"{p.Consignor.FirstName} {p.Consignor.LastName}",
+                ConsignorName = $"{p.Consignor.Name} {p.Consignor}",
                 ItemCount = p.Transactions.SelectMany(t => t.Items).Count(),
                 Amount = p.Amount,
                 PaymentMethod = p.PaymentMethod
@@ -1024,7 +1024,7 @@ public class PayoutsController : ControllerBase
         return new PayoutSummaryDto
         {
             ConsignorId = summary.ConsignorId,
-            ConsignorName = summary.Consignor.FirstName + " " + summary.Consignor.LastName,
+            ConsignorName = summary.Consignor.Name + " " + summary.Consignor,
             ConsignorNumber = summary.Consignor.ConsignorNumber,
             ClearedAmount = summary.ClearedAmount,
             UnclearedAmount = summary.UnclearedAmount,

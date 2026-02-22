@@ -59,14 +59,14 @@ public class CloudinaryPhotoService : IPhotoService
                 throw new InvalidOperationException("Invalid file type. Only JPEG, PNG, and WEBP are supported");
             }
 
-            // Generate unique public ID for the image
-            var publicId = $"consignment/{organizationId}/{itemId}/{Guid.NewGuid()}";
+            // Generate unique public ID for the image (just the filename part)
+            var fileId = Guid.NewGuid().ToString();
 
             // Upload to Cloudinary
             var uploadParams = new ImageUploadParams()
             {
                 File = new FileDescription(fileName, fileStream),
-                PublicId = publicId,
+                PublicId = fileId,
                 Transformation = new Transformation()
                     .Quality("auto:good")
                     .FetchFormat("auto"),
@@ -248,14 +248,14 @@ public class CloudinaryPhotoService : IPhotoService
                 throw new InvalidOperationException("Invalid file type. Only JPEG, PNG, WEBP, GIF, and SVG are supported");
             }
 
-            // Generate unique public ID for the logo
-            var publicId = $"consignment/logos/{organizationId}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+            // Generate unique public ID for the logo (just the filename part)
+            var fileId = $"{organizationId}_{DateTime.UtcNow:yyyyMMddHHmmss}";
 
             // Upload to Cloudinary
             var uploadParams = new ImageUploadParams()
             {
                 File = new FileDescription(fileName, fileStream),
-                PublicId = publicId,
+                PublicId = fileId,
                 Transformation = new Transformation()
                     .Quality("auto:good")
                     .FetchFormat("auto"),

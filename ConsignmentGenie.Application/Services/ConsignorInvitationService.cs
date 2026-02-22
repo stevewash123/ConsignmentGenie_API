@@ -99,7 +99,8 @@ public class ConsignorInvitationService : IConsignorInvitationService
                 invitation.Name,
                 organization?.Name ?? "ConsignmentGenie Shop",
                 inviteLink,
-                invitation.ExpiresAt.ToString("MMMM dd, yyyy")
+                invitation.ExpiresAt.ToString("MMMM dd, yyyy"),
+                request.PersonalMessage
             );
 
             var result = await GetInvitationDtoAsync(invitation.Id);
@@ -208,7 +209,8 @@ public class ConsignorInvitationService : IConsignorInvitationService
             invitation.Name,
             invitation.Organization?.Name ?? "ConsignmentGenie Shop",
             inviteLink,
-            invitation.ExpiresAt.ToString("MMMM dd, yyyy")
+            invitation.ExpiresAt.ToString("MMMM dd, yyyy"),
+            null // No personal message for resends
         );
 
         return true;
@@ -275,10 +277,6 @@ public class ConsignorInvitationService : IConsignorInvitationService
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // Use the separate first and last names from request
-            var firstName = request.FirstName.Trim();
-            var lastName = request.LastName.Trim();
-
             // Create consignor record
             var consignor = new Consignor
             {
@@ -286,8 +284,8 @@ public class ConsignorInvitationService : IConsignorInvitationService
                 OrganizationId = invitation.OrganizationId,
                 UserId = user.Id,
                 ConsignorNumber = consignorNumber,
-                FirstName = firstName,
-                LastName = lastName,
+                Name = request.Name.Trim(),
+                PreferredName = request.PreferredName?.Trim(),
                 Email = request.Email,
                 Phone = request.Phone,
                 Status = invitation.Organization?.ApprovalMode == ApprovalMode.Auto
@@ -310,7 +308,7 @@ public class ConsignorInvitationService : IConsignorInvitationService
             _context.Consignors.Add(consignor);
 
             // Create agreement if required by organization
-            await CreateConsignorAgreementIfRequiredAsync(consignor, invitation.Organization, firstName, lastName, request.Email);
+            await CreateConsignorAgreementIfRequiredAsync(consignor, invitation.Organization, request.Name, "", request.Email);
 
             // Mark invitation as accepted
             invitation.Status = InvitationStatus.Accepted;
@@ -337,7 +335,7 @@ public class ConsignorInvitationService : IConsignorInvitationService
                         ToType = "owner",
                         Type = NotificationTypes.NEW_CONSIGNOR_REQUEST,
                         Title = "New Consignor Registered",
-                        Message = $"{firstName} {lastName} has completed their registration and is ready to start consigning.",
+                        Message = $"{request.Name} has completed their registration and is ready to start consigning.",
                         ActionUrl = "/owner/consignors",
                         ReferenceType = "consignor",
                         ReferenceId = consignor.Id,
@@ -345,7 +343,7 @@ public class ConsignorInvitationService : IConsignorInvitationService
                         {
                             consignorId = consignor.Id,
                             consignorNumber = consignorNumber,
-                            consignorName = $"{firstName} {lastName}",
+                            consignorName = request.Name,
                             email = request.Email,
                             phone = request.Phone,
                             status = consignor.Status.ToString()

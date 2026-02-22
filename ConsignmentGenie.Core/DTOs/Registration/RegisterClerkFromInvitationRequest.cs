@@ -8,12 +8,11 @@ public class RegisterClerkFromInvitationRequest
     public string Token { get; set; } = string.Empty;
 
     [Required]
-    [MaxLength(50)]
-    public string FirstName { get; set; } = string.Empty;
+    [MaxLength(200)]
+    public string Name { get; set; } = string.Empty;
 
-    [Required]
-    [MaxLength(50)]
-    public string LastName { get; set; } = string.Empty;
+    [MaxLength(100)]
+    public string? PreferredName { get; set; }
 
     [MaxLength(20)]
     public string? Phone { get; set; }

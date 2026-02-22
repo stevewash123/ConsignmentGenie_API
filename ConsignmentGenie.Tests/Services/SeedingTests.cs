@@ -140,8 +140,8 @@ public class SeedingTests : IDisposable
 
         // Assert
         Assert.NotNull(consignor);
-        Assert.Equal("Jane", consignor.FirstName); // Jane Doe from SeedDataService
-        Assert.Equal("Doe", consignor.LastName);
+        Assert.Equal("Jane", consignor.Name); // Jane Doe from SeedDataService
+        Assert.Equal("Doe", consignor);
         Assert.Equal("jane.doe@email.com", consignor.Email);
         Assert.Equal(0.5000m, consignor.CommissionRate); // 50% from SeedDataService
         Assert.Equal(ConsignorStatus.Active, consignor.Status);

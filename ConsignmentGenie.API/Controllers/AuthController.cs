@@ -119,7 +119,7 @@ public class AuthController : ControllerBase
             {
                 OrganizationId = organization.Id,
                 Email = request.Email,
-                DisplayName = request.FullName,
+                DisplayName = request.Name,
                 Phone = request.Phone,
                 CommissionRate = 50.00m, // Default rate, owner can change
                 Status = ConsignmentGenie.Core.Enums.ConsignorStatus.Pending,

@@ -81,8 +81,6 @@ public class ConsignorDetailDto
     public string ConsignorNumber { get; set; } = string.Empty;
 
     // Contact Info
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? PreferredName { get; set; }
     public string? Email { get; set; }
@@ -241,11 +239,11 @@ public class ConsignorActivityPayoutDto
 // Create Request
 public class CreateConsignorRequest
 {
-    [Required, MaxLength(100)]
-    public string FirstName { get; set; } = string.Empty;
+    [Required, MaxLength(200)]
+    public string Name { get; set; } = string.Empty;
 
-    [Required, MaxLength(100)]
-    public string LastName { get; set; } = string.Empty;
+    [MaxLength(100)]
+    public string? PreferredName { get; set; }
 
     [EmailAddress, MaxLength(255)]
     public string? Email { get; set; }
@@ -281,11 +279,11 @@ public class CreateConsignorRequest
 // Update Request
 public class UpdateConsignorRequest
 {
-    [Required, MaxLength(100)]
-    public string FirstName { get; set; } = string.Empty;
+    [Required, MaxLength(200)]
+    public string Name { get; set; } = string.Empty;
 
-    [Required, MaxLength(100)]
-    public string LastName { get; set; } = string.Empty;
+    [MaxLength(100)]
+    public string? PreferredName { get; set; }
 
     [EmailAddress, MaxLength(255)]
     public string? Email { get; set; }

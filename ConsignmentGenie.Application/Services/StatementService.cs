@@ -302,7 +302,7 @@ public class StatementService : IStatementService
             PeriodStart = statement.PeriodStart,
             PeriodEnd = statement.PeriodEnd,
             PeriodLabel = statement.PeriodStart.ToString("MMMM yyyy"),
-            ConsignorName = consignor != null ? $"{consignor.FirstName} {consignor.LastName}" : "Unknown",
+            ConsignorName = consignor != null ? $"{consignor.Name} {consignor}" : "Unknown",
             ShopName = consignor?.Organization?.Name ?? "Unknown",
             OpeningBalance = statement.OpeningBalance,
             TotalSales = statement.TotalSales,

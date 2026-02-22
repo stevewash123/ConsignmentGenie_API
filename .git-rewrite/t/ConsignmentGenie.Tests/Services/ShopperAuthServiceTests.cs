@@ -74,7 +74,7 @@ public class ShopperAuthServiceTests : IDisposable
         Assert.True(result.Success);
         Assert.NotNull(result.Token);
         Assert.NotNull(result.Profile);
-        Assert.Equal("John Doe", result.Profile.FullName);
+        Assert.Equal("John Doe", result.Profile.Name);
         Assert.Equal("john@example.com", result.Profile.Email);
         Assert.True(result.Profile.EmailNotifications);
 
@@ -194,7 +194,7 @@ public class ShopperAuthServiceTests : IDisposable
         Assert.True(result.Success);
         Assert.NotNull(result.Token);
         Assert.NotNull(result.Profile);
-        Assert.Equal("Test Shopper", result.Profile.FullName);
+        Assert.Equal("Test Shopper", result.Profile.Name);
         Assert.Equal("shopper@example.com", result.Profile.Email);
 
         // Verify last login was updated
@@ -326,7 +326,7 @@ public class ShopperAuthServiceTests : IDisposable
         Assert.NotNull(guestCheckout);
         Assert.Equal(_testOrganization.Id, guestCheckout.OrganizationId);
         Assert.Equal("guest@example.com", guestCheckout.Email);
-        Assert.Equal("Guest User", guestCheckout.FullName);
+        Assert.Equal("Guest User", guestCheckout.Name);
     }
 
     [Fact]
@@ -382,7 +382,7 @@ public class ShopperAuthServiceTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("Test Shopper", result.FullName);
+        Assert.Equal("Test Shopper", result.Name);
         Assert.Equal("shopper@example.com", result.Email);
         Assert.Equal("555-1234", result.Phone);
         Assert.True(result.EmailNotifications);
@@ -433,7 +433,7 @@ public class ShopperAuthServiceTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("New Name", result.FullName);
+        Assert.Equal("New Name", result.Name);
         Assert.Equal("555-9999", result.Phone);
         Assert.False(result.EmailNotifications);
         Assert.Equal("456 Oak St", result.ShippingAddress?.Address1);
@@ -441,7 +441,7 @@ public class ShopperAuthServiceTests : IDisposable
 
         // Verify database was updated
         var updatedShopper = await _context.Shoppers.FindAsync(shopper.Id);
-        Assert.Equal("New Name", updatedShopper?.FullName);
+        Assert.Equal("New Name", updatedShopper?.Name);
         Assert.Equal("456 Oak St", updatedShopper?.ShippingAddress1);
     }
 

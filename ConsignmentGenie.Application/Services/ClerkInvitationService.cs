@@ -229,7 +229,7 @@ public class ClerkInvitationService : IClerkInvitationService
         var emailBody = $@"
 Hi {invitation.Name},
 
-You've been invited by {inviter.FullName ?? inviter.Email} to join {organization.Name} as a staff member on ConsignmentGenie.
+You've been invited by {inviter.Name ?? inviter.Email} to join {organization.Name} as a staff member on ConsignmentGenie.
 
 As a staff member, you'll have access to the point-of-sale system to help with customer transactions.
 

@@ -108,7 +108,7 @@ public class QBSyncService : IQBSyncService
                 await _notifications.NotifySuccess(
                     consignor.OrganizationId,
                     "Consignor Synced to QuickBooks",
-                    $"Consignor {consignor.FirstName} {consignor.LastName} added as vendor"
+                    $"Consignor {consignor.Name} {consignor} added as vendor"
                 );
             }
             else
@@ -280,7 +280,7 @@ public class QBSyncService : IQBSyncService
     {
         return new QBVendor
         {
-            DisplayName = $"{consignor.FirstName} {consignor.LastName}",
+            DisplayName = $"{consignor.Name} {consignor}",
             Email = consignor.Email,
             Phone = consignor.Phone,
             BillAddr = BuildQBAddress(consignor)

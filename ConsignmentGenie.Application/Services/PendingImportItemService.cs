@@ -675,9 +675,7 @@ public class PendingImportItemService : IPendingImportItemService
             Source = entity.Source,
             SourceReference = entity.SourceReference,
             ConsignorId = entity.ConsignorId,
-            ConsignorName = entity.Consignor?.FirstName != null && entity.Consignor?.LastName != null
-                ? $"{entity.Consignor.FirstName} {entity.Consignor.LastName}".Trim()
-                : null,
+            ConsignorName = entity.Consignor?.Name,
             ConsignorNumber = entity.Consignor?.ConsignorNumber,
             Status = entity.Status,
             ImportedAt = entity.ImportedAt,

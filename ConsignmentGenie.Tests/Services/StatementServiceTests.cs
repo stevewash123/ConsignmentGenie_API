@@ -293,7 +293,7 @@ public class StatementServiceTests : IDisposable
         Assert.NotNull(result);
         Assert.Equal(statement.Id, result.Id);
         Assert.Equal(statement.StatementNumber, result.StatementNumber);
-        Assert.Equal(testData.Consignor.FirstName + " " + testData.Consignor.LastName, result.ConsignorName);
+        Assert.Equal(testData.Consignor.Name + " " + testData.Consignor, result.ConsignorName);
         Assert.Equal(testData.Organization.Name, result.ShopName);
     }
 

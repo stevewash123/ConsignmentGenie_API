@@ -107,8 +107,8 @@ public class OrganizationAccountSettingsController : ControllerBase
             // Return owner contact information
             var contactInfo = new
             {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
+                FirstName = user.Name,
+                LastName = user,
                 Email = user.Email,
                 Phone = user.Phone,
                 // Add other contact-related fields as needed

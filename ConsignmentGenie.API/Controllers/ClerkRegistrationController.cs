@@ -94,8 +94,8 @@ public class ClerkRegistrationController : ControllerBase
             {
                 IsValid = true,
                 ShopName = invitation.Organization?.Name,
-                InvitedFirstName = firstName,
-                InvitedLastName = lastName,
+                InvitedName = firstName,
+                InvitedPreferredName = lastName,
                 InvitedEmail = invitation.Email,
                 ExpirationDate = invitation.ExpiresAt,
                 Role = "clerk",
@@ -160,8 +160,8 @@ public class ClerkRegistrationController : ControllerBase
             {
                 Id = Guid.NewGuid(),
                 Email = invitation.Email,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
+                Name = request.Name,
+                PreferredName = request.PreferredName,
                 Phone = request.Phone,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = UserRole.Clerk,
@@ -183,7 +183,7 @@ public class ClerkRegistrationController : ControllerBase
             var token = GenerateJwtToken(newUser, invitation.Organization!);
 
             _logger.LogInformation("[CLERK_INVITATION] Clerk registered successfully from invitation: {Token}, Email: {Email}",
-                request.Token, request.FirstName + " " + request.LastName);
+                request.Token, request.Name + " " + request);
 
             return Ok(new RegisterClerkFromInvitationResponse
             {
@@ -194,8 +194,8 @@ public class ClerkRegistrationController : ControllerBase
                 {
                     Id = newUser.Id,
                     Email = newUser.Email,
-                    FirstName = newUser.FirstName,
-                    LastName = newUser.LastName,
+                    Name = newUser.Name,
+                    PreferredName = newUser.PreferredName,
                     Role = newUser.Role.ToString(),
                     OrganizationId = newUser.OrganizationId,
                     OrganizationName = invitation.Organization.Name
@@ -225,7 +225,7 @@ public class ClerkRegistrationController : ControllerBase
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, $"{user.FirstName} {user.LastName}".Trim()),
+            new(ClaimTypes.Name, $"{user.Name} {user}".Trim()),
             new(ClaimTypes.Role, user.Role.ToString()),
             new("OrganizationId", user.OrganizationId.ToString()),
             new("OrganizationName", organization.Name)

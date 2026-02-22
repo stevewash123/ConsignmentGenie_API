@@ -170,18 +170,18 @@ public class OrganizationAgreementController : ControllerBase
         {
             // Get the organization to access the stored Cloudinary URL
             var organization = await _context.Organizations.FindAsync(organizationId);
-            if (organization == null || organization.AgreementMethod != "upload")
+            if (organization == null)
             {
-                _logger.LogWarning("[AGREEMENT] Organization {OrganizationId} not found or not in upload mode", organizationId);
-                return NotFound("Agreement template not found");
+                _logger.LogWarning("[AGREEMENT] Organization {OrganizationId} not found", organizationId);
+                return NotFound("Organization not found");
             }
 
             // Get the Cloudinary URL from the dedicated field
             var cloudinaryUrl = organization.AgreementTemplateCloudinaryUrl;
             if (string.IsNullOrEmpty(cloudinaryUrl) || !cloudinaryUrl.Contains("cloudinary.com"))
             {
-                _logger.LogWarning("[AGREEMENT] No valid Cloudinary URL found for organization {OrganizationId}", organizationId);
-                return NotFound("Agreement template file not found");
+                _logger.LogWarning("[AGREEMENT] No agreement template uploaded for organization {OrganizationId}", organizationId);
+                return NotFound("No agreement template has been uploaded");
             }
 
             // Verify the file exists in Cloudinary
@@ -212,18 +212,18 @@ public class OrganizationAgreementController : ControllerBase
         {
             // Get the organization to access the stored Cloudinary URL
             var organization = await _context.Organizations.FindAsync(organizationId);
-            if (organization == null || organization.AgreementMethod != "upload")
+            if (organization == null)
             {
-                _logger.LogWarning("[AGREEMENT] Organization {OrganizationId} not found or not in upload mode", organizationId);
-                return NotFound("Agreement template not found");
+                _logger.LogWarning("[AGREEMENT] Organization {OrganizationId} not found", organizationId);
+                return NotFound("Organization not found");
             }
 
             // Get the Cloudinary URL from the dedicated field
             var cloudinaryUrl = organization.AgreementTemplateCloudinaryUrl;
             if (string.IsNullOrEmpty(cloudinaryUrl) || !cloudinaryUrl.Contains("cloudinary.com"))
             {
-                _logger.LogWarning("[AGREEMENT] No valid Cloudinary URL found for organization {OrganizationId}", organizationId);
-                return NotFound("Agreement template file not found");
+                _logger.LogWarning("[AGREEMENT] No agreement template uploaded for organization {OrganizationId}", organizationId);
+                return NotFound("No agreement template has been uploaded");
             }
 
             // Extract text content from the Cloudinary document

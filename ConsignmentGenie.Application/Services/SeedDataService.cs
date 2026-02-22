@@ -106,7 +106,7 @@ public class SeedDataService
                 Id = Guid.NewGuid(),
                 Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("provider123"), // Demo password
-                FullName = $"{firstName} {lastName}",
+                Name = $"{firstName} {lastName}",
                 Phone = phone,
                 Role = UserRole.Consignor,
                 OrganizationId = orgId,
@@ -124,8 +124,8 @@ public class SeedDataService
                 OrganizationId = orgId,
                 UserId = user.Id,
                 ConsignorNumber = $"PRV-{(i + 1):D5}",
-                FirstName = firstName,
-                LastName = lastName,
+                Name = $"{firstName} {lastName}",
+                PreferredName = firstName,
                 DisplayName = $"{firstName} {lastName}", // Compatibility field
                 Email = email,
                 Phone = phone,

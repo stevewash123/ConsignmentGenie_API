@@ -94,7 +94,7 @@ public class ConsignorMetricsController : ControllerBase
                 topProviders.Add(new ConsignorTopPerformerDto
                 {
                     ConsignorId = provider.Id,
-                    ConsignorName = $"{provider.FirstName} {provider.LastName}",
+                    ConsignorName = $"{provider.Name} {provider}",
                     PendingBalance = pendingBalance,
                     TotalEarnings = totalEarnings,
                     ActiveItems = provider.Items.Count(i => i.Status == ItemStatus.Available),
@@ -220,7 +220,7 @@ public class ConsignorMetricsController : ControllerBase
             var activity = new ConsignorActivityDto
             {
                 ConsignorId = id,
-                ConsignorName = $"{provider.FirstName} {provider.LastName}",
+                ConsignorName = $"{provider.Name} {provider}",
                 DaysRange = days,
                 RecentTransactions = recentTransactions,
                 RecentItems = recentItems,

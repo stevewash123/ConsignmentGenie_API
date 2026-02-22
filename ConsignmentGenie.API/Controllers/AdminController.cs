@@ -234,7 +234,7 @@ public class AdminController : ControllerBase
                 PasswordHash = hashedPassword,
                 Role = ConsignmentGenie.Core.Enums.UserRole.Customer,
                 OrganizationId = testOrgId,
-                FullName = "Cypress Test Shopper",
+                Name = "Cypress Test Shopper",
                 Phone = "555-123-4567",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -246,7 +246,7 @@ public class AdminController : ControllerBase
                 PasswordHash = hashedPassword,
                 Role = ConsignmentGenie.Core.Enums.UserRole.Customer,
                 OrganizationId = testOrgId,
-                FullName = "Cypress Guest User",
+                Name = "Cypress Guest User",
                 Phone = "555-987-6543",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -918,7 +918,7 @@ public class AdminController : ControllerBase
                 Id = Guid.NewGuid(),
                 Email = "admin@microsaasbuilders.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                FullName = "Admin User",
+                Name = "Admin User",
                 Role = (UserRole)0,
                 OrganizationId = organization.Id,
                 ApprovalStatus = ApprovalStatus.Approved,

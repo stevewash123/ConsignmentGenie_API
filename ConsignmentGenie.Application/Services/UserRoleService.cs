@@ -35,7 +35,7 @@ public class UserRoleService : IUserRoleService
             {
                 UserId = user.Id,
                 Email = user.Email,
-                FullName = user.FullName,
+                FullName = user.Name,
                 Roles = user.RoleAssignments
                     .Where(ra => ra.IsActive)
                     .Select(ra => new UserRoleDto
@@ -170,7 +170,7 @@ public class UserRoleService : IUserRoleService
                 {
                     UserId = g.Key,
                     Email = g.First().User.Email,
-                    FullName = g.First().User.FullName,
+                    FullName = g.First().User.Name,
                     Roles = g.Select(ra => new UserRoleDto
                     {
                         Role = ra.Role,

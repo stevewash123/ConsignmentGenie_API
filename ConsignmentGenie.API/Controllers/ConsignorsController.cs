@@ -46,7 +46,7 @@ public class ConsignorsController : ControllerBase
             if (!string.IsNullOrEmpty(queryParams.Search))
             {
                 query = query.Where(p =>
-                    (p.FirstName + " " + p.LastName).Contains(queryParams.Search) ||
+                    (p.Name + " " + p).Contains(queryParams.Search) ||
                     p.ConsignorNumber.Contains(queryParams.Search) ||
                     (p.Email != null && p.Email.Contains(queryParams.Search)));
             }
@@ -110,7 +110,8 @@ public class ConsignorsController : ControllerBase
             {
                 ConsignorId = ((Consignor)p.Consignor).Id,
                 ConsignorNumber = ((Consignor)p.Consignor).ConsignorNumber,
-                FullName = $"{((Consignor)p.Consignor).FirstName} {((Consignor)p.Consignor).LastName}",
+                Name = ((Consignor)p.Consignor).Name,
+                PreferredName = ((Consignor)p.Consignor).PreferredName,
                 Email = ((Consignor)p.Consignor).Email,
                 Phone = ((Consignor)p.Consignor).Phone,
                 CommissionRate = ((Consignor)p.Consignor).CommissionRate,
@@ -173,9 +174,8 @@ public class ConsignorsController : ControllerBase
                 ConsignorId = consignor.Id,
                 UserId = consignor.UserId,
                 ConsignorNumber = consignor.ConsignorNumber,
-                FirstName = consignor.FirstName,
-                LastName = consignor.LastName,
-                FullName = $"{consignor.FirstName} {consignor.LastName}",
+                Name = consignor.Name,
+                PreferredName = consignor.PreferredName,
                 Email = consignor.Email,
                 Phone = consignor.Phone,
                 AddressLine1 = consignor.AddressLine1,
@@ -254,8 +254,8 @@ public class ConsignorsController : ControllerBase
             {
                 OrganizationId = organizationId,
                 ConsignorNumber = consignorNumber,
-                FirstName = request.FirstName.Trim(),
-                LastName = request.LastName.Trim(),
+                Name = request.Name.Trim(),
+                PreferredName = request.PreferredName?.Trim(),
                 Email = request.Email?.Trim(),
                 Phone = request.Phone?.Trim(),
                 AddressLine1 = request.AddressLine1?.Trim(),
@@ -292,7 +292,7 @@ public class ConsignorsController : ControllerBase
                     {
                         var shopName = organization.Name ?? "ConsignmentGenie Shop";
                         var storeCode = organization.StoreCode ?? "";
-                        var ownerName = $"{owner.FirstName} {owner.LastName}".Trim();
+                        var ownerName = $"{owner.Name} {owner}".Trim();
 
                         if (string.IsNullOrEmpty(ownerName))
                         {
@@ -301,7 +301,7 @@ public class ConsignorsController : ControllerBase
 
                         var emailSent = await _emailService.SendConsignorWelcomeAsync(
                             consignor.Email,
-                            $"{consignor.FirstName} {consignor.LastName}".Trim(),
+                            $"{consignor.Name} {consignor}".Trim(),
                             shopName,
                             storeCode,
                             ownerName
@@ -324,9 +324,8 @@ public class ConsignorsController : ControllerBase
             {
                 ConsignorId = consignor.Id,
                 ConsignorNumber = consignor.ConsignorNumber,
-                FirstName = consignor.FirstName,
-                LastName = consignor.LastName,
-                FullName = $"{consignor.FirstName} {consignor.LastName}".Trim(),
+                Name = consignor.Name,
+                PreferredName = consignor.PreferredName,
                 Email = consignor.Email,
                 Phone = consignor.Phone,
                 AddressLine1 = consignor.AddressLine1,
@@ -394,8 +393,8 @@ public class ConsignorsController : ControllerBase
                 return BadRequest(ApiResponse<ConsignorDetailDto>.ErrorResult("Contract end date must be after start date"));
             }
 
-            consignor.FirstName = request.FirstName.Trim();
-            consignor.LastName = request.LastName.Trim();
+            consignor.Name = request.Name.Trim();
+            consignor.PreferredName = request.PreferredName?.Trim();
             consignor.Email = request.Email?.Trim();
             consignor.Phone = request.Phone?.Trim();
             consignor.AddressLine1 = request.AddressLine1?.Trim();
@@ -592,8 +591,8 @@ public class ConsignorsController : ControllerBase
         return queryParams.SortBy?.ToLower() switch
         {
             "name" => queryParams.SortDirection?.ToLower() == "desc"
-                ? consignors.OrderByDescending(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList()
-                : consignors.OrderBy(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList(),
+                ? consignors.OrderByDescending(p => ((Consignor)p.Consignor).Name + " " + ((Consignor)p.Consignor)).ToList()
+                : consignors.OrderBy(p => ((Consignor)p.Consignor).Name + " " + ((Consignor)p.Consignor)).ToList(),
             "createdat" => queryParams.SortDirection?.ToLower() == "desc"
                 ? consignors.OrderByDescending(p => ((Consignor)p.Consignor).CreatedAt).ToList()
                 : consignors.OrderBy(p => ((Consignor)p.Consignor).CreatedAt).ToList(),
@@ -603,7 +602,7 @@ public class ConsignorsController : ControllerBase
             "balance" => queryParams.SortDirection?.ToLower() == "desc"
                 ? consignors.OrderByDescending(p => (decimal)p.PendingBalance).ToList()
                 : consignors.OrderBy(p => (decimal)p.PendingBalance).ToList(),
-            _ => consignors.OrderBy(p => ((Consignor)p.Consignor).FirstName + " " + ((Consignor)p.Consignor).LastName).ToList()
+            _ => consignors.OrderBy(p => ((Consignor)p.Consignor).Name + " " + ((Consignor)p.Consignor)).ToList()
         };
     }
 

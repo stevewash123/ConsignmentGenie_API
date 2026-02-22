@@ -225,7 +225,7 @@ public class AutoPayoutJob
             {
                 PayoutId = Guid.NewGuid(),
                 ConsignorId = consignor.Id,
-                ConsignorName = $"{consignor.FirstName} {consignor.LastName}",
+                ConsignorName = $"{consignor.Name} {consignor}",
                 ConsignorAccountId = ExtractAccountId(consignor.PaymentDetails!),
                 Amount = payoutAmount,
                 PayoutNumber = GeneratePayoutNumber()

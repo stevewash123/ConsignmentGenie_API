@@ -136,8 +136,9 @@ public class ConsoleEmailService : IEmailService
         return true;
     }
 
-    public async Task<bool> SendConsignorInvitationAsync(string email, string consignorName, string shopName, string inviteLink, string expirationDate)
+    public async Task<bool> SendConsignorInvitationAsync(string email, string consignorName, string shopName, string inviteLink, string expirationDate, string personalMessage = null)
     {
+        var personalMessageDisplay = !string.IsNullOrWhiteSpace(personalMessage) ? $"\n  Personal Message: {personalMessage}" : "";
         _logger.LogInformation(
             "[CONSOLE EMAIL] Consignor Invitation Email\n" +
             "  To: {Email}\n" +
@@ -145,8 +146,8 @@ public class ConsoleEmailService : IEmailService
             "  Consignor: {ConsignorName}\n" +
             "  Shop: {ShopName}\n" +
             "  Invite Link: {InviteLink}\n" +
-            "  Expires: {ExpirationDate}",
-            email, shopName, consignorName, shopName, inviteLink, expirationDate
+            "  Expires: {ExpirationDate}{PersonalMessageDisplay}",
+            email, shopName, consignorName, shopName, inviteLink, expirationDate, personalMessageDisplay
         );
 
         await Task.Delay(100);

@@ -182,15 +182,15 @@ public class ClerksController : ControllerBase
             .Select(u => new
             {
                 u.Id,
-                u.FirstName,
-                u.LastName,
+                u.Name,
+                u,
                 u.Email,
                 u.Phone,
                 u.IsActive,
                 u.CreatedAt
             })
-            .OrderBy(u => u.FirstName)
-            .ThenBy(u => u.LastName)
+            .OrderBy(u => u.Name)
+            .ThenBy(u => u)
             .ToListAsync();
 
         return Ok(clerks);

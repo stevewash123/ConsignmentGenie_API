@@ -547,7 +547,7 @@ public class ConsignorPortalController : ControllerBase
                 return NotFound("Consignor not found");
 
             // Update editable fields
-            provider.DisplayName = request.FullName;
+            provider.DisplayName = request.Name;
             provider.Phone = request.Phone;
             provider.PaymentMethod = request.PreferredPaymentMethod;
             provider.PaymentDetails = request.PaymentDetails;
@@ -1062,7 +1062,7 @@ public class ConsignorPortalController : ControllerBase
                         // Generate PDF from the personalized text using QuestPDF
                         var pdfBytes = await _pdfReportGenerator.GenerateTextDocumentPdfAsync(personalizedText, "Consignment Agreement");
                         var orgName = consignor.Organization.ShopName ?? consignor.Organization.Name;
-                        var consignorDisplayName = $"{consignor.FirstName} {consignor.LastName}".Trim();
+                        var consignorDisplayName = $"{consignor.Name} {consignor}".Trim();
                         var agreementFileName = $"{orgName.Replace(" ", "_")}_Agreement_{consignorDisplayName.Replace(" ", "_")}.pdf";
 
                         _logger.LogInformation("Returning personalized agreement PDF for consignor {ConsignorId}", consignorId);
@@ -1089,7 +1089,7 @@ public class ConsignorPortalController : ControllerBase
 
             // Create a simple personalized agreement
             var organizationName = consignor.Organization.ShopName ?? consignor.Organization.Name;
-            var consignorName = $"{consignor.FirstName} {consignor.LastName}".Trim();
+            var consignorName = $"{consignor.Name} {consignor}".Trim();
 
             var personalizedContent = $@"CONSIGNMENT AGREEMENT
 {organizationName}

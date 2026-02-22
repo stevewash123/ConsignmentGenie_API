@@ -205,7 +205,7 @@ namespace ConsignmentGenie.Tests.Services
             // Verify user was created
             var createdUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "newowner@test.com");
             Assert.NotNull(createdUser);
-            Assert.Equal("New Owner", createdUser.FullName);
+            Assert.Equal("New Owner", createdUser.Name);
             Assert.Equal(UserRole.Owner, createdUser.Role);
             Assert.Equal(ApprovalStatus.Pending, createdUser.ApprovalStatus);
 
@@ -272,7 +272,7 @@ namespace ConsignmentGenie.Tests.Services
             // Verify user was created
             var createdUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "newprovider@test.com");
             Assert.NotNull(createdUser);
-            Assert.Equal("New Provider", createdUser.FullName);
+            Assert.Equal("New Provider", createdUser.Name);
             Assert.Equal(UserRole.Provider, createdUser.Role);
             Assert.Equal(ApprovalStatus.Pending, createdUser.ApprovalStatus);
             Assert.Equal(_organizationId, createdUser.OrganizationId);
@@ -354,7 +354,7 @@ namespace ConsignmentGenie.Tests.Services
 
             // Assert
             Assert.Single(result);
-            Assert.Equal("Pending Provider", result[0].FullName);
+            Assert.Equal("Pending Provider", result[0].Name);
             Assert.Equal("pending.provider@test.com", result[0].Email);
         }
 
@@ -438,7 +438,7 @@ namespace ConsignmentGenie.Tests.Services
 
             // Assert
             Assert.Single(result);
-            Assert.Equal("Pending Owner", result[0].FullName);
+            Assert.Equal("Pending Owner", result[0].Name);
             Assert.Equal("pending.owner@test.com", result[0].Email);
             Assert.Equal("Pending Shop", result[0].ShopName);
         }

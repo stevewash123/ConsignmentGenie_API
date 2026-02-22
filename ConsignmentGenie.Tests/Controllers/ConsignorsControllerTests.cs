@@ -200,7 +200,7 @@ namespace ConsignmentGenie.Tests.Controllers
             var pagedResult = Assert.IsType<PagedResult<ConsignorListDto>>(okResult.Value);
             Assert.Equal(1, pagedResult.TotalCount);
             Assert.Single(pagedResult.Items);
-            Assert.Contains("John", pagedResult.Items.First().FullName);
+            Assert.Contains("John", pagedResult.Items.First().Name);
         }
 
         [Fact]
@@ -236,8 +236,8 @@ namespace ConsignmentGenie.Tests.Controllers
             var apiResponse = Assert.IsType<ApiResponse<ConsignorDetailDto>>(okResult.Value);
             Assert.True(apiResponse.Success);
             Assert.Equal(_consignorId, apiResponse.Data.ConsignorId);
-            Assert.Equal("John", apiResponse.Data.FirstName);
-            Assert.Equal("Doe", apiResponse.Data.LastName);
+            Assert.Equal("John", apiResponse.Data.Name);
+            Assert.Equal("Doe", apiResponse.Data);
         }
 
         [Fact]
@@ -290,14 +290,14 @@ namespace ConsignmentGenie.Tests.Controllers
             var createdAtResult = Assert.IsType<CreatedAtActionResult>(result.Result);
             var apiResponse = Assert.IsType<ApiResponse<ConsignorDetailDto>>(createdAtResult.Value);
             Assert.True(apiResponse.Success);
-            Assert.Equal("Alice", apiResponse.Data.FirstName);
-            Assert.Equal("Johnson", apiResponse.Data.LastName);
+            Assert.Equal("Alice", apiResponse.Data.Name);
+            Assert.Equal("Johnson", apiResponse.Data);
             Assert.Equal("alice@example.com", apiResponse.Data.Email);
 
             // Verify consignor was created in database
             var consignorInDb = await _context.Consignors.FindAsync(apiResponse.Data.ConsignorId);
             Assert.NotNull(consignorInDb);
-            Assert.Equal("Alice", consignorInDb.FirstName);
+            Assert.Equal("Alice", consignorInDb.Name);
         }
 
         [Fact]

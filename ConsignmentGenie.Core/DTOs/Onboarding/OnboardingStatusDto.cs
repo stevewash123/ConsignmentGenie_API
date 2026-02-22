@@ -13,6 +13,9 @@ public class OnboardingStatusDto
     [JsonPropertyName("showModal")]
     public bool ShowModal { get; set; }
 
+    [JsonPropertyName("setupChecklistDismissed")]
+    public bool SetupChecklistDismissed { get; set; }
+
     [JsonPropertyName("steps")]
     public OnboardingStepsDto Steps { get; set; } = new OnboardingStepsDto();
 }
@@ -30,4 +33,13 @@ public class OnboardingStepsDto
 
     [JsonPropertyName("quickBooksConnected")]
     public bool QuickBooksConnected { get; set; }
+
+    [JsonPropertyName("agreementUploaded")]
+    public bool AgreementUploaded { get; set; }
+
+    [JsonPropertyName("squareConnected")]
+    public bool SquareConnected { get; set; }
+
+    [JsonPropertyName("payoutMethodConfigured")]
+    public bool PayoutMethodConfigured { get; set; }
 }

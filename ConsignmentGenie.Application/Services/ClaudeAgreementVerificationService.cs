@@ -226,7 +226,7 @@ You are an expert document analyst specializing in consignment agreements. Pleas
 
 **Context:**
 - Shop: {organization.Name}
-- Consignor: {consignor.FirstName} {consignor.LastName}
+- Consignor: {consignor.Name} {consignor}
 - Expected Commission Rate: {consignor.CommissionRate:P}
 
 **Document Content:**
