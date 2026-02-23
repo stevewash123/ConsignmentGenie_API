@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ConsignmentGenie.Core.DTOs.Notifications;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
+using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Core.Services;
 using ConsignmentGenie.Infrastructure.Data;
 
@@ -10,11 +12,16 @@ namespace ConsignmentGenie.Application.Services;
 public class PayoutNotificationService : IPayoutNotificationService
 {
     private readonly ConsignmentGenieContext _context;
+    private readonly INotificationService _enhancedNotificationService;
     private readonly ILogger<PayoutNotificationService> _logger;
 
-    public PayoutNotificationService(ConsignmentGenieContext context, ILogger<PayoutNotificationService> logger)
+    public PayoutNotificationService(
+        ConsignmentGenieContext context,
+        INotificationService enhancedNotificationService,
+        ILogger<PayoutNotificationService> logger)
     {
         _context = context;
+        _enhancedNotificationService = enhancedNotificationService;
         _logger = logger;
     }
 
@@ -40,29 +47,26 @@ public class PayoutNotificationService : IPayoutNotificationService
 
                 foreach (var ownerUserId in ownerUserIds)
                 {
-                    var notification = new Notification
+                    // 🚨 CRITICAL FIX: Use EnhancedNotificationService for proper email delivery and preference checking
+                    await _enhancedNotificationService.CreateAsync(new CreateNotificationRequest
                     {
-                        Id = Guid.NewGuid(),
                         OrganizationId = summary.OrganizationId,
                         ToUserId = ownerUserId,
                         ToType = "owner",
-                        Type = "PayoutReady",
+                        Type = "payout_ready",  // Consistent naming convention
                         Title = "Consignor Ready for Payout",
-                        Message = $"{summary.Consignor.Name} {summary.Consignor} has ${summary.ClearedAmount:F2} ready for payout.",
+                        Message = $"{summary.Consignor.Name} has ${summary.ClearedAmount:F2} ready for payout.",
                         ActionUrl = $"/owner/payouts?consignorId={summary.ConsignorId}",
-                        CreatedAt = DateTime.UtcNow,
-                        IsRead = false
-                    };
-
-                    _context.Notifications.Add(notification);
+                        // This now includes: preference checking, email sending, SMS prep, compliance validation
+                    });
                 }
 
                 summary.NotificationSent = true;
                 summary.NotificationSentAt = DateTime.UtcNow;
                 summary.UpdatedAt = DateTime.UtcNow;
 
-                _logger.LogInformation("Created payout notification for consignor {ConsignorName} in organization {OrganizationId}",
-                    $"{summary.Consignor.Name} {summary.Consignor}",
+                _logger.LogInformation("[PAYOUT_NOTIFICATION] Sent enhanced notification (email + system) for consignor {ConsignorName} in organization {OrganizationId}",
+                    summary.Consignor.Name,
                     summary.OrganizationId);
             }
             catch (Exception ex)

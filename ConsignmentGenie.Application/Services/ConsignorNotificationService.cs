@@ -3,7 +3,6 @@ using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Core.DTOs;
 using ConsignmentGenie.Core.DTOs.Notifications;
 using ConsignmentGenie.Core.Entities;
-using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -12,113 +11,43 @@ using System.Text.Json;
 
 namespace ConsignmentGenie.Application.Services;
 
+/// <summary>
+/// Refactored ConsignorNotificationService that delegates CreateNotificationAsync to EnhancedNotificationService
+/// Keeps specialized notification management methods while using enhanced notification creation
+/// </summary>
 public class ConsignorNotificationService : IConsignorNotificationService
 {
     private readonly ConsignmentGenieContext _context;
-    private readonly IEmailService _emailService; // Email service for sending emails
+    private readonly INotificationService _enhancedNotificationService;
     private readonly ILogger<ConsignorNotificationService> _logger;
 
     public ConsignorNotificationService(
         ConsignmentGenieContext context,
-        IEmailService emailService,
+        INotificationService enhancedNotificationService,
         ILogger<ConsignorNotificationService> logger)
     {
         _context = context;
-        _emailService = emailService;
+        _enhancedNotificationService = enhancedNotificationService;
         _logger = logger;
     }
 
     public async Task CreateNotificationAsync(CreateNotificationRequest request)
     {
-        // 🏗️ AGGREGATE ROOT PATTERN: Detach all tracked entities to avoid conflicts
-        foreach (var entry in _context.ChangeTracker.Entries().ToList())
-        {
-            entry.State = EntityState.Detached;
-        }
-
         try
         {
-            // 🏗️ AGGREGATE ROOT PATTERN: Create notification aggregate root
-            var notification = new Notification
-            {
-                OrganizationId = request.OrganizationId,
-                FromUserId = request.FromUserId,
-                FromType = request.FromType,
-                ToUserId = request.ToUserId,
-                ToType = request.ToType,
-                ActionStatus = request.ActionStatus,
-                Type = request.Type,
-                Title = request.Title,
-                Message = request.Message,
-                Payload = request.Payload != null ? JsonSerializer.Serialize(request.Payload) : null,
-                AttachmentUrl = request.AttachmentUrl,
-                AttachmentName = request.AttachmentName,
-                AttachmentType = request.AttachmentType,
-                ActionUrl = request.ActionUrl,
-                ItemId = request.ItemId,
-                TransactionId = request.TransactionId,
-                PayoutId = request.PayoutId,
-                StatementId = request.StatementId,
-                ItemRequestId = request.ItemRequestId,
-                ReferenceType = request.ReferenceType,
-                ReferenceId = request.ReferenceId,
-                Metadata = request.Metadata != null ? JsonSerializer.Serialize(request.Metadata) : null,
-                IsRead = false,
-                EmailSent = false,
-                SmsSent = false
-            };
+            _logger.LogInformation("[CONSIGNOR_NOTIFICATION] Delegating notification creation to EnhancedNotificationService for {Type} to user {UserId}",
+                request.Type, request.ToUserId);
 
-            _context.Notifications.Add(notification);
-            await _context.SaveChangesAsync();
+            // 🚨 REFACTORED: Delegate to EnhancedNotificationService for proper preference matrix handling
+            await _enhancedNotificationService.CreateAsync(request);
 
-            // Check user preferences and send email if enabled
-            var requestType = request.Type; // Move string comparison out of LINQ query
-            var userPreference = await _context.UserNotificationPreferences
-                .Where(p => p.UserId == request.ToUserId)
-                .ToListAsync(); // Execute query first
-            var matchingPreference = userPreference.FirstOrDefault(p => p.NotificationType.ToString() == requestType);
-
-            if (matchingPreference?.EmailEnabled ?? true) // Default to email enabled
-            {
-                try
-                {
-                    // Build data dictionary for email template
-                    var emailData = BuildEmailData(request);
-
-                    // Get user's email address for sending email
-                    var user = await _context.Users
-                        .Where(u => u.Id == request.ToUserId)
-                        .FirstOrDefaultAsync();
-
-                    if (user?.Email != null)
-                    {
-                        // Send email only - don't create duplicate notification
-                        var emailSent = await _emailService.SendSimpleEmailAsync(
-                            user.Email,
-                            request.Title,
-                            request.Message,
-                            true
-                        );
-
-                        if (emailSent)
-                        {
-                            notification.EmailSent = true;
-                            notification.EmailSentAt = DateTime.UtcNow;
-                            await _context.SaveChangesAsync();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to send email notification for {Type} to user {UserId}", request.Type, request.ToUserId);
-                }
-            }
-
-            _logger.LogInformation("Created notification {Type} for user {UserId}", request.Type, request.ToUserId);
+            _logger.LogInformation("[CONSIGNOR_NOTIFICATION] Successfully delegated notification {Type} for user {UserId}",
+                request.Type, request.ToUserId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create notification {Type} for user {UserId}", request.Type, request.ToUserId);
+            _logger.LogError(ex, "[CONSIGNOR_NOTIFICATION] Failed to create notification {Type} for user {UserId}",
+                request.Type, request.ToUserId);
             throw;
         }
     }
