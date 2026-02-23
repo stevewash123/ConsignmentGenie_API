@@ -25,9 +25,9 @@ public class EnhancedNotificationService : INotificationService
     private readonly IEmailComplianceService _emailCompliance;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<EnhancedNotificationService> _logger;
+    private readonly IEmailService _emailService;
 
-    // TODO: Inject actual email/SMS services when available
-    // private readonly IEmailService _emailService;
+    // TODO: Inject SMS service when available
     // private readonly ISmsService _smsService;
 
     public EnhancedNotificationService(
@@ -35,13 +35,15 @@ public class EnhancedNotificationService : INotificationService
         INotificationPreferenceService preferenceService,
         IEmailComplianceService emailCompliance,
         IHttpContextAccessor httpContextAccessor,
-        ILogger<EnhancedNotificationService> logger)
+        ILogger<EnhancedNotificationService> logger,
+        IEmailService emailService)
     {
         _context = context;
         _preferenceService = preferenceService;
         _emailCompliance = emailCompliance;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
+        _emailService = emailService;
     }
 
     public async Task<Notification> CreateAsync(CreateNotificationRequest request)
@@ -85,10 +87,13 @@ public class EnhancedNotificationService : INotificationService
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("🚀 Notification {NotificationId} saved to database. Now processing channels for {Type} → {ToUserId} ({ToType})",
+                notification.Id, request.Type, request.ToUserId, request.ToType);
+
             // Send notifications via enabled channels using preference-aware filtering
             await SendNotificationChannelsAsync(notification);
 
-            _logger.LogInformation("Notification {Type} created and sent for user {ToUserId} with ID {NotificationId}",
+            _logger.LogInformation("✅ Notification {Type} created and sent for user {ToUserId} with ID {NotificationId}",
                 request.Type, request.ToUserId, notification.Id);
 
             return notification;
@@ -167,25 +172,42 @@ public class EnhancedNotificationService : INotificationService
     {
         try
         {
+            _logger.LogInformation("🔍 Processing notification channels for {NotificationType} to user {UserId} (role: {ToType})",
+                notification.Type, notification.ToUserId, notification.ToType);
+
             // Try to get preferences from JWT claims first (ultra-fast)
             var claimsPrefs = GetPackedPreferencesFromClaims(notification.ToUserId, notification.ToType);
 
             if (claimsPrefs.HasValue)
             {
+                _logger.LogInformation("⚡ Using bit-packed claims preferences for user {UserId}", notification.ToUserId);
+
                 // Use bit-packed claims for instant lookup
                 var packedPrefs = claimsPrefs.Value;
 
                 // Check email preference and compliance
-                if (NotificationPrefsBitPacker.IsEnabled(packedPrefs, notification.Type, NotificationChannel.Email))
+                var emailEnabled = NotificationPrefsBitPacker.IsEnabled(packedPrefs, notification.Type, NotificationChannel.Email);
+                _logger.LogInformation("📧 Email preference check - Type: {NotificationType}, Enabled: {EmailEnabled}",
+                    notification.Type, emailEnabled);
+
+                if (emailEnabled)
                 {
-                    if (await _emailCompliance.CanSendEmailAsync(notification.ToUserId, notification.ToType, notification.Type))
+                    var canSendEmail = await _emailCompliance.CanSendEmailAsync(notification.ToUserId, notification.ToType, notification.Type);
+                    _logger.LogInformation("✅ Email compliance check - Can send: {CanSend}", canSendEmail);
+
+                    if (canSendEmail)
                     {
+                        _logger.LogInformation("📬 Sending email notification...");
                         await SendEmailNotificationAsync(notification, null); // No need for full preferences object
                     }
                 }
 
                 // Check SMS preference
-                if (NotificationPrefsBitPacker.IsEnabled(packedPrefs, notification.Type, NotificationChannel.Sms))
+                var smsEnabled = NotificationPrefsBitPacker.IsEnabled(packedPrefs, notification.Type, NotificationChannel.Sms);
+                _logger.LogInformation("📱 SMS preference check - Type: {NotificationType}, Enabled: {SmsEnabled}",
+                    notification.Type, smsEnabled);
+
+                if (smsEnabled)
                 {
                     await SendSmsNotificationAsync(notification, null); // No need for full preferences object
                 }
@@ -193,31 +215,46 @@ public class EnhancedNotificationService : INotificationService
             else
             {
                 // Fallback to database lookup if claims not available
-                _logger.LogInformation("JWT claims not available for user {UserId}, falling back to database lookup", notification.ToUserId);
+                _logger.LogInformation("🐌 JWT claims not available for user {UserId}, falling back to database lookup", notification.ToUserId);
 
                 var preferences = await _preferenceService.GetPreferencesAsync(notification.ToUserId, notification.ToType);
+                _logger.LogInformation("📊 Database preferences retrieved. Has type {NotificationType}: {HasPrefs}",
+                    notification.Type, preferences.Preferences.ContainsKey(notification.Type));
 
                 if (preferences.Preferences.TryGetValue(notification.Type, out var channelPrefs))
                 {
                     // Check email preference and compliance
-                    if (channelPrefs.TryGetValue(NotificationChannel.Email, out var emailEnabled) && emailEnabled)
+                    var emailEnabled = channelPrefs.TryGetValue(NotificationChannel.Email, out var emailEnabledValue) && emailEnabledValue;
+                    _logger.LogInformation("📧 Database email preference check - Type: {NotificationType}, Enabled: {EmailEnabled}",
+                        notification.Type, emailEnabled);
+
+                    if (emailEnabled)
                     {
-                        if (await _emailCompliance.CanSendEmailAsync(notification.ToUserId, notification.ToType, notification.Type))
+                        var canSendEmail = await _emailCompliance.CanSendEmailAsync(notification.ToUserId, notification.ToType, notification.Type);
+                        _logger.LogInformation("✅ Email compliance check - Can send: {CanSend}", canSendEmail);
+
+                        if (canSendEmail)
                         {
+                            _logger.LogInformation("📬 Sending email notification (database path)...");
                             await SendEmailNotificationAsync(notification, preferences);
                         }
                     }
 
                     // Check SMS preference
-                    if (channelPrefs.TryGetValue(NotificationChannel.Sms, out var smsEnabled) && smsEnabled && preferences.SmsVerified)
+                    var smsEnabled = channelPrefs.TryGetValue(NotificationChannel.Sms, out var smsEnabledValue) && smsEnabledValue && preferences.SmsVerified;
+                    _logger.LogInformation("📱 Database SMS preference check - Type: {NotificationType}, Enabled: {SmsEnabled}, SmsVerified: {SmsVerified}",
+                        notification.Type, smsEnabled, preferences.SmsVerified);
+
+                    if (smsEnabled)
                     {
                         await SendSmsNotificationAsync(notification, preferences);
                     }
                 }
                 else
                 {
-                    // Default behavior for new notification types - send system notification only
-                    _logger.LogInformation("No preferences found for notification type {Type}, using default system notification", notification.Type);
+                    // Fallback for edge cases where preferences aren't found - system notification only
+                    // This should rarely happen since defaults are now saved during user registration
+                    _logger.LogWarning("⚠️ No preferences found for notification type {Type} - this is unexpected with new registration flow. System notification only.", notification.Type);
                 }
             }
         }
@@ -331,12 +368,17 @@ public class EnhancedNotificationService : INotificationService
     {
         try
         {
+            _logger.LogInformation("🔵 Starting email notification process for notification {NotificationId}, type {NotificationType}, to user {UserId}",
+                notification.Id, notification.Type, notification.ToUserId);
+
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == notification.ToUserId);
             if (user == null || string.IsNullOrEmpty(user.Email))
             {
-                _logger.LogWarning("Cannot send email notification: user {UserId} not found or no email address", notification.ToUserId);
+                _logger.LogWarning("❌ Cannot send email notification: user {UserId} not found or no email address", notification.ToUserId);
                 return;
             }
+
+            _logger.LogInformation("✅ Found user {UserId} with email {Email}", user.Id, user.Email);
 
             // Get organization info for compliance
             var organization = await _context.Organizations.FirstOrDefaultAsync(o => o.Id == notification.OrganizationId);
@@ -357,20 +399,23 @@ public class EnhancedNotificationService : INotificationService
                 SenderEmail = "notifications@consignmentgenie.com" // TODO: Get from configuration
             };
 
+            _logger.LogInformation("📋 Requesting email compliance processing for {NotificationType}", notification.Type);
             var complianceResult = await _emailCompliance.AddComplianceContentAsync(complianceRequest);
+            _logger.LogInformation("✅ Compliance processing completed. Subject: {Subject}", complianceResult.EmailSubject);
 
-            // TODO: Send email using actual email service
-            // await _emailService.SendAsync(new EmailMessage
-            // {
-            //     To = user.Email,
-            //     Subject = complianceResult.EmailSubject,
-            //     Body = complianceResult.EmailContent,
-            //     Headers = complianceResult.Headers
-            // });
+            // Send email using actual email service
+            _logger.LogInformation("📧 Calling IEmailService.SendSimpleEmailAsync to {Email} with subject: {Subject}",
+                user.Email, complianceResult.EmailSubject);
 
-            // For now, just log that we would send the email
-            _logger.LogInformation("Would send email to {Email} for notification {Type}: {Subject}",
-                user.Email, notification.Type, notification.Title);
+            var emailResult = await _emailService.SendSimpleEmailAsync(
+                user.Email,
+                complianceResult.EmailSubject,
+                complianceResult.EmailContent,
+                true // isHtml
+            );
+
+            _logger.LogInformation("🟢 Email service returned: {Result}. Sent email to {Email} for notification {Type}: {Subject}",
+                emailResult, user.Email, notification.Type, notification.Title);
 
             // Record email sent for compliance audit
             await _emailCompliance.RecordEmailSentAsync(

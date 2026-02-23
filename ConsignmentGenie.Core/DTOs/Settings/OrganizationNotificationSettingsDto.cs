@@ -74,7 +74,7 @@ public class OrganizationNotificationSettingsDto
             Events = new()
             {
                 new() { EventName = "New Consignor Registration", Email = true, SMS = false, System = true },
-                new() { EventName = "Item Request Submitted", Email = true, SMS = false, System = true },
+                new() { EventName = "dropoff_manifest", Email = true, SMS = false, System = true },
                 new() { EventName = "Item Request Approved", Email = false, SMS = false, System = true },
                 new() { EventName = "Item Request Rejected", Email = false, SMS = false, System = true },
                 new() { EventName = "Payout Available", Email = true, SMS = true, System = true },

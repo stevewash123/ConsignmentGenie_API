@@ -2,6 +2,7 @@ using Azure.Storage.Blobs;
 using ConsignmentGenie.API.Hubs;
 using ConsignmentGenie.Application.Services;
 using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Application.Interfaces;
 using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Core.Services;
 using ConsignmentGenie.Infrastructure.Data;
@@ -175,6 +176,9 @@ builder.Services.AddScoped<INotificationTemplateService, NotificationTemplateSer
 builder.Services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
 builder.Services.AddScoped<IEmailComplianceService, EmailComplianceService>();
 builder.Services.AddScoped<INotificationBatchService, NotificationBatchService>();
+
+// Centralized default settings management
+builder.Services.AddScoped<IDefaultSettingsService, DefaultSettingsService>();
 
 // Use enhanced notification service instead of original
 builder.Services.AddScoped<ConsignmentGenie.Core.Interfaces.INotificationService, EnhancedNotificationService>();

@@ -8,6 +8,7 @@ using ConsignmentGenie.Core.Extensions;
 using ConsignmentGenie.Core.Interfaces;
 using ConsignmentGenie.Infrastructure.Data;
 using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using BCrypt.Net;
@@ -23,6 +24,7 @@ public class RegistrationService : IRegistrationService
     private readonly IAuthService _authService;
     private readonly IConsignorNotificationService _notificationService;
     private readonly INotificationService _unifiedNotificationService;
+    private readonly IDefaultSettingsService _defaultSettingsService;
     private readonly ISlugService _slugService;
     private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<RegistrationService> _logger;
@@ -34,6 +36,7 @@ public class RegistrationService : IRegistrationService
         IAuthService authService,
         IConsignorNotificationService notificationService,
         INotificationService unifiedNotificationService,
+        IDefaultSettingsService defaultSettingsService,
         ISlugService slugService,
         ISubscriptionService subscriptionService,
         ILogger<RegistrationService> logger)
@@ -44,6 +47,7 @@ public class RegistrationService : IRegistrationService
         _authService = authService;
         _notificationService = notificationService;
         _unifiedNotificationService = unifiedNotificationService;
+        _defaultSettingsService = defaultSettingsService;
         _slugService = slugService;
         _subscriptionService = subscriptionService;
         _logger = logger;
@@ -154,6 +158,18 @@ public class RegistrationService : IRegistrationService
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            // Create all default settings for owner (notifications, preferences, etc.)
+            try
+            {
+                await _defaultSettingsService.CreateOwnerDefaultsAsync(user.Id, user.OrganizationId, request.Email);
+                _logger.LogInformation("[OWNER_REGISTRATION] Created default settings for {Email}", request.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[OWNER_REGISTRATION] Failed to create default settings for {Email}", request.Email);
+                // Continue with registration - settings can be configured later
+            }
 
             // Create Stripe customer and trial subscription
             try
@@ -1108,4 +1124,5 @@ By proceeding, {{{{ConsignorName}}}} agrees to all terms outlined above.";
             // Don't throw - agreement creation failure shouldn't block registration
         }
     }
+
 }
