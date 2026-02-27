@@ -4,6 +4,7 @@ public enum ItemStatus
 {
     PendingAssignment = 0,  // Imported, needs consignor assignment
     Available = 1,
-    Sold = 2,
-    Removed = 3  // Updated to match spec (was Returned)
+    Reserved = 2,          // Added for storefront cart timed holds
+    Sold = 3,              // Renumbered to accommodate Reserved
+    Removed = 4            // Updated to match spec (was Returned)
 }

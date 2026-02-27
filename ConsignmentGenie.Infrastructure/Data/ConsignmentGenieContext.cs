@@ -37,19 +37,11 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<UserNotificationPreference> UserNotificationPreferences { get; set; }
     public DbSet<NotificationPreferences> NotificationPreferences { get; set; }
     public DbSet<Statement> Statements { get; set; }
-    public DbSet<Shopper> Shoppers { get; set; }
-    public DbSet<GuestCheckout> GuestCheckouts { get; set; }
     public DbSet<ItemRequest> ItemRequests { get; set; }
     public DbSet<ItemRequestImage> ItemRequestImages { get; set; }
     public DbSet<DropoffRequest> DropoffRequests { get; set; }
     public DbSet<PendingConsolidatedNotification> PendingConsolidatedNotifications { get; set; }
 
-    // Storefront entities
-    public DbSet<ShoppingCart> ShoppingCarts { get; set; }
-    public DbSet<CartItem> CartItems { get; set; }
-    public DbSet<Order> Orders { get; set; }
-    public DbSet<OrderItem> OrderItems { get; set; }
-    public DbSet<Customer> Customers { get; set; }
     public DbSet<IntegrationCredentials> IntegrationCredentials { get; set; }
 
     // Agreement Management entities
@@ -69,6 +61,10 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<PayoutSummary> PayoutSummaries { get; set; }
     public DbSet<BookkeepingSettings> BookkeepingSettings { get; set; }
     public DbSet<QBSyncLog> QBSyncLogs { get; set; }
+
+    // Reservation System entities
+    public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<ReservationItem> ReservationItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -581,137 +577,6 @@ public class ConsignmentGenieContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Shopper configuration
-        modelBuilder.Entity<Shopper>(entity =>
-        {
-            entity.HasIndex(s => s.OrganizationId);
-            entity.HasIndex(s => s.UserId).IsUnique();
-            entity.HasIndex(s => new { s.OrganizationId, s.Email }).IsUnique();
-            entity.HasOne(s => s.Organization)
-                  .WithMany()
-                  .HasForeignKey(s => s.OrganizationId)
-                  .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(s => s.User)
-                  .WithOne()
-                  .HasForeignKey<Shopper>(s => s.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // GuestCheckout configuration
-        modelBuilder.Entity<GuestCheckout>(entity =>
-        {
-            entity.HasIndex(g => g.OrganizationId);
-            entity.HasIndex(g => g.SessionToken).IsUnique();
-            entity.HasIndex(g => g.ExpiresAt);
-            entity.HasOne(g => g.Organization)
-                  .WithMany()
-                  .HasForeignKey(g => g.OrganizationId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // Customer configuration
-        modelBuilder.Entity<Customer>(entity =>
-        {
-            entity.HasIndex(c => c.OrganizationId);
-            entity.HasIndex(c => new { c.OrganizationId, c.Email }).IsUnique();
-            entity.HasOne(c => c.Organization)
-                  .WithMany()
-                  .HasForeignKey(c => c.OrganizationId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // ShoppingCart configuration
-        modelBuilder.Entity<ShoppingCart>(entity =>
-        {
-            entity.HasIndex(sc => sc.OrganizationId);
-            entity.HasIndex(sc => sc.SessionId);
-            entity.HasIndex(sc => sc.CustomerId);
-            entity.HasIndex(sc => sc.ExpiresAt);
-            entity.HasIndex(sc => new { sc.OrganizationId, sc.SessionId }).IsUnique();
-            entity.HasIndex(sc => new { sc.OrganizationId, sc.CustomerId }).IsUnique();
-
-            entity.HasOne(sc => sc.Organization)
-                  .WithMany()
-                  .HasForeignKey(sc => sc.OrganizationId)
-                  .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(sc => sc.Customer)
-                  .WithMany(c => c.ShoppingCarts)
-                  .HasForeignKey(sc => sc.CustomerId)
-                  .OnDelete(DeleteBehavior.SetNull);
-        });
-
-        // CartItem configuration
-        modelBuilder.Entity<CartItem>(entity =>
-        {
-            entity.HasIndex(ci => ci.CartId);
-            entity.HasIndex(ci => ci.ItemId);
-            entity.HasIndex(ci => new { ci.CartId, ci.ItemId }).IsUnique();
-
-            entity.HasOne(ci => ci.Cart)
-                  .WithMany(sc => sc.CartItems)
-                  .HasForeignKey(ci => ci.CartId)
-                  .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(ci => ci.Item)
-                  .WithMany()
-                  .HasForeignKey(ci => ci.ItemId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // Order configuration
-        modelBuilder.Entity<Order>(entity =>
-        {
-            entity.HasIndex(o => o.OrganizationId);
-            entity.HasIndex(o => o.CustomerId);
-            entity.HasIndex(o => o.OrderNumber);
-            entity.HasIndex(o => o.Status);
-            entity.HasIndex(o => o.CreatedAt);
-            entity.HasIndex(o => new { o.OrganizationId, o.OrderNumber }).IsUnique();
-
-            entity.HasOne(o => o.Organization)
-                  .WithMany()
-                  .HasForeignKey(o => o.OrganizationId)
-                  .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(o => o.Customer)
-                  .WithMany(c => c.Orders)
-                  .HasForeignKey(o => o.CustomerId)
-                  .OnDelete(DeleteBehavior.SetNull);
-        });
-
-        // OrderItem configuration
-        modelBuilder.Entity<OrderItem>(entity =>
-        {
-            entity.HasIndex(oi => oi.OrderId);
-            entity.HasIndex(oi => oi.ItemId);
-            entity.HasIndex(oi => oi.ConsignorId);
-            entity.HasIndex(oi => new { oi.OrderId, oi.ItemId }).IsUnique();
-
-            entity.HasOne(oi => oi.Order)
-                  .WithMany(o => o.OrderItems)
-                  .HasForeignKey(oi => oi.OrderId)
-                  .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(oi => oi.Item)
-                  .WithMany()
-                  .HasForeignKey(oi => oi.ItemId)
-                  .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(oi => oi.Consignor)
-                  .WithMany()
-                  .HasForeignKey(oi => oi.ConsignorId)
-                  .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        // Add OrderId to Transaction relationship
-        modelBuilder.Entity<Transaction>(entity =>
-        {
-            entity.HasOne(t => t.Order)
-                  .WithMany()
-                  .HasForeignKey(t => t.OrderId)
-                  .OnDelete(DeleteBehavior.SetNull);
-        });
 
         // SupportTicket configuration
         modelBuilder.Entity<SupportTicket>(entity =>
@@ -749,6 +614,49 @@ public class ConsignmentGenieContext : DbContext
                   .WithMany()
                   .HasForeignKey(ca => ca.MarkedByUserId)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Reservation configuration
+        modelBuilder.Entity<Reservation>(entity =>
+        {
+            entity.HasIndex(r => r.OrganizationId);
+            entity.HasIndex(r => new { r.OrganizationId, r.Status });
+            entity.HasIndex(r => new { r.OrganizationId, r.CustomerPhone });
+            entity.HasIndex(r => r.ExpiresAt);
+            entity.HasIndex(r => r.CreatedAt);
+
+            entity.HasOne(r => r.Organization)
+                  .WithMany()
+                  .HasForeignKey(r => r.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.CreatedByUser)
+                  .WithMany()
+                  .HasForeignKey(r => r.CreatedBy)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(r => r.UpdatedByUser)
+                  .WithMany()
+                  .HasForeignKey(r => r.UpdatedBy)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ReservationItem configuration
+        modelBuilder.Entity<ReservationItem>(entity =>
+        {
+            entity.HasIndex(ri => ri.ReservationId);
+            entity.HasIndex(ri => ri.ItemId);
+            entity.HasIndex(ri => new { ri.ReservationId, ri.ItemId }).IsUnique();
+
+            entity.HasOne(ri => ri.Reservation)
+                  .WithMany(r => r.ReservationItems)
+                  .HasForeignKey(ri => ri.ReservationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ri => ri.Item)
+                  .WithMany()
+                  .HasForeignKey(ri => ri.ItemId)
+                  .OnDelete(DeleteBehavior.Restrict); // Don't allow deleting items that are reserved
         });
 
         // Seed Data
@@ -814,17 +722,6 @@ public class ConsignmentGenieContext : DbContext
                 Email = "consignor1@microsaasbuilders.com",
                 PasswordHash = hashedPassword,
                 Role = UserRole.Consignor,
-                OrganizationId = orgId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            },
-            // Customer (Customer role)
-            new User
-            {
-                Id = customerUserId,
-                Email = "customer1@microsaasbuilders.com",
-                PasswordHash = hashedPassword,
-                Role = UserRole.Customer,
                 OrganizationId = orgId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow

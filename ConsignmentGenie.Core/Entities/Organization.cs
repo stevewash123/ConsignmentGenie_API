@@ -193,6 +193,22 @@ public class Organization : BaseEntity
 
     public bool StripeConnected { get; set; } = false;  // For payment processing, not subscription
 
+    [MaxLength(255)]
+    public string? StripeAccountId { get; set; }  // Stripe Connect account ID for receiving customer payments
+
+    [MaxLength(255)]
+    public string? StripeAccessToken { get; set; }  // Stripe Connect access token (store encrypted in production)
+
+    [MaxLength(255)]
+    public string? StripeRefreshToken { get; set; }  // Stripe Connect refresh token (store encrypted in production)
+
+    [MaxLength(255)]
+    public string? StripePublishableKey { get; set; }  // Stripe Connect publishable key for frontend
+
+    public DateTime? StripeConnectedAt { get; set; }  // When Stripe Connect was set up
+
+    public bool StripePayoutsEnabled { get; set; } = false;  // Whether payouts are enabled on the connected account
+
     public bool SendGridConnected { get; set; } = false;
 
     public bool CloudinaryConnected { get; set; } = false;

@@ -38,7 +38,6 @@ public class AnalyticsEvent : BaseEntity
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public Item? Item { get; set; }
-    public Customer? Customer { get; set; }
     public User? User { get; set; }
     public Consignor? Consignor { get; set; }
 }

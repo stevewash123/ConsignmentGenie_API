@@ -182,8 +182,8 @@ public class ClerkRegistrationController : ControllerBase
             // Generate JWT token for auto-login
             var token = GenerateJwtToken(newUser, invitation.Organization!);
 
-            _logger.LogInformation("[CLERK_INVITATION] Clerk registered successfully from invitation: {Token}, Email: {Email}",
-                request.Token, request.Name + " " + request);
+            _logger.LogInformation("[CLERK_INVITATION] Clerk registered successfully from invitation: {Token}, Name: {Name}",
+                request.Token, request.Name);
 
             return Ok(new RegisterClerkFromInvitationResponse
             {
@@ -219,13 +219,13 @@ public class ClerkRegistrationController : ControllerBase
     private string GenerateJwtToken(User user, Organization organization)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["JWT:Secret"] ?? "your-secret-key");
+        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? "ConsignmentGenie_Super_Secret_Key_2024_32_Characters_Long!");
 
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, $"{user.Name} {user}".Trim()),
+            new(ClaimTypes.Name, user.Name.Trim()),
             new(ClaimTypes.Role, user.Role.ToString()),
             new("OrganizationId", user.OrganizationId.ToString()),
             new("OrganizationName", organization.Name)

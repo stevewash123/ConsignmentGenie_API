@@ -183,14 +183,13 @@ public class ClerksController : ControllerBase
             {
                 u.Id,
                 u.Name,
-                u,
                 u.Email,
                 u.Phone,
                 u.IsActive,
                 u.CreatedAt
             })
             .OrderBy(u => u.Name)
-            .ThenBy(u => u)
+            .ThenBy(u => u.Id)
             .ToListAsync();
 
         return Ok(clerks);

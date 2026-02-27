@@ -60,14 +60,7 @@ public class AdminController : ControllerBase
             // Clear existing data in dependency order
             _logger.LogInformation("Clearing existing data...");
 
-            // Clear dependent data first
-            _context.OrderItems.RemoveRange(_context.OrderItems);
-            _context.Orders.RemoveRange(_context.Orders);
-            _context.CartItems.RemoveRange(_context.CartItems);
-            _context.ShoppingCarts.RemoveRange(_context.ShoppingCarts);
-            _context.GuestCheckouts.RemoveRange(_context.GuestCheckouts);
-            _context.Shoppers.RemoveRange(_context.Shoppers);
-            _context.Customers.RemoveRange(_context.Customers);
+            // Clear dependent data first (removed storefront entities)
             _context.Statements.RemoveRange(_context.Statements);
             _context.Notifications.RemoveRange(_context.Notifications);
             _context.UserNotificationPreferences.RemoveRange(_context.UserNotificationPreferences);

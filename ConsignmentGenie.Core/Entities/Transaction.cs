@@ -114,7 +114,6 @@ public class Transaction : BaseEntity
     // Navigation properties
     public User? ProcessedByUser { get; set; }  // Link to user who processed transaction
     public Organization Organization { get; set; } = null!;
-    public Order? Order { get; set; }
     public Payout? Payout { get; set; }
 
     // New multi-item relationship

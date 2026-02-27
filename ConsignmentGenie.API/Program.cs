@@ -160,7 +160,6 @@ builder.Services.AddScoped<IPayoutSummaryComputationService, ConsignmentGenie.Ap
 builder.Services.AddScoped<IPayoutNotificationService, ConsignmentGenie.Application.Services.PayoutNotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
-builder.Services.AddScoped<IShopperAuthService, ShopperAuthService>();
 builder.Services.AddScoped<ISlugService, SlugService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IOrganizationSettingsManager, OrganizationSettingsManager>();
@@ -209,11 +208,8 @@ builder.Services.AddScoped<PendingImportAssignmentService>();
 builder.Services.AddScoped<SeedDataService>();
 builder.Services.AddScoped<StatementGenerationJob>();
 
-// Storefront services
-builder.Services.AddScoped<IStoreService, StoreService>();
-builder.Services.AddScoped<ICartService, CartService>();
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IStripePaymentService, StripePaymentService>();
+// Payment services for non-Square POS
+builder.Services.AddScoped<IStripeConnectService, StripeConnectService>();  // Keep for non-Square POS
 
 // Photo storage implementations
 builder.Services.AddScoped<CloudinaryPhotoService>();
@@ -274,6 +270,10 @@ builder.Services.AddSingleton(new ConsignmentGenie.Core.Services.QBApiConfig
 builder.Services.AddScoped<IQuickBooksApiService, ConsignmentGenie.Application.Services.QuickBooks.QuickBooksApiService>();
 builder.Services.AddScoped<IQBSyncService, ConsignmentGenie.Application.Services.QuickBooks.QBSyncService>();
 
+// Reservation System services
+builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<ISmsService, ConsoleSmsService>(); // Use ConsoleSmsService for development
+
 // Background job classes
 builder.Services.AddScoped<ConsignmentGenie.Application.Jobs.AutoPayoutJob>();
 builder.Services.AddScoped<ConsignmentGenie.Application.Jobs.QuickBooks.QBSyncPayoutJob>();
@@ -326,6 +326,8 @@ app.Lifetime.ApplicationStarted.Register(() =>
         "process-item-expirations",
         job => job.ProcessItemExpirationsAsync(),
         "0 1 * * *"); // Cron expression: 1:00 AM daily
+
+    // Cart cleanup job removed - no longer needed after storefront removal
 
     // Schedule monthly statement generation job (runs on 1st of each month at 2 AM)
     recurringJobManager.AddOrUpdate<StatementGenerationJob>(
