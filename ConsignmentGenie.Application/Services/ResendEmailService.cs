@@ -741,6 +741,37 @@ ConsignmentGenie Suggestion System
         }
     }
 
+    public async Task<bool> SendCustomerCatalogInvitationAsync(string email, string shopName, string personalMessage = null)
+    {
+        _logger.LogInformation("[EMAIL] Starting customer catalog invitation email to {Email} for shop {ShopName}", email, shopName);
+
+        try
+        {
+            var subject = $"You're invited to browse {shopName}'s catalog!";
+            var body = "";
+
+            if (!string.IsNullOrEmpty(personalMessage))
+            {
+                body += $"{personalMessage}\n\n";
+            }
+
+            body += $"You're invited to view {shopName}'s catalog and reserve items for pickup!\n\n";
+            body += "Browse our collection of quality consignment items and reserve anything that catches your eye. ";
+            body += "Once you reserve an item, we'll hold it for you to pick up at the shop.\n\n";
+            body += "Visit our location to see your reserved items and complete your purchase.\n\n";
+            body += $"Thank you for your interest in {shopName}!";
+
+            var result = await SendSimpleEmailAsync(email, subject, body, isHtml: false);
+            _logger.LogInformation("[EMAIL] Customer catalog invitation email send result for {Email}: {Result}", email, result);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[EMAIL] Failed to send customer catalog invitation email to {Email} for shop {ShopName}", email, shopName);
+            return false;
+        }
+    }
+
     public void Dispose()
     {
         Dispose(true);

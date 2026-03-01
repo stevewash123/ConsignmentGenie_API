@@ -63,6 +63,7 @@ public class ConsignmentGenieContext : DbContext
     public DbSet<QBSyncLog> QBSyncLogs { get; set; }
 
     // Reservation System entities
+    public DbSet<Customer> Customers { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ReservationItem> ReservationItems { get; set; }
 
@@ -616,12 +617,28 @@ public class ConsignmentGenieContext : DbContext
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
+        // Customer configuration
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.HasIndex(c => c.OrganizationId);
+            entity.HasIndex(c => new { c.OrganizationId, c.Email }).IsUnique();
+            entity.HasIndex(c => c.GoogleId).IsUnique().HasFilter("[GoogleId] IS NOT NULL");
+            entity.HasIndex(c => c.AppleId).IsUnique().HasFilter("[AppleId] IS NOT NULL");
+            entity.HasIndex(c => c.PhoneNumber);
+            entity.HasIndex(c => c.CreatedAt);
+
+            entity.HasOne(c => c.Organization)
+                  .WithMany()
+                  .HasForeignKey(c => c.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Reservation configuration
         modelBuilder.Entity<Reservation>(entity =>
         {
             entity.HasIndex(r => r.OrganizationId);
+            entity.HasIndex(r => r.CustomerId);
             entity.HasIndex(r => new { r.OrganizationId, r.Status });
-            entity.HasIndex(r => new { r.OrganizationId, r.CustomerPhone });
             entity.HasIndex(r => r.ExpiresAt);
             entity.HasIndex(r => r.CreatedAt);
 
@@ -629,6 +646,11 @@ public class ConsignmentGenieContext : DbContext
                   .WithMany()
                   .HasForeignKey(r => r.OrganizationId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.Customer)
+                  .WithMany(c => c.Reservations)
+                  .HasForeignKey(r => r.CustomerId)
+                  .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(r => r.CreatedByUser)
                   .WithMany()

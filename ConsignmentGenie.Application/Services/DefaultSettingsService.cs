@@ -74,6 +74,27 @@ public class DefaultSettingsService : IDefaultSettingsService
     }
 
     /// <summary>
+    /// Creates all default settings for a new customer
+    /// </summary>
+    public async Task CreateCustomerDefaultsAsync(Guid userId, string email)
+    {
+        try
+        {
+            _logger.LogInformation("[DEFAULT_SETTINGS] Creating customer defaults for user {UserId} ({Email})", userId, email);
+
+            // Create notification preferences
+            await CreateCustomerNotificationDefaultsAsync(userId, email);
+
+            _logger.LogInformation("[DEFAULT_SETTINGS] Successfully created customer defaults for {Email}", email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[DEFAULT_SETTINGS] Failed to create customer defaults for {Email}", email);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Creates default notification preferences for owners matching UI defaults
     /// </summary>
     private async Task CreateOwnerNotificationDefaultsAsync(Guid userId, string email)
@@ -94,6 +115,10 @@ public class DefaultSettingsService : IDefaultSettingsService
                 ["low_inventory_alert"] = CreateChannelDefaults(email: true, system: true, sms: false),
                 ["daily_sales_summary"] = CreateChannelDefaults(email: true, system: true, sms: false),
                 ["suggestion_submitted"] = CreateChannelDefaults(email: true, system: true, sms: false),
+
+                // Customer reservation notifications for owners
+                ["item_reserved"] = CreateChannelDefaults(email: true, system: true, sms: false),
+                ["reservation_expired_owner"] = CreateChannelDefaults(email: true, system: true, sms: false),
 
                 // System notifications (always enabled and locked in UI)
                 ["password_reset"] = CreateChannelDefaults(email: true, system: true, sms: false),
@@ -163,6 +188,40 @@ public class DefaultSettingsService : IDefaultSettingsService
 
         await _notificationPreferenceService.UpdatePreferencesAsync(userId, "consignor", defaultPreferences);
         _logger.LogInformation("[DEFAULT_SETTINGS] Created default notification preferences for consignor {Email}", email);
+    }
+
+    /// <summary>
+    /// Creates default notification preferences for customers
+    /// </summary>
+    private async Task CreateCustomerNotificationDefaultsAsync(Guid userId, string email)
+    {
+        var defaultPreferences = new NotificationPreferencesMatrix
+        {
+            UserId = userId,
+            Role = "customer",
+            PrimaryEmail = email,
+            PhoneNumber = null,
+            SmsVerified = false,
+            LastUpdated = DateTime.UtcNow,
+            Preferences = new Dictionary<string, Dictionary<NotificationChannel, bool>>
+            {
+                // Customer-specific notifications
+                ["customer_welcome"] = CreateChannelDefaults(email: true, system: true, sms: false),
+                ["reservation_confirmed"] = CreateChannelDefaults(email: true, system: true, sms: false),
+                ["reservation_expiring_soon"] = CreateChannelDefaults(email: true, system: true, sms: true), // SMS important for urgency
+                ["reservation_expired"] = CreateChannelDefaults(email: true, system: true, sms: false),
+
+                // System notifications
+                ["password_reset"] = CreateChannelDefaults(email: true, system: true, sms: false),
+                ["account_activated"] = CreateChannelDefaults(email: true, system: true, sms: false),
+                ["account_deactivated"] = CreateChannelDefaults(email: true, system: true, sms: false)
+            },
+            BatchPreferences = new Dictionary<string, string>(),
+            Thresholds = new Dictionary<string, decimal>()
+        };
+
+        await _notificationPreferenceService.UpdatePreferencesAsync(userId, "customer", defaultPreferences);
+        _logger.LogInformation("[DEFAULT_SETTINGS] Created default notification preferences for customer {Email}", email);
     }
 
     /// <summary>

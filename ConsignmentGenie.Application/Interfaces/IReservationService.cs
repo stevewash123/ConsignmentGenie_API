@@ -13,9 +13,8 @@ public interface IReservationService
     Task<ServiceResult<ReservationDto>> UpdateReservationStatusAsync(UpdateReservationStatusRequest request, Guid organizationId, Guid? userId = null);
     Task<ServiceResult<bool>> DeleteReservationAsync(Guid reservationId, Guid organizationId, Guid? userId = null);
 
-    // SMS verification
-    Task<ServiceResult<bool>> SendVerificationCodeAsync(Guid reservationId, Guid organizationId);
-    Task<ServiceResult<ReservationDto>> VerifyPhoneAsync(VerifyPhoneRequest request, Guid organizationId);
+    // Customer reservations by CustomerId
+    Task<ServiceResult<List<ReservationDto>>> GetCustomerReservationsAsync(Guid customerId, Guid organizationId);
 
     // Item availability and reservation management
     Task<ServiceResult<bool>> CheckItemsAvailabilityAsync(List<Guid> itemIds, Guid organizationId);
@@ -28,7 +27,7 @@ public interface IReservationService
 
     // Public catalog methods (for customer-facing reservation creation)
     Task<ServiceResult<ReservationDto>> CreatePublicReservationAsync(CreateReservationRequest request, Guid organizationId);
-    Task<ServiceResult<ReservationDto>> GetPublicReservationAsync(Guid reservationId, string customerPhone);
+    Task<ServiceResult<ReservationDto>> GetPublicReservationAsync(Guid reservationId, Guid customerId);
 
     // Reservation completion (when customer picks up items)
     Task<ServiceResult<bool>> CompleteReservationAsync(Guid reservationId, Guid organizationId, List<Guid>? purchasedItemIds = null, Guid? userId = null);

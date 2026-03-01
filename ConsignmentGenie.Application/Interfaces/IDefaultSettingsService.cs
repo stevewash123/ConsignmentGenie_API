@@ -17,4 +17,10 @@ public interface IDefaultSettingsService
     /// Includes notification preferences, profile settings, communication preferences, etc.
     /// </summary>
     Task CreateConsignorDefaultsAsync(Guid userId, string email);
+
+    /// <summary>
+    /// Creates all default settings for a new customer
+    /// Includes notification preferences for reservations, expiration alerts, etc.
+    /// </summary>
+    Task CreateCustomerDefaultsAsync(Guid userId, string email);
 }

@@ -21,4 +21,7 @@ public interface IEmailService
 
     // Consignor welcome email for manual add
     Task<bool> SendConsignorWelcomeAsync(string email, string consignorName, string shopName, string storeCode, string ownerName);
+
+    // Customer catalog invitation
+    Task<bool> SendCustomerCatalogInvitationAsync(string email, string shopName, string personalMessage = null);
 }

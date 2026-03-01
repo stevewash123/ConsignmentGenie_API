@@ -96,12 +96,8 @@ public class ReservationsController : ControllerBase
     [HttpPost("{id}/send-verification")]
     public async Task<IActionResult> SendVerificationCode(Guid id)
     {
-        var result = await _reservationService.SendVerificationCodeAsync(id, GetOrganizationId());
-
-        if (!result.Success)
-            return BadRequest(new { success = false, message = result.Message });
-
-        return Ok(new { success = true, message = "Verification code sent" });
+        // Customer verification is now handled by CustomerAuthService before reservation creation
+        return BadRequest(new { success = false, message = "Customer verification must be completed before creating reservations. Use CustomerAuthService instead." });
     }
 
     /// <summary>
@@ -110,13 +106,8 @@ public class ReservationsController : ControllerBase
     [HttpPost("{id}/verify")]
     public async Task<IActionResult> VerifyPhone(Guid id, [FromBody] VerifyPhoneRequest request)
     {
-        request.ReservationId = id;
-        var result = await _reservationService.VerifyPhoneAsync(request, GetOrganizationId());
-
-        if (!result.Success)
-            return BadRequest(new { success = false, message = result.Message });
-
-        return Ok(new { success = true, data = result.Data });
+        // Customer verification is now handled by CustomerAuthService before reservation creation
+        return BadRequest(new { success = false, message = "Customer verification must be completed before creating reservations. Use CustomerAuthService instead." });
     }
 
     /// <summary>
@@ -224,20 +215,19 @@ public class PublicReservationsController : ControllerBase
         _logger = logger;
     }
 
+
     /// <summary>
-    /// Create a public reservation (customer-facing)
+    /// Create a reservation for verified customer
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> CreatePublicReservation([FromBody] PublicCreateReservationRequest request)
+    public async Task<IActionResult> CreateCustomerReservation([FromBody] CustomerCreateReservationRequest request)
     {
         var createRequest = new CreateReservationRequest
         {
-            CustomerName = request.CustomerName,
-            CustomerPhone = request.CustomerPhone,
-            CustomerEmail = request.CustomerEmail,
+            CustomerId = request.CustomerId,
+            VerificationMethod = request.VerificationMethod,
             ItemIds = request.ItemIds,
-            CustomerNotes = request.CustomerNotes,
-            HoldHours = 24 // Fixed 24 hour hold for public reservations
+            CustomerNotes = request.CustomerNotes
         };
 
         var result = await _reservationService.CreatePublicReservationAsync(createRequest, request.OrganizationId);
@@ -249,12 +239,12 @@ public class PublicReservationsController : ControllerBase
     }
 
     /// <summary>
-    /// Get public reservation status (customer-facing)
+    /// Get customer reservation status
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetPublicReservation(Guid id, [FromQuery] string customerPhone)
+    public async Task<IActionResult> GetCustomerReservation(Guid id, [FromQuery] Guid customerId)
     {
-        var result = await _reservationService.GetPublicReservationAsync(id, customerPhone);
+        var result = await _reservationService.GetPublicReservationAsync(id, customerId);
 
         if (!result.Success)
             return BadRequest(result.Message);
@@ -263,18 +253,12 @@ public class PublicReservationsController : ControllerBase
     }
 
     /// <summary>
-    /// Verify phone for public reservation (customer-facing)
+    /// Get customer reservations
     /// </summary>
-    [HttpPost("{id}/verify")]
-    public async Task<IActionResult> VerifyPublicReservation(Guid id, [FromBody] PublicVerifyPhoneRequest request)
+    [HttpGet("customer/{customerId}")]
+    public async Task<IActionResult> GetCustomerReservations(Guid customerId, [FromQuery] Guid organizationId)
     {
-        var verifyRequest = new VerifyPhoneRequest
-        {
-            ReservationId = id,
-            VerificationCode = request.VerificationCode
-        };
-
-        var result = await _reservationService.VerifyPhoneAsync(verifyRequest, request.OrganizationId);
+        var result = await _reservationService.GetCustomerReservationsAsync(customerId, organizationId);
 
         if (!result.Success)
             return BadRequest(new { success = false, message = result.Message });
@@ -283,24 +267,24 @@ public class PublicReservationsController : ControllerBase
     }
 }
 
-// Additional DTOs for public API
-public class PublicCreateReservationRequest
+// Customer-based DTOs for public API
+public class CustomerCreateReservationRequest
 {
     public Guid OrganizationId { get; set; }
-    public string CustomerName { get; set; } = string.Empty;
-    public string CustomerPhone { get; set; } = string.Empty;
-    public string? CustomerEmail { get; set; }
+    public Guid CustomerId { get; set; }
+    public string VerificationMethod { get; set; } = string.Empty; // "google", "apple", "sms", "email"
     public List<Guid> ItemIds { get; set; } = new();
     public string? CustomerNotes { get; set; }
 }
 
-public class PublicVerifyPhoneRequest
+public class CustomerReservationLookupRequest
 {
     public Guid OrganizationId { get; set; }
-    public string VerificationCode { get; set; } = string.Empty;
+    public Guid CustomerId { get; set; }
 }
 
 public class CancelReservationRequest
 {
     public string? Reason { get; set; }
 }
+

@@ -275,6 +275,147 @@ public class NotificationTemplateService : INotificationTemplateService
                 IsHtml = true
             },
 
+            // Customer notifications
+            [NotificationType.CustomerWelcome] = new NotificationTemplate
+            {
+                Subject = "Welcome to {ShopName}!",
+                Body = @"
+                    <html>
+                    <body>
+                        <h2>Welcome, {CustomerName}!</h2>
+                        <p>Your customer account for <strong>{ShopName}</strong> is now ready.</p>
+                        <p>You can now:</p>
+                        <ul>
+                            <li>Browse our online catalog</li>
+                            <li>Reserve items you love</li>
+                            <li>Track your reservations</li>
+                            <li>Receive pickup reminders</li>
+                        </ul>
+                        <p><a href=""{CustomerPortalUrl}"" style=""background-color: #047857; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"">Visit Customer Portal</a></p>
+                        <p>Happy shopping!</p>
+                        <p><em>{ShopName} Team</em></p>
+                    </body>
+                    </html>",
+                IsHtml = true
+            },
+
+            [NotificationType.ReservationConfirmed] = new NotificationTemplate
+            {
+                Subject = "Reservation Confirmed - {ShopName}",
+                Body = @"
+                    <html>
+                    <body>
+                        <h2>Your Reservation is Confirmed!</h2>
+                        <p>Hi {CustomerName},</p>
+                        <p>Great news! We've confirmed your reservation at <strong>{ShopName}</strong>.</p>
+                        <div style=""background-color: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0;"">
+                            <h3>Reservation Details:</h3>
+                            <p><strong>Items Reserved:</strong> {ItemCount} item{ItemCountPlural}</p>
+                            <p><strong>Total Value:</strong> {TotalValue}</p>
+                            <p><strong>Expires:</strong> {ExpirationDate} at {ExpirationTime}</p>
+                        </div>
+                        <p>Please pick up your reserved items before the expiration date. We'll send you a reminder as the time approaches.</p>
+                        <p><a href=""{CustomerPortalUrl}"" style=""background-color: #047857; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"">View My Reservations</a></p>
+                        <p><em>{ShopName} Team</em></p>
+                    </body>
+                    </html>",
+                IsHtml = true
+            },
+
+            [NotificationType.ReservationExpiringSoon] = new NotificationTemplate
+            {
+                Subject = "⏰ Your reservation expires soon - {ShopName}",
+                Body = @"
+                    <html>
+                    <body>
+                        <h2>⏰ Friendly Reminder</h2>
+                        <p>Hi {CustomerName},</p>
+                        <p>This is a friendly reminder that your reservation at <strong>{ShopName}</strong> expires in {HoursRemaining} hours!</p>
+                        <div style=""background-color: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;"">
+                            <h3>Don't Miss Out:</h3>
+                            <p><strong>Items Reserved:</strong> {ItemCount} item{ItemCountPlural}</p>
+                            <p><strong>Total Value:</strong> {TotalValue}</p>
+                            <p><strong>Expires:</strong> {ExpirationDate} at {ExpirationTime}</p>
+                        </div>
+                        <p>Please visit the shop soon to pick up your reserved items. Our staff will be happy to help you complete your purchase.</p>
+                        <p><a href=""{CustomerPortalUrl}"" style=""background-color: #047857; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"">View Reservation Details</a></p>
+                        <p><em>{ShopName} Team</em></p>
+                    </body>
+                    </html>",
+                IsHtml = true
+            },
+
+            [NotificationType.ReservationExpired] = new NotificationTemplate
+            {
+                Subject = "Reservation Expired - {ShopName}",
+                Body = @"
+                    <html>
+                    <body>
+                        <h2>Reservation Update</h2>
+                        <p>Hi {CustomerName},</p>
+                        <p>Your reservation at <strong>{ShopName}</strong> has expired and the items have been returned to our general inventory.</p>
+                        <div style=""background-color: #fee2e2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;"">
+                            <h3>Expired Reservation:</h3>
+                            <p><strong>Items:</strong> {ItemCount} item{ItemCountPlural}</p>
+                            <p><strong>Value:</strong> {TotalValue}</p>
+                            <p><strong>Expired on:</strong> {ExpirationDate}</p>
+                        </div>
+                        <p>Don't worry - you can browse and reserve these or other items again anytime! Visit our customer portal to see what's currently available.</p>
+                        <p><a href=""{CustomerPortalUrl}"" style=""background-color: #047857; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"">Browse Available Items</a></p>
+                        <p><em>{ShopName} Team</em></p>
+                    </body>
+                    </html>",
+                IsHtml = true
+            },
+
+            // Owner notifications for customer activities
+            [NotificationType.ItemReserved] = new NotificationTemplate
+            {
+                Subject = "Items Reserved by Customer - {ShopName}",
+                Body = @"
+                    <html>
+                    <body>
+                        <h2>Customer Reservation Alert</h2>
+                        <p>A customer has just reserved items from your inventory!</p>
+                        <div style=""background-color: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0;"">
+                            <h3>Reservation Details:</h3>
+                            <p><strong>Customer:</strong> {CustomerName}</p>
+                            <p><strong>Contact:</strong> {CustomerPhone} / {CustomerEmail}</p>
+                            <p><strong>Items Reserved:</strong> {ItemCount} item{ItemCountPlural}</p>
+                            <p><strong>Total Value:</strong> {TotalValue}</p>
+                            <p><strong>Expires:</strong> {ExpirationDate} at {ExpirationTime}</p>
+                        </div>
+                        <p>The reserved items are now held in your inventory system. You may want to prepare them for pickup.</p>
+                        <p><a href=""{OwnerReservationUrl}"" style=""background-color: #047857; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"">View Reservation Details</a></p>
+                        <p><em>ConsignmentGenie System</em></p>
+                    </body>
+                    </html>",
+                IsHtml = true
+            },
+
+            [NotificationType.ReservationExpiredOwner] = new NotificationTemplate
+            {
+                Subject = "Customer Reservation Expired - {ShopName}",
+                Body = @"
+                    <html>
+                    <body>
+                        <h2>Reservation Expired</h2>
+                        <p>A customer reservation has expired and the items have been automatically returned to your available inventory.</p>
+                        <div style=""background-color: #fee2e2; padding: 15px; border-radius: 8px; margin: 20px 0;"">
+                            <h3>Expired Reservation:</h3>
+                            <p><strong>Customer:</strong> {CustomerName} ({CustomerPhone})</p>
+                            <p><strong>Items:</strong> {ItemCount} item{ItemCountPlural} worth {TotalValue}</p>
+                            <p><strong>Reserved on:</strong> {ReservationDate}</p>
+                            <p><strong>Expired on:</strong> {ExpirationDate}</p>
+                        </div>
+                        <p>The items are now available for sale again. No action is required on your part.</p>
+                        <p><a href=""{OwnerReservationUrl}"" style=""background-color: #047857; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"">View Reservation History</a></p>
+                        <p><em>ConsignmentGenie System</em></p>
+                    </body>
+                    </html>",
+                IsHtml = true
+            },
+
             // Fallback template
             [NotificationType.Info] = new NotificationTemplate
             {

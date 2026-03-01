@@ -319,4 +319,181 @@ public static class NotificationHelper
             ActionUrl = "/admin/system/errors"
         };
     }
+
+    // Customer notification methods
+    public static CreateNotificationRequest CreateCustomerWelcomeNotification(
+        User customerUser, Organization organization)
+    {
+        var portalUrl = $"/customer/{organization.StoreCode}?orgId={organization.Id}";
+
+        return new CreateNotificationRequest
+        {
+            FromUserId = null, // System notification
+            FromType = "system",
+            ToUserId = customerUser.Id,
+            ToType = "customer",
+            OrganizationId = organization.Id,
+            Type = NotificationTypes.CUSTOMER_WELCOME,
+            Title = $"Welcome to {organization.Name}!",
+            Message = $"Welcome! Your account is ready. Visit your customer portal to browse items and view reservations.",
+            Payload = new
+            {
+                shopName = organization.Name,
+                portalUrl = portalUrl,
+                welcomedAt = DateTime.UtcNow
+            },
+            ActionUrl = portalUrl
+        };
+    }
+
+    public static CreateNotificationRequest CreateReservationConfirmedNotification(
+        Reservation reservation, Customer customer, Organization organization, int itemCount)
+    {
+        var portalUrl = $"/customer/{organization.StoreCode}?orgId={organization.Id}";
+
+        return new CreateNotificationRequest
+        {
+            FromUserId = null, // System notification
+            FromType = "system",
+            ToUserId = customer.Id, // Customer ID directly, not UserId
+            ToType = "customer",
+            OrganizationId = organization.Id,
+            Type = NotificationTypes.RESERVATION_CONFIRMED,
+            Title = "Reservation Confirmed!",
+            Message = $"Your reservation at {organization.Name} is confirmed! You have {itemCount} item{(itemCount > 1 ? "s" : "")} reserved worth {reservation.TotalValue:C}.",
+            Payload = new
+            {
+                reservationId = reservation.Id,
+                shopName = organization.Name,
+                itemCount = itemCount,
+                totalValue = reservation.TotalValue,
+                expiresAt = reservation.ExpiresAt,
+                portalUrl = portalUrl
+            },
+            ActionUrl = portalUrl,
+            ReferenceType = "reservation",
+            ReferenceId = reservation.Id
+        };
+    }
+
+    public static CreateNotificationRequest CreateReservationExpiringSoonNotification(
+        Reservation reservation, Customer customer, Organization organization, int itemCount, int hoursUntilExpiration)
+    {
+        var portalUrl = $"/customer/{organization.StoreCode}?orgId={organization.Id}";
+
+        return new CreateNotificationRequest
+        {
+            FromUserId = null, // System notification
+            FromType = "system",
+            ToUserId = customer.Id, // Customer ID directly, not UserId
+            ToType = "customer",
+            OrganizationId = organization.Id,
+            Type = NotificationTypes.RESERVATION_EXPIRING_SOON,
+            Title = "Reservation Expiring Soon",
+            Message = $"Your reservation at {organization.Name} expires in {hoursUntilExpiration} hours. Please pick up your {itemCount} reserved item{(itemCount > 1 ? "s" : "")} soon!",
+            Payload = new
+            {
+                reservationId = reservation.Id,
+                shopName = organization.Name,
+                itemCount = itemCount,
+                totalValue = reservation.TotalValue,
+                expiresAt = reservation.ExpiresAt,
+                hoursUntilExpiration = hoursUntilExpiration,
+                portalUrl = portalUrl
+            },
+            ActionUrl = portalUrl,
+            ReferenceType = "reservation",
+            ReferenceId = reservation.Id
+        };
+    }
+
+    public static CreateNotificationRequest CreateReservationExpiredNotification(
+        Reservation reservation, Customer customer, Organization organization, int itemCount)
+    {
+        var portalUrl = $"/customer/{organization.StoreCode}?orgId={organization.Id}";
+
+        return new CreateNotificationRequest
+        {
+            FromUserId = null, // System notification
+            FromType = "system",
+            ToUserId = customer.Id, // Customer ID directly, not UserId
+            ToType = "customer",
+            OrganizationId = organization.Id,
+            Type = NotificationTypes.RESERVATION_EXPIRED,
+            Title = "Reservation Expired",
+            Message = $"Your reservation at {organization.Name} has expired and your {itemCount} item{(itemCount > 1 ? "s have" : " has")} been returned to inventory.",
+            Payload = new
+            {
+                reservationId = reservation.Id,
+                shopName = organization.Name,
+                itemCount = itemCount,
+                totalValue = reservation.TotalValue,
+                expiredAt = reservation.ExpiresAt,
+                portalUrl = portalUrl
+            },
+            ActionUrl = portalUrl,
+            ReferenceType = "reservation",
+            ReferenceId = reservation.Id
+        };
+    }
+
+    // Owner notification methods for customer activities
+    public static CreateNotificationRequest CreateItemReservedNotification(
+        Reservation reservation, Customer customer, User owner, int itemCount)
+    {
+        return new CreateNotificationRequest
+        {
+            FromUserId = null, // System notification
+            FromType = "system",
+            ToUserId = owner.Id,
+            ToType = "owner",
+            OrganizationId = reservation.OrganizationId,
+            Type = NotificationTypes.ITEM_RESERVED,
+            Title = "Items Reserved",
+            Message = $"{customer.Name} reserved {itemCount} item{(itemCount > 1 ? "s" : "")} worth {reservation.TotalValue:C}",
+            Payload = new
+            {
+                reservationId = reservation.Id,
+                customerName = customer.Name,
+                customerPhone = customer.PhoneNumber,
+                customerEmail = customer.Email,
+                itemCount = itemCount,
+                totalValue = reservation.TotalValue,
+                expiresAt = reservation.ExpiresAt,
+                reservedAt = reservation.CreatedAt
+            },
+            ActionUrl = $"/owner/reservations/{reservation.Id}",
+            ReferenceType = "reservation",
+            ReferenceId = reservation.Id
+        };
+    }
+
+    public static CreateNotificationRequest CreateReservationExpiredOwnerNotification(
+        Reservation reservation, Customer customer, User owner, int itemCount)
+    {
+        return new CreateNotificationRequest
+        {
+            FromUserId = null, // System notification
+            FromType = "system",
+            ToUserId = owner.Id,
+            ToType = "owner",
+            OrganizationId = reservation.OrganizationId,
+            Type = NotificationTypes.RESERVATION_EXPIRED_OWNER,
+            Title = "Reservation Expired",
+            Message = $"{customer.Name}'s reservation expired. {itemCount} item{(itemCount > 1 ? "s" : "")} returned to inventory ({reservation.TotalValue:C})",
+            Payload = new
+            {
+                reservationId = reservation.Id,
+                customerName = customer.Name,
+                customerPhone = customer.PhoneNumber,
+                itemCount = itemCount,
+                totalValue = reservation.TotalValue,
+                expiredAt = reservation.ExpiresAt,
+                reservedAt = reservation.CreatedAt
+            },
+            ActionUrl = $"/owner/reservations/{reservation.Id}",
+            ReferenceType = "reservation",
+            ReferenceId = reservation.Id
+        };
+    }
 }

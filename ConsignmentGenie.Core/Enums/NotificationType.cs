@@ -33,6 +33,20 @@ public enum NotificationType
     OwnerInvitationSent,
     [Display(Name = "dropoff_manifest")]
     DropoffManifest,
+    [Display(Name = "item_reserved")]
+    ItemReserved,
+    [Display(Name = "reservation_expired_owner")]
+    ReservationExpiredOwner,
+
+    // Customer notifications
+    [Display(Name = "customer_welcome")]
+    CustomerWelcome,
+    [Display(Name = "reservation_confirmed")]
+    ReservationConfirmed,
+    [Display(Name = "reservation_expiring_soon")]
+    ReservationExpiringSoon,
+    [Display(Name = "reservation_expired")]
+    ReservationExpired,
 
     // System notifications
     [Display(Name = "password_reset")]

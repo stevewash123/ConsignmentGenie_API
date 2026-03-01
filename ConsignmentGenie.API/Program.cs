@@ -273,6 +273,8 @@ builder.Services.AddScoped<IQBSyncService, ConsignmentGenie.Application.Services
 // Reservation System services
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<ISmsService, ConsoleSmsService>(); // Use ConsoleSmsService for development
+builder.Services.AddScoped<ICustomerAuthService, CustomerAuthService>();
+builder.Services.AddScoped<IBusinessHoursService, BusinessHoursService>();
 
 // Background job classes
 builder.Services.AddScoped<ConsignmentGenie.Application.Jobs.AutoPayoutJob>();

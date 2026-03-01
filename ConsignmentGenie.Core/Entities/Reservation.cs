@@ -8,19 +8,14 @@ public class Reservation : BaseEntity
 {
     public Guid OrganizationId { get; set; }
 
-    // Customer Information
+    // Customer Account (required for all reservations)
     [Required]
-    [MaxLength(100)]
-    public string CustomerName { get; set; } = string.Empty;
+    public Guid CustomerId { get; set; }
 
+    // Verification Method Used (required for all reservations)
     [Required]
-    [MaxLength(15)]
-    [Phone]
-    public string CustomerPhone { get; set; } = string.Empty;
-
-    [MaxLength(255)]
-    [EmailAddress]
-    public string? CustomerEmail { get; set; }
+    [MaxLength(20)]
+    public string VerificationMethod { get; set; } = string.Empty; // "google", "apple", "sms", "email"
 
     // SMS Verification
     [MaxLength(6)]
@@ -68,7 +63,13 @@ public class Reservation : BaseEntity
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
+    public Customer? Customer { get; set; }
     public User? CreatedByUser { get; set; }
     public User? UpdatedByUser { get; set; }
     public ICollection<ReservationItem> ReservationItems { get; set; } = new List<ReservationItem>();
+
+    // Helper properties
+    public string DisplayCustomerName => Customer?.Name ?? "Unknown";
+    public string? DisplayCustomerEmail => Customer?.Email;
+    public string? DisplayCustomerPhone => Customer?.PhoneNumber;
 }

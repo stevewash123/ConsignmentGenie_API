@@ -17,6 +17,8 @@ public static class NotificationTypes
     public const string OWNER_WELCOME = "welcome";
     public const string NEW_CONSIGNOR_REQUEST = "new_provider_request";
     public const string NEW_ITEM_REQUEST = "new_item_request";
+    public const string ITEM_RESERVED = "item_reserved";
+    public const string RESERVATION_EXPIRED_OWNER = "reservation_expired_owner";
     public const string SUBSCRIPTION_FAILED = "subscription_failed";
     public const string PROVIDER_APPROVED = "provider_approved";
     public const string DAILY_SALES_SUMMARY = "daily_sales_summary";
@@ -36,6 +38,10 @@ public static class NotificationTypes
     public const string DAILY_PLATFORM_SUMMARY = "daily_platform_summary";
 
     // Customer types
+    public const string CUSTOMER_WELCOME = "customer_welcome";
+    public const string RESERVATION_CONFIRMED = "reservation_confirmed";
+    public const string RESERVATION_EXPIRING_SOON = "reservation_expiring_soon";
+    public const string RESERVATION_EXPIRED = "reservation_expired";
     public const string ORDER_CONFIRMED = "order_confirmed";
     public const string ORDER_READY_PICKUP = "order_ready_pickup";
     public const string ORDER_SHIPPED = "order_shipped";

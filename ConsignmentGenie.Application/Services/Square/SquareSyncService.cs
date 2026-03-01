@@ -4,6 +4,7 @@ using System.Text.Json;
 using ConsignmentGenie.Application.Services.Interfaces;
 using ConsignmentGenie.Application.DTOs;
 using ConsignmentGenie.Core.DTOs.Square;
+using ConsignmentGenie.Core.DTOs.Notifications;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Enums;
 using ConsignmentGenie.Core.Interfaces;
@@ -19,6 +20,7 @@ public class SquareSyncService : ISquareSyncService
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
     private readonly IPendingImportItemService _pendingImportItemService;
+    private readonly INotificationService _notificationService;
     private readonly string _squareBaseUrl;
 
     public SquareSyncService(
@@ -26,13 +28,15 @@ public class SquareSyncService : ISquareSyncService
         ILogger<SquareSyncService> logger,
         HttpClient httpClient,
         IConfiguration configuration,
-        IPendingImportItemService pendingImportItemService)
+        IPendingImportItemService pendingImportItemService,
+        INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _httpClient = httpClient;
         _configuration = configuration;
         _pendingImportItemService = pendingImportItemService;
+        _notificationService = notificationService;
         _squareBaseUrl = _configuration["Square:BaseUrl"] ?? "https://connect.squareupsandbox.com";
     }
 
@@ -293,6 +297,9 @@ public class SquareSyncService : ISquareSyncService
             }
 
             stopwatch.Stop();
+
+            // TODO: Send notification to owner about sync completion
+            // await SendSyncCompletionNotificationAsync(shopId, created, updated, catResult.Total, transactionSyncResult.TransactionsSynced, errors, stopwatch.Elapsed);
 
             return new FullSyncResult
             {
@@ -908,6 +915,9 @@ public class SquareSyncService : ISquareSyncService
             await _unitOfWork.PendingSquareTransactionItems.AddAsync(pendingItem);
         }
     }
+
+    // TODO: Implement Square sync completion notifications
+    // private async Task SendSyncCompletionNotificationAsync(...)
 
     // Helper classes (keeping existing Square API models for now)
     private class UpsertResult

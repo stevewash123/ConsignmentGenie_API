@@ -171,7 +171,7 @@ public class ConsolidatedNotificationJob
         }
 
         // Send via existing notification service
-        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest
+        var createRequest = new CreateNotificationRequest
         {
             OrganizationId = notification.OrganizationId,
             FromType = "system",
@@ -180,7 +180,7 @@ public class ConsolidatedNotificationJob
             Type = notificationType.ToString(),
             Title = subject,
             Message = message,
-            ActionUrl = $"/consignor/notifications/activated-items/{notification.Id}",
+            ActionUrl = "", // Will be set after we get the notification ID
             Payload = new
             {
                 ItemIds = itemIds,
@@ -189,6 +189,21 @@ public class ConsolidatedNotificationJob
             },
             ReferenceType = "consolidated_notification",
             ReferenceId = notification.Id
-        });
+        };
+
+        var createdNotification = await _notificationService.CreateNotificationAsync(createRequest);
+
+        // Update the ActionUrl with the correct notification ID
+        var actualNotification = await _context.Notifications
+            .FirstOrDefaultAsync(n => n.Id == createdNotification.Id);
+
+        if (actualNotification != null)
+        {
+            actualNotification.ActionUrl = $"/consignor/notifications/activated-items/{createdNotification.Id}";
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Updated notification {NotificationId} ActionUrl to use correct notification ID",
+                createdNotification.Id);
+        }
     }
 }

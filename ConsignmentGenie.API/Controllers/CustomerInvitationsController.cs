@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using ConsignmentGenie.Application.Services.Interfaces;
+using ConsignmentGenie.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConsignmentGenie.API.Controllers;
 
@@ -10,11 +13,17 @@ namespace ConsignmentGenie.API.Controllers;
 public class CustomerInvitationsController : ControllerBase
 {
     private readonly ILogger<CustomerInvitationsController> _logger;
+    private readonly IEmailService _emailService;
+    private readonly ConsignmentGenieContext _context;
 
     public CustomerInvitationsController(
-        ILogger<CustomerInvitationsController> logger)
+        ILogger<CustomerInvitationsController> logger,
+        IEmailService emailService,
+        ConsignmentGenieContext context)
     {
         _logger = logger;
+        _emailService = emailService;
+        _context = context;
     }
 
     private Guid GetOrganizationId()
@@ -52,6 +61,15 @@ public class CustomerInvitationsController : ControllerBase
 
         try
         {
+            // Get organization details for the email
+            var organization = await _context.Organizations
+                .FirstOrDefaultAsync(o => o.Id == organizationId);
+
+            if (organization == null)
+            {
+                return BadRequest(new { success = false, message = "Organization not found" });
+            }
+
             var response = new CustomerInvitationResponse
             {
                 Success = true,
@@ -60,18 +78,28 @@ public class CustomerInvitationsController : ControllerBase
                 FailedEmails = new List<string>()
             };
 
-            // For now, we'll simulate sending invitations
-            // In the future, this would integrate with an email service
+            // Send customer catalog invitations
             foreach (var email in request.Emails)
             {
                 try
                 {
-                    // TODO: Implement actual email sending logic
-                    // This would send an email invitation to the customer
-                    _logger.LogInformation("[CUSTOMER_INVITATION] Simulated sending invitation to {Email}", email);
+                    _logger.LogInformation("[CUSTOMER_INVITATION] Sending invitation to {Email}", email);
 
-                    // Simulate a small delay
-                    await Task.Delay(100);
+                    var emailSent = await _emailService.SendCustomerCatalogInvitationAsync(
+                        email,
+                        organization.Name,
+                        request.PersonalMessage);
+
+                    if (!emailSent)
+                    {
+                        _logger.LogError("[CUSTOMER_INVITATION] Failed to send invitation to {Email}", email);
+                        response.FailedEmails.Add(email);
+                        response.InvitationsSent--;
+                    }
+                    else
+                    {
+                        _logger.LogInformation("[CUSTOMER_INVITATION] Successfully sent invitation to {Email}", email);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -131,16 +159,17 @@ public class CustomerInvitationsController : ControllerBase
         }
     }
 
+
     private string GeneratePreviewText(string personalMessage)
     {
-        var baseText = "You're invited to shop our consignment store online!";
+        var baseText = "You're invited to view our catalog and reserve items for pickup!";
 
         if (!string.IsNullOrEmpty(personalMessage))
         {
             baseText = $"{personalMessage}\n\n{baseText}";
         }
 
-        baseText += "\n\nClick the link below to browse our latest items and find great deals on quality consignment goods.";
+        baseText += "\n\nBrowse our collection and reserve items that interest you for pickup at our shop.";
 
         return baseText;
     }

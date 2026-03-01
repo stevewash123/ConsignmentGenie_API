@@ -8,14 +8,14 @@ public class ReservationDto
     public Guid Id { get; set; }
     public Guid OrganizationId { get; set; }
 
-    // Customer Information
+    // Customer Information (linked to Customer account)
+    public Guid CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
-    public string CustomerPhone { get; set; } = string.Empty;
+    public string? CustomerPhone { get; set; }
     public string? CustomerEmail { get; set; }
 
-    // Verification Status
-    public bool IsPhoneVerified { get; set; }
-    public DateTime? PhoneVerifiedAt { get; set; }
+    // Verification Method
+    public string VerificationMethod { get; set; } = string.Empty; // "google", "apple", "sms", "email"
 
     // Reservation Details
     public ReservationStatus Status { get; set; }
@@ -58,24 +58,16 @@ public class ReservationDto
 public class CreateReservationRequest
 {
     [Required]
-    [MaxLength(100)]
-    public string CustomerName { get; set; } = string.Empty;
+    public Guid CustomerId { get; set; }
 
     [Required]
-    [MaxLength(15)]
-    [Phone]
-    public string CustomerPhone { get; set; } = string.Empty;
-
-    [MaxLength(255)]
-    [EmailAddress]
-    public string? CustomerEmail { get; set; }
+    [MaxLength(20)]
+    public string VerificationMethod { get; set; } = string.Empty; // "google", "apple", "sms", "email"
 
     [Required]
     public List<Guid> ItemIds { get; set; } = new();
 
     public string? CustomerNotes { get; set; }
-
-    public int HoldHours { get; set; } = 24; // Default 24 hour hold
 }
 
 public class SendVerificationCodeRequest

@@ -170,4 +170,19 @@ public class ConsoleEmailService : IEmailService
         await Task.Delay(100);
         return true;
     }
+
+    public async Task<bool> SendCustomerCatalogInvitationAsync(string email, string shopName, string personalMessage = null)
+    {
+        var personalMessageDisplay = !string.IsNullOrWhiteSpace(personalMessage) ? $"\n  Personal Message: {personalMessage}" : "";
+        _logger.LogInformation(
+            "[CONSOLE EMAIL] Customer Catalog Invitation Email\n" +
+            "  To: {Email}\n" +
+            "  Subject: You're invited to browse {ShopName}'s catalog!\n" +
+            "  Shop: {ShopName}{PersonalMessageDisplay}",
+            email, shopName, shopName, personalMessageDisplay
+        );
+
+        await Task.Delay(100);
+        return true;
+    }
 }

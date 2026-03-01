@@ -2301,6 +2301,43 @@ startxref
         }
     }
 
+    // Public endpoint for customer portal - get basic organization info
+    [HttpGet("public/{organizationId}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<object>> GetPublicOrganizationInfo(Guid organizationId)
+    {
+        _logger.LogInformation("[ORGANIZATION_PUBLIC] Getting public organization info for {OrganizationId}", organizationId);
+
+        try
+        {
+            var organization = await _context.Organizations
+                .Where(o => o.Id == organizationId)
+                .Select(o => new
+                {
+                    o.Id,
+                    o.Name,
+                    o.StoreCode,
+                    o.ShopLogoUrl,
+                    o.ShopDescription
+                })
+                .FirstOrDefaultAsync();
+
+            if (organization == null)
+            {
+                _logger.LogWarning("[ORGANIZATION_PUBLIC] Organization {OrganizationId} not found", organizationId);
+                return NotFound("Organization not found");
+            }
+
+            _logger.LogDebug("[ORGANIZATION_PUBLIC] Public organization info retrieved for {OrganizationId}: {Name}", organizationId, organization.Name);
+            return Ok(organization);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[ORGANIZATION_PUBLIC] Error getting public organization info for {OrganizationId}", organizationId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
     // Helper methods
     private BusinessPoliciesDto CreateDefaultBusinessPolicies()
     {

@@ -764,6 +764,27 @@ public class ConsignorPortalController : ControllerBase
         return consignorId;
     }
 
+    private Guid? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        _logger.LogInformation("GetCurrentUserId: claim value = {ClaimValue}", userIdClaim ?? "[NULL]");
+
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            _logger.LogWarning("GetCurrentUserId: NameIdentifier claim is null or empty");
+            return null;
+        }
+
+        if (!Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogWarning("GetCurrentUserId: Failed to parse NameIdentifier claim '{ClaimValue}' as Guid", userIdClaim);
+            return null;
+        }
+
+        _logger.LogInformation("GetCurrentUserId: Successfully parsed userId = {UserId}", userId);
+        return userId;
+    }
+
     private string ExtractPrimaryImage(string? photosJson)
     {
         // TODO: Parse Photos JSON field and return first image URL
@@ -1598,21 +1619,51 @@ Agreement ID: AGR-{DateTime.UtcNow:yyyy}-{Random.Shared.Next(10000, 99999):D5}";
         {
             var consignorId = GetCurrentConsignorId();
             if (consignorId == null)
+            {
+                _logger.LogWarning("GetActivatedItemsForNotification: consignorId is null");
                 return BadRequest("Consignor not found");
+            }
 
-            // Get the notification and ensure it belongs to this consignor
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                _logger.LogWarning("GetActivatedItemsForNotification: currentUserId is null");
+                return BadRequest("User not found");
+            }
+
+            _logger.LogInformation("GetActivatedItemsForNotification: notificationId={NotificationId}, consignorId={ConsignorId}, userId={UserId}",
+                notificationId, consignorId.Value, currentUserId.Value);
+
+            // Get the notification and ensure it belongs to this user
             var notification = await _unitOfWork.Notifications.GetByIdAsync(notificationId);
 
-            if (notification == null || notification.ToUser?.Consignor?.Id != consignorId.Value)
+            if (notification == null)
+            {
+                _logger.LogWarning("GetActivatedItemsForNotification: notification not found for id {NotificationId}", notificationId);
                 return NotFound("Notification not found");
+            }
+
+            // Check if notification belongs to current user by comparing ToUserId with current user ID
+            if (notification.ToUserId != currentUserId.Value)
+            {
+                _logger.LogWarning("GetActivatedItemsForNotification: notification {NotificationId} belongs to user {ToUserId}, but current user is {CurrentUserId}",
+                    notificationId, notification.ToUserId, currentUserId.Value);
+                return NotFound("Notification not found");
+            }
+
+            _logger.LogInformation("GetActivatedItemsForNotification: notification found and authorized, ToType={ToType}, Type={Type}",
+                notification.ToType, notification.Type);
 
             // Parse the payload to get ItemIds
             List<Guid> itemIds = new List<Guid>();
             if (!string.IsNullOrEmpty(notification.Payload))
             {
+                _logger.LogInformation("GetActivatedItemsForNotification: parsing payload: {Payload}", notification.Payload);
                 try
                 {
                     var payload = JsonSerializer.Deserialize<Dictionary<string, object>>(notification.Payload);
+                    _logger.LogInformation("GetActivatedItemsForNotification: payload deserialized, keys: {Keys}", string.Join(", ", payload.Keys));
+
                     if (payload.ContainsKey("ItemIds"))
                     {
                         var itemIdsElement = payload["ItemIds"] as JsonElement?;
@@ -1621,17 +1672,36 @@ Agreement ID: AGR-{DateTime.UtcNow:yyyy}-{Random.Shared.Next(10000, 99999):D5}";
                             itemIds = itemIdsElement.Value.EnumerateArray()
                                 .Select(id => Guid.Parse(id.GetString()))
                                 .ToList();
+                            _logger.LogInformation("GetActivatedItemsForNotification: parsed {Count} item IDs: {ItemIds}",
+                                itemIds.Count, string.Join(", ", itemIds));
                         }
+                        else
+                        {
+                            _logger.LogWarning("GetActivatedItemsForNotification: ItemIds element is not a valid array, ValueKind: {ValueKind}",
+                                itemIdsElement?.ValueKind);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("GetActivatedItemsForNotification: payload does not contain 'ItemIds' key");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to parse notification payload for notification {NotificationId}", notificationId);
+                    _logger.LogError(ex, "Failed to parse notification payload for notification {NotificationId}, payload: {Payload}",
+                        notificationId, notification.Payload);
                 }
+            }
+            else
+            {
+                _logger.LogWarning("GetActivatedItemsForNotification: notification payload is null or empty");
             }
 
             // Get the item details
+            _logger.LogInformation("GetActivatedItemsForNotification: retrieving items for consignor {ConsignorId}", consignorId.Value);
             var allItems = await _unitOfWork.Items.GetAllAsync();
+            _logger.LogInformation("GetActivatedItemsForNotification: found {TotalItemCount} total items in database", allItems.Count());
+
             var items = allItems
                 .Where(i => itemIds.Contains(i.Id) && i.ConsignorId == consignorId.Value)
                 .Select(i => new
@@ -1644,6 +1714,9 @@ Agreement ID: AGR-{DateTime.UtcNow:yyyy}-{Random.Shared.Next(10000, 99999):D5}";
                     activatedAt = i.StatusChangedAt ?? i.CreatedAt
                 })
                 .ToList();
+
+            _logger.LogInformation("GetActivatedItemsForNotification: returning {ItemCount} items for consignor {ConsignorId}. Items: {Items}",
+                items.Count, consignorId.Value, string.Join(", ", items.Select(i => $"{i.id}:{i.title}")));
 
             return Ok(items);
         }
