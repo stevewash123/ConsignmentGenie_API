@@ -742,6 +742,41 @@ public class ConsignorPortalController : ControllerBase
         }
     }
 
+    [HttpDelete("dropoff-requests/{id}")]
+    public async Task<ActionResult> CancelDropoffRequest(Guid id)
+    {
+        try
+        {
+            var consignorId = GetCurrentConsignorId();
+            if (consignorId == null)
+                return BadRequest("Consignor not found");
+
+            var dropoffRequest = await _unitOfWork.DropoffRequests
+                .GetAsync(dr => dr.Id == id && dr.ConsignorId == consignorId.Value);
+
+            if (dropoffRequest == null)
+                return NotFound("Dropoff request not found");
+
+            // Only allow cancellation of pending requests
+            if (dropoffRequest.Status != DropoffRequestStatus.Pending)
+                return BadRequest("Can only cancel pending dropoff requests");
+
+            // Update status to cancelled
+            dropoffRequest.Status = DropoffRequestStatus.Cancelled;
+            dropoffRequest.UpdatedAt = DateTime.UtcNow;
+
+            await _unitOfWork.DropoffRequests.UpdateAsync(dropoffRequest);
+            await _unitOfWork.SaveChangesAsync();
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelling dropoff request");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
     // Helper methods
     private Guid? GetCurrentConsignorId()
     {

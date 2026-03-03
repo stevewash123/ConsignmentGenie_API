@@ -4,6 +4,8 @@ using System.Security.Claims;
 using ConsignmentGenie.Core.DTOs;
 using ConsignmentGenie.Core.Entities;
 using ConsignmentGenie.Core.Interfaces;
+using ConsignmentGenie.Application.Services;
+using ConsignmentGenie.Application.DTOs;
 
 namespace ConsignmentGenie.API.Controllers;
 
@@ -14,11 +16,13 @@ public class OwnerController : ControllerBase
 {
     private readonly ILogger<OwnerController> _logger;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPendingImportItemService _pendingImportItemService;
 
-    public OwnerController(ILogger<OwnerController> logger, IUnitOfWork unitOfWork)
+    public OwnerController(ILogger<OwnerController> logger, IUnitOfWork unitOfWork, IPendingImportItemService pendingImportItemService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _pendingImportItemService = pendingImportItemService;
     }
 
     // DROPOFF REQUESTS MANAGEMENT
@@ -204,17 +208,24 @@ public class OwnerController : ControllerBase
             if (dropoffRequest.Status != DropoffRequestStatus.Received)
                 return BadRequest("Can only import received dropoff requests");
 
-            // TODO: Implement actual import logic
-            // This would create Item entities from the DropoffItemDtos
-            // For now, just mark as imported
+            // Create pending import items from the manifest
+            var createPendingImportsRequest = new CreatePendingImportsFromManifestRequest
+            {
+                ManifestId = id,
+                AutoAssignConsignor = true
+            };
 
-            dropoffRequest.Status = DropoffRequestStatus.Imported;
-            dropoffRequest.ImportedAt = DateTime.UtcNow;
+            var pendingImportItems = await _pendingImportItemService.CreateFromManifestAsync(user.OrganizationId, createPendingImportsRequest);
+
+            // Update dropoff request with owner notes
             dropoffRequest.OwnerNotes = request.OwnerNotes;
             dropoffRequest.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.DropoffRequests.UpdateAsync(dropoffRequest);
             await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("Successfully imported {ItemCount} items from dropoff request {DropoffRequestId}",
+                pendingImportItems.Count, id);
 
             return Ok();
         }

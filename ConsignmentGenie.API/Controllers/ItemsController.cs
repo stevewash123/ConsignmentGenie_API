@@ -138,7 +138,7 @@ public class ItemsController : ControllerBase
                     ReceivedDate = i.ReceivedDate.ToDateTime(TimeOnly.MinValue),
                     SoldDate = i.SoldDate.HasValue ? i.SoldDate.Value.ToDateTime(TimeOnly.MinValue) : null,
                     ConsignorId = i.ConsignorId,
-                    ConsignorName = (i.Consignor.Name + " " + i.Consignor).Trim(),
+                    ConsignorName = i.Consignor.Name,
                     CommissionRate = i.Consignor.CommissionRate
                 })
                 .ToListAsync();

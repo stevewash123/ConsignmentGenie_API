@@ -191,19 +191,19 @@ public class ConsolidatedNotificationJob
             ReferenceId = notification.Id
         };
 
-        var createdNotification = await _notificationService.CreateNotificationAsync(createRequest);
+        await _notificationService.CreateNotificationAsync(createRequest);
 
-        // Update the ActionUrl with the correct notification ID
+        // Find the created notification by ReferenceId to update the ActionUrl
         var actualNotification = await _context.Notifications
-            .FirstOrDefaultAsync(n => n.Id == createdNotification.Id);
+            .FirstOrDefaultAsync(n => n.ReferenceId == notification.Id && n.ReferenceType == "consolidated_notification");
 
         if (actualNotification != null)
         {
-            actualNotification.ActionUrl = $"/consignor/notifications/activated-items/{createdNotification.Id}";
+            actualNotification.ActionUrl = $"/consignor/notifications/activated-items/{actualNotification.Id}";
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Updated notification {NotificationId} ActionUrl to use correct notification ID",
-                createdNotification.Id);
+                actualNotification.Id);
         }
     }
 }

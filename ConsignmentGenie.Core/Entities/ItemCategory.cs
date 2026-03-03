@@ -3,6 +3,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ConsignmentGenie.Core.Entities;
 
+public enum CategorySource
+{
+    CG,      // Created by ConsignmentGenie owner or consignor
+    Square   // Imported from Square
+}
+
+public enum CategoryStatus
+{
+    Active,  // Available for use in dropdowns and assignments
+    Pending  // Awaiting owner approval (consignor-originated)
+}
+
 public class ItemCategory : BaseEntity
 {
     public Guid OrganizationId { get; set; }
@@ -17,7 +29,17 @@ public class ItemCategory : BaseEntity
     [MaxLength(10)]
     public string? Color { get; set; } // Hex color code for UI
 
-    // Square integration
+    // Amendment 1: Hybrid model fields
+    [Required]
+    public CategorySource Source { get; set; } = CategorySource.CG;
+
+    [Required]
+    public CategoryStatus Status { get; set; } = CategoryStatus.Active;
+
+    // Non-null while Status = Pending; cleared on promotion to Active
+    public Guid? ConsignorId { get; set; }
+
+    // Square's catalog object ID. Populated for Source = Square.
     [MaxLength(100)]
     public string? SquareCategoryId { get; set; }
 
@@ -36,4 +58,7 @@ public class ItemCategory : BaseEntity
     public ItemCategory? ParentCategory { get; set; }
     public ICollection<ItemCategory> SubCategories { get; set; } = new List<ItemCategory>();
     public ICollection<Item> Items { get; set; } = new List<Item>();
+
+    // Consignor who suggested this category (when Status = Pending)
+    public Consignor? Consignor { get; set; }
 }

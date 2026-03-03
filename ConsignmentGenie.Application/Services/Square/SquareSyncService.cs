@@ -94,28 +94,24 @@ public class SquareSyncService : ISquareSyncService
 
                 _logger.LogInformation("🏷️ Processing category: {CategoryName} (Square ID: {SquareId})", categoryName, squareCategoryId);
 
-                // First try to match by Square ID
-                var existingCategory = await _unitOfWork.ItemCategories.GetAsync(c =>
+                // Amendment 1: Look for existing Square category by Square ID only
+                // We don't automatically merge with CG categories by name anymore - that would trigger overlap detection
+                var existingSquareCategory = await _unitOfWork.ItemCategories.GetAsync(c =>
                     c.OrganizationId == shopId &&
-                    c.SquareCategoryId == squareCategoryId);
+                    c.SquareCategoryId == squareCategoryId &&
+                    c.Source == CategorySource.Square);
 
-                // If not found by Square ID, try by name
-                if (existingCategory == null)
+                if (existingSquareCategory == null)
                 {
-                    existingCategory = await _unitOfWork.ItemCategories.GetAsync(c =>
-                        c.OrganizationId == shopId &&
-                        c.Name == categoryName);
-                }
-
-                if (existingCategory == null)
-                {
-                    // Create new category in CG
+                    // Create new category in CG with Square source (Amendment 1)
                     var newCategory = new ItemCategory
                     {
                         Id = Guid.NewGuid(),
                         OrganizationId = shopId,
                         Name = categoryName,
                         SquareCategoryId = squareCategoryId,
+                        Source = CategorySource.Square,  // Amendment 1: Track source
+                        Status = CategoryStatus.Active,   // Square categories are always active
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
@@ -136,33 +132,32 @@ public class SquareSyncService : ISquareSyncService
                 }
                 else
                 {
-                    // Update existing category with Square ID if missing
+                    // Update existing Square category if name has changed
                     bool needsUpdate = false;
-                    if (string.IsNullOrEmpty(existingCategory.SquareCategoryId))
+                    if (existingSquareCategory.Name != categoryName)
                     {
-                        existingCategory.SquareCategoryId = squareCategoryId;
+                        existingSquareCategory.Name = categoryName;
                         needsUpdate = true;
-                    }
-
-                    if (existingCategory.Name != categoryName)
-                    {
-                        existingCategory.Name = categoryName;
-                        needsUpdate = true;
+                        _logger.LogInformation("🏷️ 📝 Square category renamed: {OldName} → {NewName}", existingSquareCategory.Name, categoryName);
                     }
 
                     if (needsUpdate)
                     {
-                        existingCategory.UpdatedAt = DateTime.UtcNow;
-                        await _unitOfWork.ItemCategories.UpdateAsync(existingCategory);
+                        existingSquareCategory.UpdatedAt = DateTime.UtcNow;
+                        await _unitOfWork.ItemCategories.UpdateAsync(existingSquareCategory);
                         await _unitOfWork.SaveChangesAsync();
                         updated++;
-                        _logger.LogInformation("🏷️ ✅ Updated existing category: {CategoryName} (Square ID: {SquareId})", categoryName, squareCategoryId);
+                        _logger.LogInformation("🏷️ ✅ Updated existing Square category: {CategoryName} (Square ID: {SquareId})", categoryName, squareCategoryId);
                     }
                     else
                     {
-                        _logger.LogInformation("🏷️ ⏭️ Category {CategoryName} already exists and is up-to-date", categoryName);
+                        _logger.LogInformation("🏷️ ⏭️ Square category {CategoryName} already exists and is up-to-date", categoryName);
                     }
                 }
+
+                // TODO Amendment 1: Add fuzzy matching logic here to detect overlaps with CG categories
+                // If this new/updated Square category fuzzy-matches an existing CG category,
+                // emit a category_overlap notification for the owner to review
             }
             catch (Exception ex)
             {

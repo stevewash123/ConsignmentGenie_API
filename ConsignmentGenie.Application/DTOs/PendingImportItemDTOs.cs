@@ -66,13 +66,16 @@ public class UpdatePendingImportItemRequest
 
 /// <summary>
 /// Request for partial update of pending import item (PATCH operation)
-/// Used for inline editing of price, category, and condition
+/// Used for inline editing and modal editing of pending import fields
 /// </summary>
 public class PatchPendingImportItemRequest
 {
+    public string? Name { get; set; }
+    public string? Description { get; set; }
     public decimal? Price { get; set; }
     public string? Category { get; set; }
     public string? Condition { get; set; }
+    public string? Brand { get; set; }
 }
 
 /// <summary>

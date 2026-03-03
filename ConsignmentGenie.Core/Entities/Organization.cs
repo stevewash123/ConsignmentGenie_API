@@ -216,6 +216,9 @@ public class Organization : BaseEntity
     // Inventory Management (determines source of truth)
     public IntegrationMode IntegrationMode { get; set; } = IntegrationMode.CgNative;
 
+    // Amendment 1 Addendum: Consignor category suggestions (off by default)
+    public bool AllowConsignorCategorySuggestions { get; set; } = false;
+
     // Navigation properties
     public ICollection<User> Users { get; set; } = new List<User>();
     public ICollection<Consignor> Consignors { get; set; } = new List<Consignor>();

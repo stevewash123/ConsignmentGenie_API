@@ -3,6 +3,7 @@ using System;
 using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ConsignmentGenie.Infrastructure.Migrations
 {
     [DbContext(typeof(ConsignmentGenieContext))]
-    partial class ConsignmentGenieContextModelSnapshot : ModelSnapshot
+    [Migration("20260302193619_HybridCategoryModel")]
+    partial class HybridCategoryModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -604,7 +607,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             Id = new Guid("66666666-6666-6666-6666-666666666666"),
                             CommissionRate = 0.6000m,
                             ConsignorNumber = "PRV-00001",
-                            CreatedAt = new DateTime(2026, 3, 2, 19, 49, 50, 498, DateTimeKind.Utc).AddTicks(5150),
+                            CreatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 884, DateTimeKind.Utc).AddTicks(5354),
                             Email = "consignor1@microsaasbuilders.com",
                             IsShopOwned = false,
                             Name = "Demo Artist",
@@ -613,7 +616,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             PortalAccess = false,
                             PreferredName = "Demo",
                             Status = 1,
-                            UpdatedAt = new DateTime(2026, 3, 2, 19, 49, 50, 498, DateTimeKind.Utc).AddTicks(5150),
+                            UpdatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 884, DateTimeKind.Utc).AddTicks(5355),
                             UserId = new Guid("44444444-4444-4444-4444-444444444444")
                         });
                 });
@@ -1863,9 +1866,6 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<bool>("AllowConsignorCategorySuggestions")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("ApprovalMode")
                         .HasColumnType("integer");
 
@@ -2160,12 +2160,11 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             AgreementMethod = "none",
-                            AllowConsignorCategorySuggestions = false,
                             ApprovalMode = 1,
                             AutoApproveConsignors = true,
                             CachedSubscriptionStatus = "active",
                             CloudinaryConnected = false,
-                            CreatedAt = new DateTime(2026, 3, 2, 19, 49, 49, 923, DateTimeKind.Utc).AddTicks(2416),
+                            CreatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 315, DateTimeKind.Utc).AddTicks(5671),
                             Currency = "USD",
                             DefaultSplitPercentage = 60.00m,
                             FounderTier = 1,
@@ -2194,7 +2193,7 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                             StripePayoutsEnabled = false,
                             Subdomain = "demo-shop",
                             TaxRate = 0.0000m,
-                            UpdatedAt = new DateTime(2026, 3, 2, 19, 49, 49, 923, DateTimeKind.Utc).AddTicks(2417),
+                            UpdatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 315, DateTimeKind.Utc).AddTicks(5672),
                             VerticalType = 1,
                             WelcomeGuideCompleted = false
                         });
@@ -3798,37 +3797,37 @@ namespace ConsignmentGenie.Infrastructure.Migrations
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2026, 3, 2, 19, 49, 50, 498, DateTimeKind.Utc).AddTicks(4879),
+                            CreatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 884, DateTimeKind.Utc).AddTicks(5104),
                             Email = "admin@microsaasbuilders.com",
                             IsActive = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$KtGQKTeJ47VZN7PwVdog0u6YqhJfpa5H/r3QEfDl53FbQdZBfEax6",
+                            PasswordHash = "$2a$11$Y1tHSIDm4mpna7xWnpt2LuCDSiP0wEMQ3rlHGOjqXe1Er.xypxR5W",
                             Role = 1,
-                            UpdatedAt = new DateTime(2026, 3, 2, 19, 49, 50, 498, DateTimeKind.Utc).AddTicks(4880)
+                            UpdatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 884, DateTimeKind.Utc).AddTicks(5106)
                         },
                         new
                         {
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2026, 3, 2, 19, 49, 50, 498, DateTimeKind.Utc).AddTicks(4912),
+                            CreatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 884, DateTimeKind.Utc).AddTicks(5131),
                             Email = "owner1@microsaasbuilders.com",
                             IsActive = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$KtGQKTeJ47VZN7PwVdog0u6YqhJfpa5H/r3QEfDl53FbQdZBfEax6",
+                            PasswordHash = "$2a$11$Y1tHSIDm4mpna7xWnpt2LuCDSiP0wEMQ3rlHGOjqXe1Er.xypxR5W",
                             Role = 1,
-                            UpdatedAt = new DateTime(2026, 3, 2, 19, 49, 50, 498, DateTimeKind.Utc).AddTicks(4947)
+                            UpdatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 884, DateTimeKind.Utc).AddTicks(5166)
                         },
                         new
                         {
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
                             ApprovalStatus = 1,
-                            CreatedAt = new DateTime(2026, 3, 2, 19, 49, 50, 498, DateTimeKind.Utc).AddTicks(4969),
+                            CreatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 884, DateTimeKind.Utc).AddTicks(5183),
                             Email = "consignor1@microsaasbuilders.com",
                             IsActive = true,
                             OrganizationId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            PasswordHash = "$2a$11$KtGQKTeJ47VZN7PwVdog0u6YqhJfpa5H/r3QEfDl53FbQdZBfEax6",
+                            PasswordHash = "$2a$11$Y1tHSIDm4mpna7xWnpt2LuCDSiP0wEMQ3rlHGOjqXe1Er.xypxR5W",
                             Role = 2,
-                            UpdatedAt = new DateTime(2026, 3, 2, 19, 49, 50, 498, DateTimeKind.Utc).AddTicks(4969)
+                            UpdatedAt = new DateTime(2026, 3, 2, 19, 36, 17, 884, DateTimeKind.Utc).AddTicks(5184)
                         });
                 });
 

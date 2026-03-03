@@ -8,6 +8,7 @@ using ConsignmentGenie.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
+using System.Text.Json;
 
 namespace ConsignmentGenie.Application.Services;
 
@@ -190,8 +191,8 @@ public class PendingImportItemService : IPendingImportItemService
 
         foreach (var entity in entities)
         {
-            _logger.LogInformation("📝 [PendingImportWrite] BULK ITEM - Name: {Name}, Source: {Source}, SourceRef: {SourceRef}, ConsignorId: {ConsignorId}, Price: {Price}",
-                entity.Name, entity.Source, entity.SourceReference, entity.ConsignorId, entity.Price);
+            _logger.LogInformation("📝 [PendingImportWrite] BULK ITEM - Name: {Name}, Category: {Category}, Condition: {Condition}, Source: {Source}, SourceRef: {SourceRef}, ConsignorId: {ConsignorId}, Price: {Price}",
+                entity.Name, entity.Category, entity.Condition, entity.Source, entity.SourceReference, entity.ConsignorId, entity.Price);
         }
 
         _context.PendingImportItems.AddRange(entities);
@@ -238,9 +239,12 @@ public class PendingImportItemService : IPendingImportItemService
         if (entity == null) return null;
 
         // Only update provided fields (true PATCH semantics)
+        if (request.Name != null) entity.Name = request.Name;
+        if (request.Description != null) entity.Description = request.Description;
         if (request.Price.HasValue) entity.Price = request.Price.Value;
         if (request.Category != null) entity.Category = request.Category;
         if (request.Condition != null) entity.Condition = request.Condition;
+        if (request.Brand != null) entity.Brand = request.Brand;
 
         await _context.SaveChangesAsync();
 
@@ -569,8 +573,12 @@ public class PendingImportItemService : IPendingImportItemService
         _logger.LogInformation("👤 [CreateFromManifest] Manifest belongs to ConsignorId: {ConsignorId}, AutoAssign: {AutoAssign}",
             manifest.ConsignorId, request.AutoAssignConsignor);
 
-        // Parse items from JSON
-        var manifestItems = System.Text.Json.JsonSerializer.Deserialize<List<ManifestItemDto>>(manifest.ItemsJson ?? "[]");
+        // Parse items from JSON with case-insensitive property matching
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+        var manifestItems = System.Text.Json.JsonSerializer.Deserialize<List<ManifestItemDto>>(manifest.ItemsJson ?? "[]", options);
 
         if (manifestItems == null || !manifestItems.Any())
             return new List<PendingImportItemDto>();
@@ -594,6 +602,15 @@ public class PendingImportItemService : IPendingImportItemService
             ConsignorId = assignedConsignorId,
             Notes = item.Notes
         }).ToList();
+
+        // Debug logging for manifest import requests
+        _logger.LogInformation("🔍 [CreateFromManifest] Processing {Count} manifest items:", manifestItems.Count);
+        for (int i = 0; i < pendingImportRequests.Count; i++)
+        {
+            var req = pendingImportRequests[i];
+            _logger.LogInformation("🔍 [CreateFromManifest] Item {Index}: Name='{Name}', Category='{Category}', Condition='{Condition}'",
+                i, req.Name, req.Category, req.Condition);
+        }
 
         var createdImports = await CreatePendingImportItemsBulkAsync(organizationId, pendingImportRequests);
 
