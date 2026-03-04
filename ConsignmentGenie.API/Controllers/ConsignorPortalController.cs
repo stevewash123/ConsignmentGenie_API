@@ -1790,4 +1790,60 @@ Agreement ID: AGR-{DateTime.UtcNow:yyyy}-{Random.Shared.Next(10000, 99999):D5}";
         }
     }
 
+    // Balance & Payout endpoints - TODO: Implement these methods
+    [HttpGet("balance")]
+    public async Task<IActionResult> GetConsignorBalance()
+    {
+        throw new NotImplementedException("Consignor balance endpoint not yet implemented");
+    }
+
+    [HttpPost("payouts/{payoutId}/confirm-received")]
+    public async Task<IActionResult> ConfirmPayoutReceived(string payoutId)
+    {
+        throw new NotImplementedException("Confirm payout received endpoint not yet implemented");
+    }
+
+    [HttpPost("payout-requests")]
+    public async Task<IActionResult> RequestPayout([FromBody] object request)
+    {
+        throw new NotImplementedException("Payout request endpoint not yet implemented");
+    }
+
+    [HttpGet("payout-requests/status")]
+    public async Task<IActionResult> GetPayoutRequestStatus()
+    {
+        throw new NotImplementedException("Payout request status endpoint not yet implemented");
+    }
+
+    [HttpDelete("payout-requests/{requestId}")]
+    public async Task<IActionResult> CancelPayoutRequest(string requestId)
+    {
+        throw new NotImplementedException("Cancel payout request endpoint not yet implemented");
+    }
+
+    // Statement endpoints - TODO: Implement these methods
+    [HttpGet("statements/{statementId}")]
+    public async Task<IActionResult> GetStatement(string statementId)
+    {
+        throw new NotImplementedException("Get statement endpoint not yet implemented");
+    }
+
+    [HttpGet("statements/{year:int}/{month:int}")]
+    public async Task<IActionResult> GetStatementByPeriod(int year, int month)
+    {
+        throw new NotImplementedException("Get statement by period endpoint not yet implemented");
+    }
+
+    [HttpGet("statements/{statementId}/pdf")]
+    public async Task<IActionResult> DownloadStatementPdfById(string statementId)
+    {
+        throw new NotImplementedException("Download statement PDF by ID endpoint not yet implemented");
+    }
+
+    [HttpPost("statements/{statementId}/regenerate")]
+    public async Task<IActionResult> RegenerateStatement(string statementId)
+    {
+        throw new NotImplementedException("Regenerate statement endpoint not yet implemented");
+    }
+
 }

@@ -197,4 +197,19 @@ public class TransactionsController : ControllerBase
             return StatusCode(500, "An error occurred while retrieving sales metrics");
         }
     }
+
+    // Check clearance endpoints - TODO: Implement these methods
+    [HttpGet("pending-checks")]
+    [Authorize(Roles = "Owner,Admin")]
+    public async Task<IActionResult> GetPendingChecks()
+    {
+        throw new NotImplementedException("Get pending checks endpoint not yet implemented");
+    }
+
+    [HttpPost("mark-cleared")]
+    [Authorize(Roles = "Owner,Admin")]
+    public async Task<IActionResult> MarkChecksAsCleared([FromBody] object request)
+    {
+        throw new NotImplementedException("Mark checks as cleared endpoint not yet implemented");
+    }
 }
